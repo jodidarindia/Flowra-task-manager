@@ -1,0 +1,7 @@
+SIZE 30 mm,10 mm
+GAP 2 mm,0 mm
+CLS
+BOX 2,2,236,76,2
+TEXT 92,10,"3",0,1,1,"200W"
+TEXT 96,38,"2",0,1,1,"POWER"
+PRINT 1
