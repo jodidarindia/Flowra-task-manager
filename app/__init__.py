@@ -7,12 +7,16 @@ from app.extensions import mongo
 from app.models import MongoUser
 from bson import ObjectId
 import os
+from dotenv import load_dotenv
+
+
 
 login_manager = LoginManager()
 scheduler = BackgroundScheduler()
 
 
 def create_app():
+    load_dotenv()
     app = Flask(__name__)
     app.config.from_object(Config)
 
