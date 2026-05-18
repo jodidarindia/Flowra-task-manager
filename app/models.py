@@ -199,3 +199,24 @@ class Announcement(db.Model):
     active = db.Column(db.Boolean, default=True)
 
     creator = db.relationship("User", backref="announcements")
+
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+
+
+class MongoUser(UserMixin):
+    def __init__(self, data):
+        self.data = data or {}
+
+    def get_id(self):
+        return str(self.data.get("_id"))
+
+    def __getattr__(self, name):
+        return self.data.get(name)
+
+    def check_password(self, password):
+        return check_password_hash(self.data.get("password_hash", ""), password)
+
+
+def hash_password(password):
+    return generate_password_hash(password)
