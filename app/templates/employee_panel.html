@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+{% block title %}Employee Panel{% endblock %}
+
+{% block content %}
+
+<style>
+input[type="text"]{
+    background:#1f293a;
+    color:#ffffff;
+    border:1px solid #2c4766;
+}
+
+input[type="text"]::placeholder{
+    color:#9ca3af;
+}
+
+input[type="text"]:focus{
+    background:#1f293a;
+    color:#ffffff;
+    border-color:#0ef;
+    box-shadow:none;
+}
+
+.employee-topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:20px;
+}
+
+.employee-filters{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+
+.employee-filters a{
+    text-decoration:none;
+    padding:10px 16px;
+    border-radius:12px;
+    font-weight:600;
+    background:#f3f4f6;
+    color:#374151;
+    transition:0.25s;
+    border:1px solid #e5e7eb;
+}
+
+.employee-filters a:hover{
+    background:#e0f2fe;
+    color:#2563eb;
+}
+
+.employee-filters a.active{
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    color:white;
+    border:none;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+@media(max-width:768px){
+    .employee-topbar{
+        align-items:flex-start;
+    }
+}
+</style>
+
+<div class="employee-topbar">
+    <div>
+        <h2 class="mb-0">Welcome, {{ current_user.username }}</h2>
+        <p class="text-muted mb-0">Manage your tasks, submissions, and reminders.</p>
+    </div>
+
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <a href="{{ url_for('main.my_reminders') }}" class="btn btn-outline-warning rounded-3">
+            🔔 My Reminders
+        </a>
+        <a href="{{ url_for('main.task_history') }}" class="btn btn-outline-secondary rounded-3">
+            Task History
+        </a>
+
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body text-center py-2 px-4">
+                <div class="small text-muted">🏆 Reward Points</div>
+                <h4 class="text-success mb-0 fw-bold">{{ employee.points or 0 }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FILTER NAVIGATION -->
+<div class="employee-filters">
+    <a href="{{ url_for('main.employee_panel', filter='mytasks') }}"
+       class="{% if active_filter == 'mytasks' %}active{% endif %}">
+       My Tasks
+    </a>
+
+    <a href="{{ url_for('main.employee_panel', filter='today') }}"
+       class="{% if active_filter == 'today' %}active{% endif %}">
+       Today
+    </a>
+
+    <a href="{{ url_for('main.employee_panel', filter='upcoming') }}"
+       class="{% if active_filter == 'upcoming' %}active{% endif %}">
+       Upcoming
+    </a>
+
+    <a href="{{ url_for('main.employee_panel', filter='completed') }}"
+       class="{% if active_filter == 'completed' %}active{% endif %}">
+       Completed
+    </a>
+</div>
+
+<h4 class="mb-3">
+    {% if active_filter == 'today' %}
+        Today's Tasks
+    {% elif active_filter == 'upcoming' %}
+        Upcoming Tasks
+    {% elif active_filter == 'completed' %}
+        Completed Tasks
+    {% else %}
+        Your Tasks
+    {% endif %}
+</h4>
+
+{% if tasks %}
+<div class="table-wrap">
+<table class="table table-bordered table-striped align-middle text-center shadow-sm">
+    <thead class="table-dark">
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Priority</th>
+            <th>Assigned By</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Time Left</th>
+            <th>Admin File</th>
+            <th>Your File</th>
+            <th>Sub Tasks</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for task in tasks %}
+        <tr>
+            <td>
+                <div class="fw-semibold">{{ task.title }}</div>
+                {% if task.reward_points %}
+                    <span class="badge bg-success mt-1">{{ task.reward_points }} pts</span>
+                {% endif %}
+            </td>
+
+            <td>{{ task.description or '-' }}</td>
+
+            <td>
+                {% if task.priority == "High" %}
+                    <span class="badge bg-danger">High</span>
+                {% elif task.priority == "Medium" %}
+                    <span class="badge bg-warning text-dark">Medium</span>
+                {% else %}
+                    <span class="badge bg-secondary">Low</span>
+                {% endif %}
+            </td>
+
+            <td>{{ task.creator.username if task.creator else '-' }}</td>
+
+            <td>
+                {% if task.due_date %}
+                    {{ task.due_date.strftime('%Y-%m-%d') }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if task.status == 'Approved' %}
+                    <span class="badge bg-success">Approved</span>
+                {% elif task.status == 'Rejected' %}
+                    <span class="badge bg-danger">Rejected</span>
+                {% elif task.status == 'Submitted' %}
+                    <span class="badge bg-info text-dark">Submitted</span>
+                {% else %}
+                    <span class="badge bg-secondary">Pending</span>
+                {% endif %}
+
+                <div class="mt-2">
+                    {% if task.status == 'Approved' %}
+                        <span class="badge bg-success">Completed</span>
+                    {% elif task.work_status == "Started" %}
+                        <span class="badge bg-success">Started</span>
+                    {% else %}
+                        <span class="badge bg-dark">Stopped</span>
+                    {% endif %}
+                </div>
+            </td>
+
+            <td>
+                {% if task.due_date and task.status not in ['Submitted', 'Approved'] %}
+                    <span class="countdown text-success fw-bold"
+                          data-due="{{ task.due_date.isoformat() }}">
+                    </span>
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if task.attachment %}
+                    <a href="{{ url_for('main.download_attachment', filename=task.attachment) }}"
+                       target="_blank"
+                       class="btn btn-sm btn-outline-primary rounded-3">
+                        <i class="fas fa-paperclip"></i> View
+                    </a>
+                {% else %}
+                    <span class="text-muted small">No File</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if task.proof_file %}
+                    <a href="{{ url_for('main.download_proof', filename=task.proof_file) }}"
+                       target="_blank"
+                       class="btn btn-sm btn-outline-success rounded-3">
+                        <i class="fas fa-file-alt"></i> View
+                    </a>
+                {% else %}
+                    <span class="text-muted small">Not Uploaded</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if task.subtasks %}
+                    <ul class="small text-start mb-2">
+                        {% for sub in task.subtasks %}
+                        <li>
+                            {{ sub.title }}
+                            <span class="badge bg-secondary">{{ sub.status }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <span class="text-muted small">No Sub Tasks</span>
+                {% endif %}
+
+                <form method="POST"
+                      action="{{ url_for('main.create_subtask', task_id=task.id) }}"
+                      class="mt-2">
+                    <input type="text"
+                           name="title"
+                           placeholder="Add Sub Task"
+                           class="form-control form-control-sm mb-2"
+                           required>
+
+                    <button class="btn btn-primary btn-sm w-100">
+                        Add
+                    </button>
+                </form>
+            </td>
+
+            <td>
+                {% if task.status == 'Pending' %}
+                <form method="POST"
+                      action="{{ url_for('main.submit_task', id=task.id) }}"
+                      enctype="multipart/form-data">
+                    <input type="file"
+                           name="proof_file"
+                           class="form-control form-control-sm mb-2 rounded-3"
+                           accept=".jpg,.png,.pdf,.jpeg,.doc,.docx"
+                           required>
+                    <button type="submit"
+                            class="btn btn-success btn-sm w-100 rounded-3 mb-2">
+                        Submit
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if task.status == 'Rejected' %}
+                <div class="border p-2 rounded bg-light mb-2">
+                    <span class="text-danger fw-bold d-block mb-2">
+                        Reason: {{ task.remarks }}
+                    </span>
+                    <form method="POST"
+                          action="{{ url_for('main.resubmit_task', id=task.id) }}"
+                          enctype="multipart/form-data">
+                        <input type="file"
+                               name="proof_file"
+                               class="form-control form-control-sm mb-2 rounded-3"
+                               required>
+                        <button type="submit"
+                                class="btn btn-primary btn-sm w-100 rounded-3">
+                            Resubmit
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+                {% if task.status not in ['Approved', 'Submitted'] %}
+                    {% if task.work_status == "Stopped" %}
+                        <a href="{{ url_for('main.start_task', id=task.id) }}"
+                           class="btn btn-success btn-sm w-100 rounded-3 mb-2">
+                           ▶ Start
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('main.stop_task', id=task.id) }}"
+                           class="btn btn-danger btn-sm w-100 rounded-3 mb-2">
+                           ⏹ Stop
+                        </a>
+                    {% endif %}
+                {% endif %}
+
+                <button 
+class="btn btn-info btn-sm w-100 rounded-3 mb-2 ai-btn"
+data-task="{{ task.id }}">
+🤖 AI Help
+</button>
+
+                {% if task.status == 'Submitted' %}
+                    <span class="badge bg-info text-dark p-2 w-100">Proof Submitted</span>
+                {% endif %}
+
+                {% if task.status == 'Approved' %}
+                    <span class="badge bg-success p-2 w-100">Approved</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="alert alert-light border rounded-4">
+    No tasks found in this section.
+</div>
+{% endif %}
+
+<a href="{{ url_for('main.logout') }}" class="btn btn-secondary mt-3 rounded-3">Logout</a>
+
+<script>
+function startCountdown() {
+    const timers = document.querySelectorAll(".countdown");
+
+    timers.forEach(timer => {
+        const dueDate = timer.getAttribute("data-due");
+        if (!dueDate) return;
+
+        const end = new Date(dueDate).getTime();
+
+        const interval = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = end - now;
+
+            if (distance <= 0) {
+                clearInterval(interval);
+                timer.innerHTML = "Time Over";
+                timer.classList.remove("text-success");
+                timer.classList.add("text-danger");
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            const h = hours.toString().padStart(2, "0");
+            const m = minutes.toString().padStart(2, "0");
+            const s = seconds.toString().padStart(2, "0");
+
+            if (days > 0) {
+                timer.innerHTML = days + "d " + h + ":" + m + ":" + s;
+            } else {
+                timer.innerHTML = h + ":" + m + ":" + s;
+            }
+        }, 1000);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", startCountdown);
+
+
+document.querySelectorAll(".ai-btn").forEach(btn => {
+
+btn.addEventListener("click", function(){
+
+const taskId = this.dataset.task;
+
+fetch(`/task/${taskId}/ai-suggestion`)
+.then(res => res.json())
+.then(data => {
+
+if(!data.success){
+alert("AI suggestion not available");
+return;
+}
+
+document.getElementById("aiTaskTitle").innerText = data.title;
+
+const list = document.getElementById("aiSuggestionList");
+list.innerHTML = "";
+
+data.suggestions.forEach(s => {
+
+const li = document.createElement("li");
+li.innerText = s;
+li.className = "mb-2";
+
+list.appendChild(li);
+
+});
+
+let modal = new bootstrap.Modal(document.getElementById("aiModal"));
+modal.show();
+
+});
+
+});
+
+});
+</script>
+
+<!-- AI SUGGESTION MODAL -->
+
+<div class="modal fade" id="aiModal">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+
+<div class="modal-header bg-dark text-white">
+<h5 class="modal-title">🤖 AI Task Suggestions</h5>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<div class="modal-body">
+
+<h5 id="aiTaskTitle"></h5>
+
+<ul id="aiSuggestionList" class="mt-3"></ul>
+
+</div>
+
+</div>
+</div>
+</div>
+
+{% endblock %}

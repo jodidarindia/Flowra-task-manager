@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+
+<style>
+
+.user-page{
+    min-height:80vh;
+}
+
+.page-card{
+    background:#16202e;
+    border:1px solid #2c4766;
+    border-radius:20px;
+    padding:25px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.25);
+}
+
+.page-title{
+    color:#0ef;
+    font-weight:700;
+}
+
+.table-wrapper{
+    border-radius:16px;
+    overflow:hidden;
+}
+
+.user-table{
+    margin-bottom:0;
+}
+
+.user-table thead th{
+    background:#0ef !important;
+    color:#1f293a !important;
+    border:none !important;
+    font-size:14px;
+}
+
+.user-table tbody tr{
+    background:#1f293a;
+}
+
+.user-table tbody tr:hover{
+    background:#203046;
+}
+
+.user-table td{
+    border-color:#2c4766;
+    vertical-align:middle;
+}
+
+.search-bar input{
+    background:#1f293a;
+    border:1px solid #2c4766;
+    color:white;
+}
+
+.search-bar input:focus{
+    border-color:#0ef;
+    box-shadow:none;
+}
+
+.filter-select{
+    background:#1f293a;
+    border:1px solid #2c4766;
+    color:white;
+}
+
+.filter-select:focus{
+    border-color:#0ef;
+    box-shadow:none;
+}
+
+.back-btn{
+    margin-top:30px;
+}
+
+.action-btn{
+    font-size:13px;
+    padding:6px 10px;
+}
+select, 
+.form-select{
+    background:#1f293a;
+    border:1px solid #2c4766;
+    color:#fff;
+}
+select option{
+    background:#16202e;
+    color:#fff;
+}
+select option{
+    background:#16202e;
+    color:#fff;
+}
+
+</style>
+
+<div class="container mt-5 user-page">
+
+<div class="page-card">
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+
+<h3 class="page-title">Manage Users</h3>
+
+<div class="d-flex gap-2">
+
+<input type="text" id="searchUser"
+class="form-control form-control-sm search-bar"
+placeholder="Search user...">
+
+<select id="roleFilter"
+class="form-select form-select-sm filter-select">
+
+<option value="">All Roles</option>
+<option value="admin">Admin</option>
+<option value="manager">Manager</option>
+<option value="employee">Employee</option>
+
+</select>
+
+</div>
+
+</div>
+
+<div class="table-wrapper">
+
+<table class="table table-bordered table-hover align-middle text-center user-table">
+
+<thead>
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>Department</th>
+<th>Role</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="userTable">
+
+{% for u in users %}
+
+<tr data-role="{{ u.role }}">
+
+<td>{{ u.username }}</td>
+
+<td>{{ u.email }}</td>
+
+<td>{{ u.department.name if u.department else "-" }}</td>
+
+<td>
+<span class="badge
+{% if u.role == 'admin' %}bg-danger
+{% elif u.role == 'manager' %}bg-warning text-dark
+{% else %}bg-info text-dark
+{% endif %}">
+{{ u.role }}
+</span>
+</td>
+
+<td>
+
+<a href="{{ url_for('main.edit_user', id=u.id) }}"
+class="btn btn-warning btn-sm action-btn">
+Edit
+</a>
+<form action="{{ url_for('main.delete_user', user_id=u.id) }}" method="POST"
+
+method="POST"
+style="display:inline;">
+
+<button class="btn btn-danger btn-sm action-btn"
+onclick="return confirm('Delete this user?')">
+Delete
+</button>
+
+</form>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+<div class="text-center back-btn">
+
+<button onclick="history.back()" class="btn btn-secondary px-4">
+⬅ Back
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const searchInput = document.getElementById("searchUser")
+const roleFilter = document.getElementById("roleFilter")
+const rows = document.querySelectorAll("#userTable tr")
+
+function filterUsers(){
+
+const search = searchInput.value.toLowerCase()
+const role = roleFilter.value
+
+rows.forEach(row=>{
+
+const name = row.children[0].innerText.toLowerCase()
+const email = row.children[1].innerText.toLowerCase()
+const userRole = row.dataset.role
+
+const matchSearch = name.includes(search) || email.includes(search)
+const matchRole = role === "" || userRole === role
+
+if(matchSearch && matchRole){
+
+row.style.display=""
+
+}else{
+
+row.style.display="none"
+
+}
+
+})
+
+}
+
+searchInput.addEventListener("keyup",filterUsers)
+roleFilter.addEventListener("change",filterUsers)
+
+</script>
+
+{% endblock %}

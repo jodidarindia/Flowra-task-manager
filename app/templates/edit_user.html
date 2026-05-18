@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="card shadow-lg border-0 rounded-4">
+        
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">Edit User</h4>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="POST">
+
+                <!-- Username -->
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text"
+                           name="username"
+                           class="form-control"
+                           value="{{ user.username }}"
+                           required>
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email"
+                           name="email"
+                           class="form-control"
+                           value="{{ user.email }}"
+                           required>
+                </div>
+
+                <!-- Phone -->
+                <div class="mb-3">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text"
+                           name="phone"
+                           class="form-control"
+                           value="{{ user.phone }}"
+                           placeholder="+919876543210"
+                           required>
+                </div>
+
+                <div class="mb-3">
+<label class="form-label">Department</label>
+
+<select name="department_id" class="form-select">
+
+<option value="">Select Department</option>
+
+{% for dept in departments %}
+
+<option value="{{ dept.id }}"
+{% if user.department_id == dept.id %}selected{% endif %}>
+
+{{ dept.name }}
+
+</option>
+
+{% endfor %}
+
+</select>
+
+</div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label class="form-label">New Password (Leave blank if not changing)</label>
+                    <input type="password"
+                           name="password"
+                           class="form-control">
+                </div>
+
+                <!-- Role -->
+                <div class="mb-3">
+                    <label class="form-label">Role</label>
+                    <select name="role" id="roleSelect" class="form-select">
+                        <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
+                        <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
+                        <option value="employee" {% if user.role == "employee" %}selected{% endif %}>Employee</option>
+                        <option value="manager" {% if user.role == "manager" %}selected{% endif %}>Manager</option>
+                    </select>
+                </div>
+
+                <!-- Supervisor Dropdown -->
+                <div class="mb-3 {% if user.role != 'employee' %}d-none{% endif %}" id="managerDropdown">
+                    <label class="form-label">Assign Manager</label>
+                    <select name="supervisor_id" class="form-select">
+                        <option value="">Select Manager</option>
+                        {% for mgr in managers %}
+                            <option value="{{ mgr.id }}"
+                                {% if user.supervisor_id == mgr.id %}selected{% endif %}>
+                                {{ mgr.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('main.admin_panel') }}"
+                       class="btn btn-secondary">
+                        Cancel
+                    </a>
+                    
+
+                    <button type="submit"
+                            class="btn btn-success">
+                        Update User
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<!-- Show/Hide Manager Dropdown -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const roleSelect = document.getElementById("roleSelect");
+    const managerDropdown = document.getElementById("managerDropdown");
+
+    roleSelect.addEventListener("change", function () {
+        if (this.value === "employee") {
+            managerDropdown.classList.remove("d-none");
+        } else {
+            managerDropdown.classList.add("d-none");
+        }
+    });
+
+});
+</script>
+
+{% endblock %}

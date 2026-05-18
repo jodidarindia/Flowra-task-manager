@@ -1,0 +1,11 @@
+Flask
+Flask-Login
+gunicorn
+twilio
+APScheduler
+pandas
+openpyxl
+xhtml2pdf
+flask-pymongo
+pymongo
+python-dotenv

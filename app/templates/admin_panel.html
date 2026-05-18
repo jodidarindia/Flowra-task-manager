@@ -1,0 +1,667 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel{% endblock %}
+
+{% block content %}
+
+<style>
+
+/* PAGE BACKGROUND */
+
+.admin-page{
+display:flex;
+flex-direction:column;
+height:100vh;
+background:linear-gradient(270deg,#eef2ff,#f5f3ff,#e0f2fe,#ede9fe);
+overflow:hidden;
+}
+
+@keyframes gradientMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+/* CONTENT */
+
+.content{
+padding:40px;
+overflow-y:auto;
+flex:1;
+}
+
+/* NAVBAR */
+.top-banner{
+position:sticky;
+top:80px; /* navbar ki height ke hisaab se */
+z-index:999;
+}
+
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:white;
+padding:14px 25px;
+border-radius:14px;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+margin-bottom:25px;
+flex-wrap:wrap;
+gap:12px;
+position:sticky;
+top:0;
+z-index:1000;
+}
+
+.panel-title{
+font-weight:700;
+color:#2563eb;
+margin:0;
+}
+
+.nav-menu{
+display:flex;
+gap:16px;
+flex-wrap:wrap;
+align-items:center;
+}
+
+.nav-menu > a{
+text-decoration:none;
+font-size:14px;
+color:#475569;
+padding:6px 10px;
+border-radius:8px;
+transition:0.2s;
+}
+
+.nav-menu a:hover{
+background:#eef2ff;
+color:#2563eb;
+}
+
+.logout-link{
+background:#ef4444;
+color:white !important;
+padding:6px 12px;
+border-radius:8px;
+}
+.dropdown{
+    position: relative;
+}
+
+.dropdown-menu{
+position: absolute;
+top: 100%;
+min-width:180px;
+padding:6px;
+left: 0;
+z-index: 1000;
+border-radius:10px;
+border:none;
+box-shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+.dropdown-item{
+font-size:14px;
+color:#475569;
+}
+
+.dropdown-item:hover{
+background:#eef2ff;
+color:#2563eb;
+}
+
+/* BANNER */
+
+.top-banner{
+background:linear-gradient(135deg,#2563eb,#7c3aed);
+border-radius:18px;
+padding:30px;
+color:white;
+margin-bottom:30px;
+box-shadow:0 15px 35px rgba(0,0,0,0.2);
+}
+
+.top-banner h2{
+font-weight:700;
+color:#ede9fe;
+text-shadow:0 2px 8px rgba(0,0,0,0.35);
+}
+
+/* GRID */
+
+.departments-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+gap:24px;
+}
+
+/* CARD */
+
+.department-card{
+background:white;
+border-radius:18px;
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
+overflow:hidden;
+display:flex;
+flex-direction:column;
+height:520px;
+}
+
+.department-header{
+background:#f1f5f9;
+padding:16px;
+font-weight:600;
+border-bottom:1px solid #e5e7eb;
+}
+
+.card-body{
+padding:20px;
+overflow-y:auto;
+display:flex;
+flex-direction:column;
+gap:16px;
+}
+
+/* TASK */
+
+.task-card{
+background:#ffffff;
+border-radius:14px;
+border:1px solid #e5e7eb;
+padding:16px;
+transition:0.2s;
+}
+
+.task-card:hover{
+transform:translateY(-3px);
+box-shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+.task-main{
+display:flex;
+justify-content:space-between;
+gap:12px;
+}
+
+.task-right{
+width:160px;
+display:flex;
+flex-direction:column;
+gap:8px;
+}
+
+.subtask-box{
+margin-top:12px;
+padding-top:10px;
+border-top:1px solid #e5e7eb;
+}
+
+.subtask-list{
+padding-left:18px;
+margin-bottom:10px;
+}
+
+.btn-primary{
+background:linear-gradient(135deg,#2563eb,#7c3aed);
+border:none;
+}
+
+.form-control{
+border-radius:10px;
+}
+
+.modal-content{
+border-radius:18px;
+}
+
+@media(max-width:768px){
+.content{
+padding:20px;
+}
+.topbar{
+padding:14px 16px;
+}
+.task-main{
+flex-direction:column;
+}
+.task-right{
+width:100%;
+}
+.department-card{
+height:auto;
+min-height:420px;
+}
+}
+
+</style>
+
+<div class="admin-page">
+
+<div class="content">
+
+<!-- NAVBAR -->
+
+<div class="topbar">
+
+<h4 class="panel-title">Flowra Admin</h4>
+
+<div class="nav-menu">
+
+<a href="{{ url_for('main.department_dashboard') }}">Dashboard</a>
+
+<!-- USERS DROPDOWN -->
+
+<div class="dropdown">
+
+<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+Users
+</a>
+
+<ul class="dropdown-menu">
+
+<li>
+<a class="dropdown-item" href="{{ url_for('main.create_user') }}">
+Create User
+</a>
+</li>
+
+<li>
+<a class="dropdown-item" href="{{ url_for('main.manage_users') }}">
+Manage Users
+</a>
+</li>
+
+</ul>
+
+</div>
+
+<a href="{{ url_for('main.create_department') }}">Create Department</a>
+
+<a href="{{ url_for('main.create_task') }}">Assign Task</a>
+
+<!-- REMINDERS DROPDOWN -->
+
+<div class="dropdown">
+
+<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+Reminders
+</a>
+
+<ul class="dropdown-menu">
+
+<li>
+<a class="dropdown-item" href="{{ url_for('main.my_reminders') }}">
+My Reminder
+</a>
+</li>
+
+<li>
+<a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#reminderModal">
+Set Reminder
+</a>
+</li>
+
+<li>
+<a class="dropdown-item" href="{{ url_for('main.create_recurring_task') }}">
+Recurring Task
+</a>
+</li>
+
+</ul>
+
+</div>
+
+<a href="{{ url_for('main.task_history') }}">Task History</a>
+
+<a href="{{ url_for('main.analytics') }}">Analytics</a>
+
+<a href="{{ url_for('main.logout') }}" class="logout-link">Logout</a>
+
+</div>
+</div>
+
+<!-- BANNER -->
+
+<div class="top-banner">
+
+<h2>Welcome to Flowra Admin Dashboard</h2>
+
+<p>Monitor departments, manage employees, and track work progress.</p>
+
+</div>
+
+<h3 class="mb-4">Department Tasks</h3>
+
+<div class="departments-grid">
+
+{% for dept, tasks in department_tasks.items() %}
+
+<div class="department-card">
+
+<div class="department-header">
+{{ dept }} Department
+</div>
+
+<div class="card-body">
+
+{% if tasks %}
+
+{% for task in tasks %}
+
+<div class="task-card">
+
+<div class="task-main">
+
+<div>
+
+<h6 class="fw-bold">{{ task.title }}</h6>
+
+<p class="small">{{ task.description or '-' }}</p>
+
+<div class="small">
+Employee :
+{{ task.assignee.username if task.assignee else '-' }}
+
+<br>
+
+Due :
+{{ task.due_date.strftime('%d %b %Y') if task.due_date else '-' }}
+
+<br>
+
+Status :
+{% if task.status == 'Approved' %}
+<span class="badge bg-success">Approved</span>
+{% elif task.status == 'Rejected' %}
+<span class="badge bg-danger">Rejected</span>
+{% elif task.status == 'Submitted' %}
+<span class="badge bg-info text-dark">Submitted</span>
+{% else %}
+<span class="badge bg-secondary">Pending</span>
+{% endif %}
+
+<br>
+
+Work :
+
+{% if task.status == "Approved" %}
+<span class="badge bg-success">Completed</span>
+
+{% elif task.work_status == "Started" %}
+<span class="badge bg-success">Started</span>
+
+{% elif task.work_status == "Stopped" %}
+<span class="badge bg-warning text-dark">Stopped</span>
+
+{% else %}
+<span class="badge bg-secondary">Not Started</span>
+
+{% endif %}
+</div>
+
+</div>
+
+<div class="task-right">
+
+{% if task.proof_file %}
+<a href="{{ url_for('main.download_proof', filename=task.proof_file) }}"
+   class="btn btn-info btn-sm text-white"
+   target="_blank">
+   View Proof
+</a>
+{% endif %}
+
+{% if task.status == 'Submitted' %}
+<a href="{{ url_for('main.approve_task', id=task.id) }}" class="btn btn-success btn-sm">
+Approve
+</a>
+{% endif %}
+
+<button
+class="btn btn-primary btn-sm"
+type="button"
+onclick="toggleSubTaskForm('subtask-form-{{ task.id }}')">
+Add Sub Task
+</button>
+
+<form class="delete-task-form" data-task-id="{{ task.id }}">
+<button type="submit" class="btn btn-danger btn-sm">
+Delete
+</button>
+</form>
+
+</div>
+
+</div>
+
+<div class="subtask-box">
+
+<strong>Sub Tasks</strong>
+
+{% if task.subtasks %}
+
+<ul class="subtask-list">
+
+{% for sub in task.subtasks %}
+
+<li>{{ sub.title }} ({{ sub.status }})</li>
+
+{% endfor %}
+
+</ul>
+
+{% else %}
+
+<p class="small text-muted">No sub tasks</p>
+
+{% endif %}
+
+<form
+method="POST"
+action="{{ url_for('main.create_subtask', task_id=task.id) }}"
+id="subtask-form-{{ task.id }}"
+class="d-none mt-2">
+
+<div class="d-flex gap-2">
+
+<input
+type="text"
+name="title"
+class="form-control form-control-sm"
+placeholder="Add Sub Task"
+required>
+
+<button class="btn btn-primary btn-sm" type="submit">Save</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+{% else %}
+
+<p>No tasks assigned</p>
+
+{% endif %}
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
+<!-- SET REMINDER MODAL -->
+
+<div class="modal fade" id="reminderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Set Reminder</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('main.create_reminder') }}">
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label">Reason</label>
+                            <input type="text" name="reason" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Remind At</label>
+                            <input type="datetime-local" name="remind_at" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">End At</label>
+                            <input type="datetime-local" name="end_at" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_daily" id="dailyCheck">
+                                <label class="form-check-label" for="dailyCheck">
+                                    Daily Reminder
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 text-end">
+                            <button class="btn btn-primary" type="submit">Set Reminder</button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="loginApprovalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">New Login Request</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p id="loginRequestText"></p>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-success" id="approveBtn">Approve</button>
+                <button class="btn btn-danger" id="denyBtn">Deny</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<script>
+let currentRequestId = null;
+let modalInstance = null;
+
+document.addEventListener("DOMContentLoaded", function () {
+    const modalEl = document.getElementById("loginApprovalModal");
+    modalInstance = new bootstrap.Modal(modalEl);
+
+    setInterval(function () {
+        fetch("/pending-logins")
+            .then(res => res.json())
+            .then(data => {
+                if (data.length > 0) {
+                    const req = data[0];
+                    currentRequestId = req.id;
+                    document.getElementById("loginRequestText").innerText =
+                        "New login request from " + req.device;
+                    modalInstance.show();
+                }
+            });
+    }, 1000);
+
+    document.getElementById("approveBtn").onclick = function () {
+        if (currentRequestId) {
+            fetch("/approve-login/" + currentRequestId, { method: "POST" })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        modalInstance.hide();
+                        currentRequestId = null;
+                    }
+                });
+        }
+    };
+
+    document.getElementById("denyBtn").onclick = function () {
+        if (currentRequestId) {
+            fetch("/deny-login/" + currentRequestId, { method: "POST" })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        modalInstance.hide();
+                        currentRequestId = null;
+                    }
+                });
+        }
+    };
+});
+</script>
+
+
+
+<script>
+
+/* SUBTASK TOGGLE */
+function toggleSubTaskForm(id){
+document.getElementById(id).classList.toggle("d-none");
+}
+
+/* DELETE TASK */
+document.querySelectorAll(".delete-task-form").forEach(form => {
+form.addEventListener("submit", function(e){
+e.preventDefault();
+
+const taskId = this.dataset.taskId;
+
+if(confirm("Delete this task?")){
+fetch(`/task/delete/${taskId}`,{
+method:"POST"
+})
+.then(res => res.json())
+.then(data => {
+if(data.success){
+this.closest(".task-card").remove();
+} else {
+alert(data.message || "Could not delete task");
+}
+});
+}
+});
+});
+
+</script>
+<script>
+    setTimeout(function () {
+        window.location.reload();
+    }, 100000); // 100000 ms = 100 seconds
+</script>
+
+{% endblock %}

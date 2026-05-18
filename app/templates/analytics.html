@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.analytics-page{
+    position: relative;
+    min-height: 100vh;
+    background: linear-gradient(270deg,#eef2ff,#f5f3ff,#e0f2fe,#ede9fe);
+    background-size: 600% 600%;
+    animation: gradientMove 18s ease infinite;
+    padding: 32px 20px;
+}
+
+@keyframes gradientMove{
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.analytics-header{
+    background: linear-gradient(135deg,#2563eb,#7c3aed);
+    color: white;
+    border-radius: 20px;
+    padding: 24px 26px;
+    margin-bottom: 24px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+}
+
+.analytics-header h2{
+    margin: 0;
+    font-weight: 700;
+    color: white;
+}
+
+.analytics-header p{
+    margin: 6px 0 0 0;
+    opacity: 0.92;
+}
+
+.analytics-card{
+    background: rgba(255,255,255,0.96);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    height: 100%;
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.summary-card{
+    text-align: center;
+    padding: 24px 18px;
+}
+
+.summary-card h6{
+    color: #6b7280;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.summary-card h3{
+    margin: 0;
+    font-weight: 700;
+}
+
+.chart-card{
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-card h5{
+    text-align: center;
+    margin-bottom: 18px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.chart-wrap{
+    position: relative;
+    height: 290px;
+    width: 100%;
+}
+
+.progress-block{
+    padding-top: 8px;
+}
+
+.progress{
+    height: 28px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.progress-bar{
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.table-card h4,
+.table-card h5{
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.table{
+    margin-bottom: 0;
+}
+
+.table thead th{
+    white-space: nowrap;
+}
+
+.top-actions{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.top-actions .right-actions{
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.top-performer{
+    border-radius: 14px;
+    margin-bottom: 22px;
+}
+
+.badge-soft{
+    background: #eef2ff;
+    color: #4338ca;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+@media (max-width: 991px){
+    .analytics-page{
+        padding: 24px 14px;
+    }
+
+    .analytics-header{
+        padding: 20px 18px;
+    }
+
+    .chart-card{
+        min-height: 350px;
+    }
+
+    .chart-wrap{
+        height: 260px;
+    }
+}
+
+@media (max-width: 767px){
+    .analytics-page{
+        padding: 18px 10px;
+    }
+
+    .analytics-header{
+        padding: 18px 16px;
+        border-radius: 16px;
+    }
+
+    .analytics-header h2{
+        font-size: 22px;
+    }
+
+    .analytics-card{
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .summary-card{
+        padding: 18px 14px;
+    }
+
+    .chart-card{
+        min-height: 320px;
+    }
+
+    .chart-wrap{
+        height: 230px;
+    }
+
+    .top-actions{
+        align-items: stretch;
+    }
+
+    .top-actions .right-actions{
+        width: 100%;
+    }
+
+    .top-actions .right-actions a,
+    .top-actions .right-actions button{
+        flex: 1;
+    }
+}
+</style>
+
+<div class="analytics-page">
+
+    <div class="analytics-header">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h2>📊 Flowra Analytics Dashboard</h2>
+                <p>Track employee performance, progress, overdue work, and productivity trends.</p>
+            </div>
+
+            <button onclick="history.back()" class="btn btn-light">
+                ⬅ Back
+            </button>
+        </div>
+    </div>
+
+    <div class="top-actions">
+        <div>
+            <span class="badge-soft">Analytics Overview</span>
+        </div>
+
+        <div class="right-actions">
+            <a href="{{ url_for('main.export_report_pdf') }}" class="btn btn-danger">
+                📄 Export Full Report
+            </a>
+        </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="row g-4 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="analytics-card summary-card">
+                <h6>Total Tasks</h6>
+                <h3>{{ total }}</h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="analytics-card summary-card">
+                <h6>Completed</h6>
+                <h3 class="text-success">{{ approved }}</h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="analytics-card summary-card">
+                <h6>Pending</h6>
+                <h3 class="text-warning">{{ pending }}</h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="analytics-card summary-card">
+                <h6>Overdue</h6>
+                <h3 class="text-danger">{{ overdue }}</h3>
+            </div>
+        </div>
+    </div>
+
+    {% if top_performer %}
+    <div class="alert alert-success text-center shadow-sm top-performer">
+        🏆 Top Performer: <strong>{{ top_performer }}</strong>
+    </div>
+    {% endif %}
+
+    <!-- CHARTS ROW 1 -->
+    <div class="row g-4 mt-1">
+        <div class="col-12 col-lg-6">
+            <div class="analytics-card chart-card">
+                <h5>Task Completed per Employee</h5>
+                <div class="chart-wrap">
+                    <canvas id="employeeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="analytics-card chart-card">
+                <h5>Project Progress</h5>
+
+                <div class="progress-block">
+                    <div class="progress">
+                        <div class="progress-bar bg-success"
+                             id="projectProgressBar"
+                             role="progressbar"
+                             aria-valuenow="{{ progress_percent }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            {{ progress_percent }}%
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <strong>Completed:</strong> {{ project_completed }}
+                        &nbsp; | &nbsp;
+                        <strong>Remaining:</strong> {{ project_remaining }}
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="row g-3 text-center">
+                            <div class="col-6">
+                                <div class="analytics-card summary-card">
+                                    <h6>Completion %</h6>
+                                    <h3 class="text-success">{{ progress_percent }}%</h3>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="analytics-card summary-card">
+                                    <h6>Total Scope</h6>
+                                    <h3 class="text-primary">{{ total }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERDUE -->
+    <div class="analytics-card table-card mt-4">
+        <h5 class="mb-3 text-center">Overdue Tasks</h5>
+
+        <div class="table-responsive">
+            <table class="table table-bordered text-center align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Task</th>
+                        <th>Employee</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in overdue_tasks %}
+                    <tr>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.employee }}</td>
+                        <td>{{ task.due_date.strftime('%d %b %Y') if task.due_date else '-' }}</td>
+                        <td><span class="badge bg-danger">{{ task.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-muted">No overdue tasks</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW 2 -->
+    <div class="row g-4 mt-1">
+        <div class="col-12 col-lg-6">
+            <div class="analytics-card chart-card">
+                <h5>Productivity Trends</h5>
+                <div class="chart-wrap">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="analytics-card chart-card">
+                <h5>Employee Points</h5>
+                <div class="chart-wrap">
+                    <canvas id="pointsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EMPLOYEE REPORT -->
+    <div class="analytics-card table-card mt-4">
+        <h4 class="mb-3 text-center">Employee Progress Report</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered text-center align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Completed Tasks</th>
+                        <th>Pending Tasks</th>
+                        <th>In Progress</th>
+                        <th>Total Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employee_report %}
+                    <tr>
+                        <td>{{ emp.name }}</td>
+                        <td>{{ emp.completed }}</td>
+                        <td>{{ emp.pending }}</td>
+                        <td>{{ emp.in_progress }}</td>
+                        <td>{{ emp.points }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script id="analytics-data" type="application/json">
+{
+  "employeeNames": {{ employee_names | tojson }},
+  "employeeCompleted": {{ employee_completed | tojson }},
+  "employeePoints": {{ employee_points | tojson }},
+  "monthLabels": {{ month_labels | tojson }},
+  "productivityTrend": {{ productivity_trend | tojson }},
+  "progressPercent": {{ progress_percent | tojson }}
+}
+</script>
+
+<script>
+const analyticsData = JSON.parse(document.getElementById("analytics-data").textContent);
+
+const employeeNames = analyticsData.employeeNames;
+const employeeCompleted = analyticsData.employeeCompleted;
+const employeePoints = analyticsData.employeePoints;
+const monthLabels = analyticsData.monthLabels;
+const productivityTrend = analyticsData.productivityTrend;
+const progressPercent = analyticsData.progressPercent;
+
+document.getElementById("projectProgressBar").style.width = progressPercent + "%";
+
+new Chart(document.getElementById("employeeChart"), {
+    type: "bar",
+    data: {
+        labels: employeeNames,
+        datasets: [{
+            label: "Completed Tasks",
+            data: employeeCompleted,
+            backgroundColor: "#2563eb",
+            borderRadius: 8,
+            maxBarThickness: 40
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    autoSkip: false,
+                    maxRotation: 45,
+                    minRotation: 0
+                }
+            },
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: {
+        labels: monthLabels,
+        datasets: [{
+            label: "Completed Tasks",
+            data: productivityTrend,
+            borderColor: "#7c3aed",
+            backgroundColor: "rgba(124,58,237,0.15)",
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+new Chart(document.getElementById("pointsChart"), {
+    type: "bar",
+    data: {
+        labels: employeeNames,
+        datasets: [{
+            label: "Points",
+            data: employeePoints,
+            backgroundColor: "#14b8a6",
+            borderRadius: 8,
+            maxBarThickness: 40
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    autoSkip: false,
+                    maxRotation: 45,
+                    minRotation: 0
+                }
+            },
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

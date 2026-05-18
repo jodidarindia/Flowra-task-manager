@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+
+/* PAGE BACKGROUND */
+
+.create-user-page{
+position:relative;
+min-height:100vh;
+background:linear-gradient(270deg,#eef2ff,#f5f3ff,#e0f2fe,#ede9fe);
+background-size:600% 600%;
+animation:gradientMove 18s ease infinite;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:40px;
+overflow:hidden;
+}
+
+/* FLOATING BLOBS */
+
+.create-user-page::before{
+content:"";
+position:absolute;
+width:500px;
+height:500px;
+background:#7c3aed;
+opacity:0.15;
+filter:blur(140px);
+top:-150px;
+left:-150px;
+animation:floatBlob1 20s infinite alternate;
+}
+
+.create-user-page::after{
+content:"";
+position:absolute;
+width:450px;
+height:450px;
+background:#2563eb;
+opacity:0.15;
+filter:blur(140px);
+bottom:-120px;
+right:-120px;
+animation:floatBlob2 22s infinite alternate;
+}
+
+/* ANIMATIONS */
+
+@keyframes gradientMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+@keyframes floatBlob1{
+0%{transform:translate(0,0)}
+100%{transform:translate(120px,80px)}
+}
+
+@keyframes floatBlob2{
+0%{transform:translate(0,0)}
+100%{transform:translate(-120px,-60px)}
+}
+
+/* FORM CARD */
+
+.create-user-card{
+width:520px;
+background:rgba(255,255,255,0.9);
+backdrop-filter:blur(12px);
+border-radius:20px;
+box-shadow:0 20px 40px rgba(0,0,0,0.12);
+padding:40px;
+z-index:10;
+}
+
+/* TITLE */
+
+.create-user-card h3{
+text-align:center;
+font-weight:700;
+margin-bottom:25px;
+color:#2563eb;
+}
+
+/* INPUTS */
+
+.form-control,
+.form-select{
+border-radius:12px;
+padding:10px 14px;
+border:1px solid #e5e7eb;
+}
+
+.form-control:focus,
+.form-select:focus{
+border-color:#2563eb;
+box-shadow:none;
+}
+
+/* BUTTONS */
+
+.btn-primary{
+background:linear-gradient(135deg,#2563eb,#7c3aed);
+border:none;
+border-radius:12px;
+}
+
+.btn-primary:hover{
+opacity:0.9;
+}
+
+.btn-warning{
+border-radius:12px;
+}
+
+.btn-secondary{
+border-radius:12px;
+}
+
+</style>
+
+
+<div class="create-user-page">
+
+<div class="create-user-card">
+
+<h3>Create New User</h3>
+
+<form method="POST" action="{{ url_for('main.create_user') }}">
+
+<!-- Username -->
+
+<div class="mb-3">
+<label class="form-label fw-semibold">Username</label>
+<input type="text" name="username" class="form-control"
+placeholder="Enter username" required>
+</div>
+
+<!-- Email -->
+
+<div class="mb-3">
+<label class="form-label fw-semibold">Email Address</label>
+<input type="email" name="email" class="form-control"
+placeholder="Enter email" required>
+</div>
+
+<!-- Phone -->
+
+<div class="mb-3">
+<label class="form-label fw-semibold">
+Phone Number (with country code)
+</label>
+
+<input type="text"
+name="phone"
+class="form-control"
+placeholder="+91XXXXXXXXXX"
+required>
+</div>
+
+<!-- Department -->
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">Department</label>
+
+<select name="department_id" class="form-select" required>
+
+<option value="">Select Department</option>
+
+{% for dept in departments %}
+
+<option value="{{ dept.id }}">
+{{ dept.name }}
+</option>
+
+{% endfor %}
+
+</select>
+
+</div>
+
+<!-- Password -->
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">Password</label>
+
+<input type="password"
+name="password"
+class="form-control"
+placeholder="Enter password"
+required>
+
+</div>
+
+<!-- Role -->
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">Select Role</label>
+
+<select name="role"
+id="roleSelect"
+class="form-select"
+required>
+
+<option value="">Choose Role</option>
+<option value="manager">Manager</option>
+<option value="employee">Employee</option>
+
+</select>
+
+</div>
+
+<!-- Manager -->
+
+{% if managers %}
+
+<div class="mb-3 d-none" id="managerDropdown">
+
+<label class="form-label fw-semibold">
+Assign Manager
+</label>
+
+<select name="supervisor_id" class="form-select">
+
+<option value="">Select Manager</option>
+
+{% for mgr in managers %}
+
+<option value="{{ mgr.id }}">
+{{ mgr.username }}
+</option>
+
+{% endfor %}
+
+</select>
+
+</div>
+
+{% endif %}
+
+<!-- BUTTONS -->
+
+<div class="d-grid gap-2 mt-4">
+
+<button type="submit" class="btn btn-primary btn-lg">
+Create User
+</button>
+
+<button type="reset" class="btn btn-warning">
+Reset
+</button>
+
+<button onclick="history.back()" class="btn btn-secondary">
+⬅ Back
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+
+<script>
+
+const roleSelect = document.getElementById("roleSelect");
+const managerDropdown = document.getElementById("managerDropdown");
+
+roleSelect.addEventListener("change", function(){
+
+if(this.value === "employee"){
+managerDropdown.classList.remove("d-none");
+}else{
+managerDropdown.classList.add("d-none");
+}
+
+});
+
+</script>
+
+{% endblock %}

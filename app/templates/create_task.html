@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+
+/* PAGE BACKGROUND */
+
+.task-page{
+position:relative;
+min-height:100vh;
+background:linear-gradient(270deg,#eef2ff,#f5f3ff,#e0f2fe,#ede9fe);
+background-size:600% 600%;
+animation:gradientMove 18s ease infinite;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:40px;
+overflow:hidden;
+}
+
+/* FLOATING BLOBS */
+
+.task-page::before{
+content:"";
+position:absolute;
+width:500px;
+height:500px;
+background:#7c3aed;
+opacity:0.15;
+filter:blur(140px);
+top:-150px;
+left:-150px;
+animation:floatBlob1 20s infinite alternate;
+}
+
+.task-page::after{
+content:"";
+position:absolute;
+width:450px;
+height:450px;
+background:#2563eb;
+opacity:0.15;
+filter:blur(140px);
+bottom:-120px;
+right:-120px;
+animation:floatBlob2 22s infinite alternate;
+}
+
+/* ANIMATIONS */
+
+@keyframes gradientMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+@keyframes floatBlob1{
+0%{transform:translate(0,0)}
+100%{transform:translate(120px,80px)}
+}
+
+@keyframes floatBlob2{
+0%{transform:translate(0,0)}
+100%{transform:translate(-120px,-60px)}
+}
+
+/* CARD */
+
+.task-card{
+width:600px;
+background:rgba(255,255,255,0.9);
+backdrop-filter:blur(12px);
+border-radius:20px;
+padding:35px;
+box-shadow:0 20px 40px rgba(0,0,0,0.12);
+z-index:10;
+}
+
+/* TITLE */
+
+.task-title{
+text-align:center;
+color:#2563eb;
+font-weight:700;
+margin-bottom:25px;
+}
+
+/* INPUTS */
+
+.form-control,
+.form-select{
+border-radius:12px;
+border:1px solid #e5e7eb;
+}
+
+.form-control:focus,
+.form-select:focus{
+border-color:#2563eb;
+box-shadow:none;
+}
+
+/* FILE INPUT */
+
+input[type="file"]{
+border-radius:12px;
+}
+
+/* BUTTONS */
+
+.btn-primary{
+background:linear-gradient(135deg,#2563eb,#7c3aed);
+border:none;
+border-radius:12px;
+}
+
+.btn-warning{
+border-radius:12px;
+}
+
+.btn-secondary{
+border-radius:12px;
+}
+
+/* BUTTON GROUP */
+
+.btn-group-custom{
+margin-top:25px;
+display:flex;
+justify-content:center;
+gap:15px;
+flex-wrap:wrap;
+}
+
+</style>
+
+
+<div class="task-page">
+
+<div class="task-card">
+
+<h3 class="task-title">Create Task</h3>
+
+<form method="POST"
+action="{{ url_for('main.create_task') }}"
+enctype="multipart/form-data">
+
+<input type="text"
+name="title"
+placeholder="Task Title"
+class="form-control mb-3"
+required>
+
+<textarea name="description"
+placeholder="Task Description"
+class="form-control mb-3"></textarea>
+
+<select name="priority" class="form-select mb-3">
+
+<option value="Low">Low Priority</option>
+<option value="Medium">Medium Priority</option>
+<option value="High">High Priority</option>
+
+</select>
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">
+Reward Points
+</label>
+
+<select name="reward_points"
+class="form-select"
+required>
+
+<option value="5">5 Points</option>
+<option value="10">10 Points</option>
+<option value="15">15 Points</option>
+
+</select>
+
+</div>
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">
+Attachment (Optional)
+</label>
+
+<input type="file"
+name="proof_file"
+class="form-control"
+accept=".jpg,.png,.pdf">
+
+</div>
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">
+Due Date & Time
+</label>
+
+<input type="datetime-local"
+name="due_date"
+class="form-control"
+required>
+
+</div>
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">
+Assign To
+</label>
+
+<select name="assigned_to"
+class="form-select"
+required>
+
+{% for user in users %}
+
+<option value="{{ user.id }}">
+{{ user.username }}
+</option>
+
+{% endfor %}
+
+</select>
+
+</div>
+
+<div class="btn-group-custom">
+
+<button class="btn btn-primary">
+Add Task
+</button>
+
+<button type="reset"
+class="btn btn-warning">
+Reset
+</button>
+
+<button type="button"
+onclick="history.back()"
+class="btn btn-secondary">
+
+⬅ Back
+
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+{% endblock %}

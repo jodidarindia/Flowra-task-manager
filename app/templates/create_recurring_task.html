@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block title %}Create Recurring Task{% endblock %}
+{% block content %}
+<style>
+
+body{
+    background: linear-gradient(135deg,#eef2f7,#dbe6f6);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.form-wrapper{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:24px;
+    padding:20px;
+}
+
+.custom-card{
+    width:100%;
+    max-width:520px;
+    border:none;
+    border-radius:13px;
+    overflow:hidden;
+    box-shadow:0 12px 30px rgba(0,0,0,0.08);
+    animation:fadeIn .5s ease;
+    background:white;
+}
+
+.table-card{
+    width:100%;
+    max-width:1100px;
+    border:none;
+    border-radius:13px;
+    overflow:hidden;
+    box-shadow:0 12px 30px rgba(0,0,0,0.08);
+    animation:fadeIn .5s ease;
+    background:white;
+}
+
+@keyframes fadeIn{
+    from{opacity:0; transform:translateY(10px)}
+    to{opacity:1; transform:translateY(0)}
+}
+
+.custom-card .card-header,
+.table-card .card-header{
+    background:linear-gradient(45deg,#198754,#20c997);
+    color:white;
+    text-align:center;
+    font-size:20px;
+    font-weight:600;
+    padding:16px;
+    letter-spacing:.5px;
+}
+
+.custom-card .card-body,
+.table-card .card-body{
+    padding:30px;
+    background:white;
+}
+
+.form-label{
+    font-weight:600;
+    font-size:14px;
+    margin-bottom:5px;
+}
+
+.form-control,
+.form-select{
+    border-radius:8px;
+    padding:10px 15px;
+    border:1px solid #dee2e6;
+    transition:.2s;
+}
+
+.form-control:focus,
+.form-select:focus{
+    border-color:#20c997;
+    box-shadow:0 0 0 2px rgba(32,201,151,0.15);
+}
+
+.alert{
+    border-radius:8px;
+    background:#f8f9fa;
+    font-size:13px;
+}
+
+.btn-success{
+    background:#20c997;
+    border:none;
+    border-radius:8px;
+    padding:9px 22px;
+    font-weight:500;
+    transition:.2s;
+}
+
+.btn-success:hover{
+    background:#17b489;
+}
+
+.btn-outline-secondary{
+    border-radius:8px;
+    padding:9px 18px;
+}
+
+.button-group{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:20px;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.frequency-select{
+    width:100%;
+    border-radius:8px;
+    padding:10px 15px;
+    border:1px solid #dee2e6;
+    transition:.2s;
+}
+
+.frequency-select:focus{
+    border-color:#20c997;
+    box-shadow:0 0 0 2px rgba(32,201,151,0.15);
+    outline:none;
+}
+
+.table-responsive{
+    overflow-x:auto;
+}
+
+.table th{
+    background:#198754 !important;
+    color:white !important;
+    vertical-align:middle;
+    white-space:nowrap;
+}
+
+.table td{
+    vertical-align:middle;
+    white-space:nowrap;
+}
+
+.empty-text{
+    text-align:center;
+    color:#6c757d;
+    font-weight:500;
+    padding:20px 0;
+}
+
+@media (max-width:768px){
+    .custom-card .card-body,
+    .table-card .card-body{
+        padding:20px;
+    }
+
+    .button-group{
+        flex-direction:column;
+        align-items:stretch;
+    }
+
+    .button-group .btn{
+        width:100%;
+    }
+}
+
+</style>
+
+<div class="form-wrapper">
+
+    <div class="card custom-card">
+
+        <div class="card-header">
+            Create Recurring Task
+        </div>
+
+        <div class="card-body">
+
+            <form method="POST">
+
+                <div class="mb-3">
+                    <label class="form-label">Task Title</label>
+                    <input type="text"
+                           name="title"
+                           class="form-control"
+                           placeholder="Enter task title"
+                           required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Assign Employee</label>
+                    <select name="assigned_to"
+                            class="form-select"
+                            required>
+                        <option value="" disabled selected>Select Employee</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.id }}">
+                            {{ emp.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date"
+                               name="start_date"
+                               class="form-control"
+                               required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Repeat Until</label>
+                        <input type="date"
+                               name="end_date"
+                               class="form-control"
+                               required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Frequency</label>
+                    <select name="frequency" class="frequency-select" required>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn btn-success">
+                        Create Task
+                    </button>
+
+                    <button type="button" onclick="history.back()" class="btn btn-secondary">
+                        ⬅ Back
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+    <div class="card table-card">
+
+        <div class="card-header">
+            Recurring Task History
+        </div>
+
+        <div class="card-body">
+
+            {% if recurring_tasks %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle text-center">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Task Title</th>
+                            <th>Employee</th>
+                            <th>Start Date</th>
+                            <th>Repeat Until</th>
+                            <th>Frequency</th>
+                            <th>Last Generated</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in recurring_tasks %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ task.title }}</td>
+                            <td>{{ task.employee.username if task.employee else '-' }}</td>
+                            <td>{{ task.start_date.strftime('%d-%m-%Y') if task.start_date else '-' }}</td>
+                            <td>{{ task.end_date.strftime('%d-%m-%Y') if task.end_date else '-' }}</td>
+                            <td>{{ task.frequency|capitalize if task.frequency else '-' }}</td>
+                            <td>{{ task.last_generated.strftime('%d-%m-%Y') if task.last_generated else '-' }}</td>
+                            <td>{{ task.created_at.strftime('%d-%m-%Y %I:%M %p') if task.created_at else '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="empty-text">
+                    No recurring tasks found.
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.querySelector("form").addEventListener("submit", function(e){
+
+    const start = new Date(document.querySelector("[name='start_date']").value);
+    const end = new Date(document.querySelector("[name='end_date']").value);
+
+    if(end < start){
+        alert("End date must be after Start date");
+        e.preventDefault();
+    }
+
+});
+</script>
+
+{% endblock %}

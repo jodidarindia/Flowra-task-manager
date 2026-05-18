@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Task History{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+<div class="card shadow-lg border-0 rounded-4">
+
+<div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h4 class="mb-0">📜 Task History</h4>
+
+    <div class="d-flex gap-2">
+        {% if current_user.role in ['admin','manager'] %}
+        <a href="{{ url_for('main.export_task_history') }}" class="btn btn-success btn-sm">
+            ⬇ Export Excel
+        </a>
+        {% endif %}
+
+        <button onclick="history.back()" class="btn btn-secondary btn-sm">
+            ⬅ Back
+        </button>
+    </div>
+</div>
+
+<div class="card-body p-4">
+<div class="table-responsive">
+
+<table class="table table-bordered table-striped align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Task ID</th>
+            <th>Title</th>
+            <th>Employee</th>
+            <th>Status</th>
+            <th>Points</th>
+            <th>Created At</th>
+            <th>Completed At</th>
+            <th>Deleted</th>
+            <th>View Proof</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for task in tasks %}
+        <tr>
+            <td>
+                <button
+                    type="button"
+                    class="btn btn-link p-0 fw-bold text-primary text-decoration-none"
+                    data-bs-toggle="modal"
+                    data-bs-target="#taskModal"
+                    data-id="{{ task.id }}"
+                    data-title="{{ task.title }}"
+                    data-employee="{{ task.assignee.username if task.assignee else '-' }}"
+                    data-description="{{ task.description or '-' }}"
+                    data-status="{{ task.status }}"
+                    data-points="{{ task.reward_points or 0 }}"
+                    data-created="{{ task.created_at_ist.strftime('%d %b %Y %I:%M %p') if task.created_at_ist else '-' }}"
+                    data-completed="{{ task.completed_at_ist.strftime('%d %b %Y %I:%M %p') if task.completed_at_ist else '-' }}"
+                    data-deleted="{{ 'Yes' if task.is_deleted else 'No' }}">
+                    {{ loop.index }}
+                </button>
+            </td>
+
+            <td>{{ task.title }}</td>
+            <td>{{ task.assignee.username if task.assignee else "-" }}</td>
+            <td>{{ task.status }}</td>
+            <td>{{ task.reward_points or 0 }}</td>
+
+            <td>
+                {{ task.created_at_ist.strftime('%d %b %Y %I:%M %p') if task.created_at_ist else '-' }}
+            </td>
+
+            <td>
+                {{ task.completed_at_ist.strftime('%d %b %Y %I:%M %p') if task.completed_at_ist else '-' }}
+            </td>
+
+            <td>
+                {% if task.is_deleted %}
+                <span class="badge bg-danger">Deleted</span>
+                {% else %}
+                <span class="badge bg-success">Active</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if task.proof_file %}
+                <a href="{{ url_for('main.download_proof', filename=task.proof_file) }}"
+                   target="_blank"
+                   class="btn btn-primary btn-sm">
+                    View
+                </a>
+                {% else %}
+                <span class="text-muted">No Proof</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if task.status == "Approved" %}
+                <span class="badge bg-success">Completed</span>
+                {% elif task.work_status == "Started" %}
+                <span class="badge bg-primary">Started</span>
+                {% elif task.status == "Pending" %}
+                <span class="badge bg-warning text-dark">Pending</span>
+                {% else %}
+                <span class="badge bg-secondary">Stopped</span>
+                {% endif %}
+            </td>
+        </tr>
+
+        {% else %}
+        <tr>
+            <td colspan="10" class="text-center text-muted">
+                No task history found
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Task Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p><b>Task ID:</b> <span id="m_id"></span></p>
+                <p><b>Title:</b> <span id="m_title"></span></p>
+                <p><b>Employee:</b> <span id="m_employee"></span></p>
+                <p><b>Description:</b> <span id="m_desc"></span></p>
+                <p><b>Status:</b> <span id="m_status"></span></p>
+                <p><b>Points:</b> <span id="m_points"></span></p>
+                <p><b>Created At:</b> <span id="m_created"></span></p>
+                <p><b>Completed At:</b> <span id="m_completed"></span></p>
+                <p><b>Deleted:</b> <span id="m_deleted"></span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const taskModal = document.getElementById("taskModal");
+
+    taskModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget;
+
+        document.getElementById("m_id").innerText = button.getAttribute("data-id") || "-";
+        document.getElementById("m_title").innerText = button.getAttribute("data-title") || "-";
+        document.getElementById("m_employee").innerText = button.getAttribute("data-employee") || "-";
+        document.getElementById("m_desc").innerText = button.getAttribute("data-description") || "-";
+        document.getElementById("m_status").innerText = button.getAttribute("data-status") || "-";
+        document.getElementById("m_points").innerText = button.getAttribute("data-points") || "-";
+        document.getElementById("m_created").innerText = button.getAttribute("data-created") || "-";
+        document.getElementById("m_completed").innerText = button.getAttribute("data-completed") || "-";
+        document.getElementById("m_deleted").innerText = button.getAttribute("data-deleted") || "-";
+    });
+});
+</script>
+
+{% endblock %}

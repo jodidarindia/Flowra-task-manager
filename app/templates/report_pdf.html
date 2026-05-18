@@ -1,0 +1,27 @@
+<h2 style="text-align:center">Flowra Employee Report</h2>
+
+<table border="1" width="100%" cellpadding="5">
+
+<tr>
+
+<th>Employee</th>
+<th>Completed</th>
+<th>Pending</th>
+<th>Points</th>
+
+</tr>
+
+{% for emp in employee_report %}
+
+<tr>
+
+<td>{{ emp.name }}</td>
+<td>{{ emp.completed }}</td>
+<td>{{ emp.pending }}</td>
+<td>{{ emp.points }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>

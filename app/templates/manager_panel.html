@@ -1,0 +1,579 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
+
+body{
+    background: linear-gradient(135deg,#eef2ff,#f5f3ff,#f0f9ff);
+    min-height:100vh;
+    color:#1f2937;
+    overflow-x:hidden;
+    position:relative;
+}
+
+.background-blobs{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    z-index:-1;
+    overflow:hidden;
+}
+
+.blob{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(120px);
+    opacity:.55;
+    animation:moveBlob 18s infinite alternate ease-in-out;
+}
+
+.blob1{
+    width:420px;
+    height:420px;
+    background:#2563eb;
+    top:-120px;
+    left:-120px;
+}
+
+.blob2{
+    width:420px;
+    height:420px;
+    background:#7c3aed;
+    bottom:-120px;
+    right:-120px;
+    animation-duration:22s;
+}
+
+.blob3{
+    width:320px;
+    height:320px;
+    background:#38bdf8;
+    top:40%;
+    left:45%;
+    animation-duration:25s;
+}
+
+@keyframes moveBlob{
+    0%{transform:translate(0,0)}
+    100%{transform:translate(90px,-60px)}
+}
+
+.flowra-navbar{
+    background:rgba(255,255,255,0.72);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    box-shadow:0 10px 30px rgba(0,0,0,0.06);
+    border-bottom:1px solid rgba(255,255,255,0.4);
+}
+
+.navbar-brand{
+    font-weight:800;
+    font-size:26px;
+    color:#111827 !important;
+}
+
+.navbar-brand span{
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    background-clip: border-box;
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+.nav-link{
+    font-weight:600;
+    color:#374151 !important;
+    margin-right:10px;
+    border-radius:10px;
+    padding:10px 14px !important;
+    transition:.3s ease;
+}
+
+.nav-link:hover{
+    background:rgba(37,99,235,0.08);
+    color:#111827 !important;
+}
+
+.nav-action{
+    border:none;
+    border-radius:12px;
+    padding:10px 16px;
+    font-weight:600;
+    text-decoration:none;
+    display:inline-block;
+    transition:.3s ease;
+    margin-left:8px;
+}
+
+.nav-primary{
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    color:#fff;
+}
+
+.nav-warning{
+    background:linear-gradient(135deg,#facc15,#f59e0b);
+    color:#111827;
+}
+
+.nav-info{
+    background:linear-gradient(135deg,#06b6d4,#2563eb);
+    color:#fff;
+}
+
+.nav-secondary{
+    background:linear-gradient(135deg,#64748b,#334155);
+    color:#fff;
+}
+
+.nav-danger{
+    background:linear-gradient(135deg,#ef4444,#dc2626);
+    color:#fff;
+}
+
+.nav-action:hover{
+    transform:translateY(-2px);
+    color:#fff;
+}
+
+.nav-warning:hover{
+    color:#111827;
+}
+
+.main-content{
+    padding:30px;
+}
+
+.topbar{
+    background:rgba(255,255,255,0.62);
+    backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,0.45);
+    box-shadow:0 12px 35px rgba(0,0,0,0.06);
+    border-radius:22px;
+    padding:22px 24px;
+    margin-bottom:24px;
+}
+
+.topbar h2{
+    font-weight:800;
+    margin-bottom:6px;
+}
+
+.topbar p{
+    margin:0;
+    color:#6b7280;
+}
+
+.glass-card{
+    background:rgba(255,255,255,0.72);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,0.45);
+    border-radius:24px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.08);
+    overflow:hidden;
+}
+
+.card-head{
+    padding:20px 24px;
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    color:#fff;
+}
+
+.card-head h5{
+    margin:0;
+    font-weight:700;
+}
+
+.table{
+    margin-bottom:0;
+}
+
+.table thead th{
+    background:#f8fafc;
+    color:#374151;
+    font-size:14px;
+    font-weight:700;
+    vertical-align:middle;
+    white-space:nowrap;
+    border-bottom:1px solid #e5e7eb;
+    padding:16px 12px;
+}
+
+.table tbody td{
+    vertical-align:middle;
+    font-size:14px;
+    padding:16px 12px;
+}
+
+.table tbody tr:hover{
+    background:rgba(37,99,235,0.04);
+}
+
+.status-badge{
+    padding:8px 12px;
+    border-radius:30px;
+    font-size:12px;
+    font-weight:700;
+}
+
+.bg-approved{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.bg-rejected{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.bg-submitted{
+    background:#fef3c7;
+    color:#92400e;
+}
+
+.bg-pending{
+    background:#e5e7eb;
+    color:#374151;
+}
+
+.bg-other{
+    background:#dbeafe;
+    color:#1d4ed8;
+}
+
+.action-box{
+    min-width:220px;
+}
+
+.reject-input{
+    border-radius:12px;
+    border:1px solid #d1d5db;
+    padding:9px 12px;
+}
+
+.btn-action{
+    border:none;
+    border-radius:12px;
+    font-weight:600;
+    padding:9px 12px;
+}
+
+.btn-approve{
+    background:linear-gradient(135deg,#16a34a,#22c55e);
+    color:#fff;
+}
+
+.btn-reject{
+    background:linear-gradient(135deg,#dc2626,#ef4444);
+    color:#fff;
+}
+
+.btn-proof{
+    background:linear-gradient(135deg,#0ea5e9,#2563eb);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    font-weight:600;
+}
+
+.empty-state{
+    padding:28px;
+    color:#6b7280;
+    font-weight:600;
+}
+
+.modal-content{
+    border:none;
+    border-radius:24px;
+    overflow:hidden;
+    background:rgba(255,255,255,0.92);
+    backdrop-filter:blur(15px);
+}
+
+.modal-header{
+    background:linear-gradient(135deg,#111827,#374151);
+    color:#fff;
+    border:none;
+}
+
+.modal-body{
+    padding:26px;
+}
+
+.form-control{
+    border-radius:12px;
+    padding:12px 14px;
+    border:1px solid #d1d5db;
+}
+
+.form-control:focus{
+    box-shadow:0 0 0 .2rem rgba(37,99,235,.15);
+    border-color:#2563eb;
+}
+
+.btn-save-reminder{
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    padding:12px 24px;
+    font-weight:700;
+}
+
+@media(max-width:991px){
+    .main-content{
+        padding:20px;
+    }
+
+    .nav-action{
+        display:block;
+        width:100%;
+        margin:8px 0 0 0;
+        text-align:center;
+    }
+
+    .navbar-nav{
+        margin-bottom:10px;
+    }
+}
+</style>
+
+<div class="background-blobs">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+</div>
+
+<nav class="navbar navbar-expand-lg flowra-navbar sticky-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="#">
+            <span>Flowra</span> Manager
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#managerNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="managerNavbar">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.create_task') }}">Assign Task</a>
+                </li>
+               <li class="nav-item dropdown">
+
+<a class="nav-link dropdown-toggle"
+href="#"
+role="button"
+data-bs-toggle="dropdown">
+
+Reminders
+
+</a>
+
+<ul class="dropdown-menu">
+
+<li>
+<a class="dropdown-item" href="{{ url_for('main.my_reminders') }}">
+My Reminder
+</a>
+</li>
+
+<li>
+<a class="dropdown-item"
+href="#"
+data-bs-toggle="modal"
+data-bs-target="#reminderModal">
+
+Set Reminder
+</a>
+</li>
+
+<li>
+<a class="dropdown-item" href="{{ url_for('main.create_recurring_task') }}">
+Recurring Task
+</a>
+</li>
+
+</ul>
+
+</li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.task_history') }}">Task History</a>
+                </li>
+            </ul>
+
+            <div class="d-lg-flex align-items-lg-center ms-lg-3">
+                
+                <a href="{{ url_for('main.logout') }}" class="nav-action nav-danger">
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="main-content">
+    <div class="topbar">
+        <h2>Team Tasks</h2>
+        <p>Track submissions, review proofs and manage employee task flow with Flowra.</p>
+    </div>
+
+    <div class="glass-card">
+        <div class="card-head">
+            <h5>Team Tasks Overview</h5>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle text-center">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Priority</th>
+                        <th>Assigned To</th>
+                        <th>Status</th>
+                        <th>Due Date</th>
+                        <th>Proof of Task</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.description }}</td>
+                        <td>{{ task.priority }}</td>
+                        <td>
+                            {% if task.assignee %}
+                                {{ task.assignee.username }}
+                            {% else %}
+                                <span class="text-muted">Not Assigned</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if task.status == 'Approved' %}
+                                <span class="status-badge bg-approved">Approved</span>
+                            {% elif task.status == 'Rejected' %}
+                                <span class="status-badge bg-rejected">Rejected</span>
+                            {% elif task.status == 'Submitted' %}
+                                <span class="status-badge bg-submitted">Submitted</span>
+                            {% elif task.status == 'Pending' %}
+                                <span class="status-badge bg-pending">Pending</span>
+                            {% else %}
+                                <span class="status-badge bg-other">{{ task.status }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '-' }}
+                        </td>
+
+                        <td>
+                            {% if task.proof_file %}
+                                <a href="{{ url_for('main.download_proof', filename=task.proof_file) }}"
+                                   target="_blank"
+                                   class="btn btn-proof btn-sm">
+                                   View Proof
+                                </a>
+                            {% else %}
+                                <span class="text-muted">No Proof</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="action-box">
+                            {% if task.status == 'Submitted' %}
+                                <div class="d-flex flex-column gap-2">
+                                    <a href="{{ url_for('main.approve_task', id=task.id) }}"
+                                       class="btn btn-action btn-approve btn-sm">
+                                       Approve
+                                    </a>
+
+                                    <form method="POST" action="{{ url_for('main.reject_task', id=task.id) }}">
+                                        <input type="text"
+                                               name="remarks"
+                                               placeholder="Enter reject reason"
+                                               class="form-control form-control-sm mb-2 reject-input"
+                                               required>
+
+                                        <button type="submit" class="btn btn-action btn-reject btn-sm w-100">
+                                            Reject
+                                        </button>
+                                    </form>
+                                </div>
+                            {% else %}
+                                <span class="text-muted">{{ task.status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center empty-state">
+                            No tasks assigned yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reminderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Set Reminder</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('main.create_reminder') }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Reason</label>
+                            <input type="text" name="reason" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Remind At</label>
+                            <input type="datetime-local" name="remind_at" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">End At</label>
+                            <input type="datetime-local" name="end_at" class="form-control">
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_daily" id="dailyCheck">
+                                <label class="form-check-label" for="dailyCheck">
+                                    Daily Reminder
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 text-end">
+                            <button type="submit" class="btn btn-save-reminder">
+                                Save Reminder
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
