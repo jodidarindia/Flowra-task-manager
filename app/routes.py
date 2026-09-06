@@ -50,27 +50,21 @@ def keep_session_alive():
     if current_user.is_authenticated:
 
         saved_token = session.get("session_token")
+        current_token = getattr(current_user, "active_session_token", None)
 
-        current_token = getattr(
-            current_user,
-            "active_session_token",
-            None
-        )
+        print("SESSION TOKEN:", saved_token)
+        print("CURRENT TOKEN:", current_token)
 
         if current_token and saved_token != current_token:
-
             logout_user()
             session.clear()
-
             flash(
                 "Your session was ended because this account was approved on another device.",
                 "warning"
             )
-
             return redirect(url_for("main.login"))
 
         session["last_activity"] = datetime.utcnow().isoformat()
-
 @bp.route("/")
 def home():
     return render_template("home.html")
@@ -546,12 +540,18 @@ def create_task():
         flash("Unauthorized access", "danger")
         return redirect(url_for("main.dashboard"))
 
-    if request.method == "POST":
+    if request.method == "POST": 
+
 
         title = request.form.get("title")
         description = request.form.get("description")
         priority = request.form.get("priority")
         assigned_to_id = request.form.get("assigned_to")
+
+        print("=" * 50)
+        print("FORM DATA =", request.form)
+        print("ASSIGNED_TO_ID =", assigned_to_id)
+        print("=" * 50)
         due_date_str = request.form.get("due_date")
         reward_points = int(request.form.get("reward_points", 5))
         estimated_time = request.form.get("estimated_time")
@@ -726,6 +726,8 @@ Please check your dashboard.
                 "role": "employee"
             })
         )
+    for emp in employees:
+        emp["id"] = str(emp["_id"])
 
     return render_template(
         "create_task.html",
@@ -874,10 +876,15 @@ def edit_user(id):
             "role": "manager"
         })
     )
+    for mgr in managers:
+        mgr["id"] = str(mgr["_id"])
+
 
     departments = list(
         mongo.db.departments.find()
     )
+    for  dept in departments:
+         dept["id"] = str(dept["_id"])
 
     if request.method == "POST":
 
@@ -887,7 +894,10 @@ def edit_user(id):
         role = request.form.get("role")
         department_id = request.form.get("department_id")
         supervisor_id = request.form.get("supervisor_id")
-
+                 
+        print("ROLE =",  role)
+        print("SUPERVISOR =", supervisor_id)
+        print("DEPARTMENT =" , department_id)
         if not re.match(r'^\+\d{10,15}$', phone):
             flash(
                 "Invalid phone number format. Use +919876543210",
@@ -1870,12 +1880,20 @@ def manage_users():
     for user in users:
         user["id"] = str(user["_id"])
 
+        dept_id = user.get("department_id")
+
+        if dept_id:
+            dept = mongo.db.departments.find_one({
+                "_id": ObjectId(dept_id)
+            })
+            user["department"] = dept
+        else:
+            user["department"] = None
+
     return render_template(
         "manage_users.html",
         users=users
     )
-
-
 @bp.route("/department-dashboard")
 @login_required
 def department_dashboard():
@@ -1961,7 +1979,14 @@ def admin_panel():
 
         for task in tasks:
             task["id"] = str(task["_id"])
-
+   
+            if task.get("assigned_to"):
+               employee = mongo.db.users.find_one({
+                   "_id": ObjectId(task["assigned_to"])
+               })
+               task["assignee"] = employee
+            else:
+                task["assignee"] = None 
         department_tasks[dept_name] = tasks
 
     return render_template(
@@ -2090,7 +2115,18 @@ def manager_panel():
 
     for task in tasks:
         task["id"] = str(task["_id"])
+        
+        if task.get("assigned_to"):
+  
+           employee = mongo.db.users.find_one({
+               "_id": ObjectId(task["assigned_to"])
+           })
 
+           task["assignee"] = employee
+
+        else:
+
+           task["assignee"] = None
     return render_template(
         "manager_panel.html",
         tasks=tasks,
@@ -2141,6 +2177,19 @@ def employee_panel():
 
     for task in tasks:
         task["id"] = str(task["_id"])
+
+        if task.get("created_by"):
+            creator = mongo.db.users.find_one({
+                "_id": ObjectId(task["created_by"])
+            })
+            task["creator"] = creator
+
+        else:
+            task["creator"] = None
+
+    employee = mongo.db.users.find_one({
+        "_id": ObjectId(user_id)
+    })
 
     employee = mongo.db.users.find_one({
         "_id": ObjectId(user_id)

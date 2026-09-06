@@ -64,7 +64,7 @@
             </td>
 
             <td>{{ task.title }}</td>
-            <td>{{ task.assignee.username if task.assignee else "-" }}</td>
+            <td>{{ task.employee_name or  "-" }}</td>
             <td>{{ task.status }}</td>
             <td>{{ task.reward_points or 0 }}</td>
 
