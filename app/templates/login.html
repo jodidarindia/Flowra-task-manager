@@ -3,238 +3,82 @@
 {% block content %}
 
 <style>
-
-/* PARTICLES BACKGROUND */
-
-#particles-js{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-z-index:-2;
-}
-
-/* Animated Blobs */
-
-.login-bg{
-position:fixed;
-inset:0;
-z-index:-1;
-overflow:hidden;
-}
-
-.login-blob{
-position:absolute;
-border-radius:50%;
-filter:blur(120px);
-opacity:.6;
-animation:moveBlob 18s infinite alternate ease-in-out;
-}
-
-.blob-a{
-width:420px;
-height:420px;
-background:#2563eb;
-top:-120px;
-left:-120px;
-}
-
-.blob-b{
-width:420px;
-height:420px;
-background:#7c3aed;
-bottom:-140px;
-right:-120px;
-animation-duration:22s;
-}
-
-.blob-c{
-width:300px;
-height:300px;
-background:#38bdf8;
-top:40%;
-left:45%;
-animation-duration:26s;
-}
-
-@keyframes moveBlob{
-0%{transform:translate(0,0)}
-100%{transform:translate(70px,-60px)}
-}
-
-/* LOGIN CARD */
-
-.login-wrapper{
-display:flex;
-justify-content:center;
-align-items:center;
-padding:80px 20px;
-}
-
-.login-card{
-    width:420px;
-    background:#ffffff;
-    border-radius:22px;
-    box-shadow:0 20px 60px rgba(0,0,0,0.12);
-    padding:40px;
-    border:1px solid rgba(226,232,240,0.9);
-    position:relative;
-    z-index:2;
-    transform:none !important;
-    backdrop-filter:none !important;
-    -webkit-backdrop-filter:none !important;
-    filter:none !important;
-}
-
-.login-card:hover{
-    transform:translateY(-4px);
-}
-
-/* HEADINGS */
-
-.login-card h3{
-text-align:center;
-margin-bottom:25px;
-font-weight:700;
-}
-
-/* INPUTS */
-
-.login-input{
-margin-bottom:18px;
-position:relative;
-}
-
-.login-input input{
-width:100%;
-padding:12px 12px 12px 42px;
-border-radius:12px;
-border:1px solid #d1d5db;
-outline:none;
-transition:0.25s;
-}
-
-.login-input input:focus{
-border-color:#2563eb;
-box-shadow:0 0 0 3px rgba(37,99,235,0.15);
-}
-
-.login-input i{
-position:absolute;
-left:12px;
-top:50%;
-transform:translateY(-50%);
-color:#2563eb;
-}
-
-/* LOGIN BUTTON */
-
-.login-btn{
-width:100%;
-padding:12px;
-border:none;
-border-radius:12px;
-background:linear-gradient(135deg,#2563eb,#7c3aed);
-color:white;
-font-weight:600;
-box-shadow:0 10px 30px rgba(37,99,235,0.35);
-transition:.3s;
-}
-
-.login-btn:hover{
-transform:translateY(-2px);
-}
-
-/* SHOW PASSWORD */
-
-.show-pass{
-position:absolute;
-right:12px;
-top:50%;
-transform:translateY(-50%);
-cursor:pointer;
-color:#6b7280;
-}
-
-/* SMALL TEXT */
-
-.login-footer{
-margin-top:15px;
-text-align:center;
-font-size:13px;
-color:#6b7280;
-}
-
-/* LOADER */
-
-.loader-box{
-display:none;
-text-align:center;
-padding-top:10px;
-}
-
-.loader-box h5{
-margin-bottom:16px;
-font-weight:600;
-color:#2563eb;
-}
-
-.loader-box p{
-font-size:14px;
-color:#6b7280;
-margin-top:12px;
-}
-
+    /* 
+      Animations and Pseudo-classes (Hover/Focus) 
+      These cannot be written as inline styles. 
+    */
+    @keyframes moveBlob {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(70px, -60px); }
+    }
+    
+    .login-card-custom {
+        transition: transform 0.3s ease;
+    }
+    .login-card-custom:hover {
+        transform: translateY(-4px);
+    }
+    
+    .login-input-custom:focus {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+    }
+    
+    .login-btn-custom:hover {
+        transform: translateY(-2px);
+    }
 </style>
 
 <!-- particles -->
-<div id="particles-js"></div>
+<div id="particles-js" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-2;"></div>
 
-<div class="login-bg">
-<div class="login-blob blob-a"></div>
-<div class="login-blob blob-b"></div>
-<div class="login-blob blob-c"></div>
+<!-- Animated Background Blobs -->
+<div style="position:fixed; inset:0; z-index:-1; overflow:hidden;">
+    <div style="position:absolute; border-radius:50%; filter:blur(120px); opacity:.6; animation:moveBlob 18s infinite alternate ease-in-out; width:420px; height:420px; background:#2563eb; top:-120px; left:-120px;"></div>
+    <div style="position:absolute; border-radius:50%; filter:blur(120px); opacity:.6; animation:moveBlob 22s infinite alternate ease-in-out; width:420px; height:420px; background:#7c3aed; bottom:-140px; right:-120px;"></div>
+    <div style="position:absolute; border-radius:50%; filter:blur(120px); opacity:.6; animation:moveBlob 26s infinite alternate ease-in-out; width:300px; height:300px; background:#38bdf8; top:40%; left:45%;"></div>
 </div>
 
-<div class="login-wrapper">
+<!-- Login Section -->
+<div class="d-flex justify-content-center align-items-center" style="padding:80px 20px; min-height: 100vh;">
 
-<div class="login-card">
+    <!-- Login Card -->
+    <div class="login-card-custom" style="width:420px; background:#ffffff; border-radius:22px; box-shadow:0 20px 60px rgba(0,0,0,0.12); padding:40px; border:1px solid rgba(226,232,240,0.9); position:relative; z-index:2; transform:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; filter:none !important;">
 
-<h3>Login to Flowra</h3>
+        <h3 style="text-align:center; margin-bottom:25px; font-weight:700;">Login to Flowra</h3>
 
-<div id="messageBox"></div>
+        <div id="messageBox"></div>
 
-<form method="POST" id="loginForm">
+        <form method="POST" id="loginForm">
 
-<div class="login-input">
-<i class="fa fa-user"></i>
-<input type="text" name="username" placeholder="Username" required>
-</div>
+            <div class="position-relative mb-3">
+                <i class="fa fa-user" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#2563eb;"></i>
+                <input class="login-input-custom" type="text" name="username" placeholder="Username" required style="width:100%; padding:12px 12px 12px 42px; border-radius:12px; border:1px solid #d1d5db; outline:none; transition:0.25s;">
+            </div>
 
-<div class="login-input">
-<i class="fa fa-lock"></i>
-<input type="password" name="password" id="password" placeholder="Password" required>
-<i class="fa fa-eye show-pass" onclick="togglePassword()"></i>
-</div>
+            <div class="position-relative mb-3">
+                <i class="fa fa-lock" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#2563eb;"></i>
+                <input class="login-input-custom" type="password" name="password" id="password" placeholder="Password" required style="width:100%; padding:12px 12px 12px 42px; border-radius:12px; border:1px solid #d1d5db; outline:none; transition:0.25s;">
+                <i class="fa fa-eye" onclick="togglePassword()" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#6b7280;"></i>
+            </div>
 
-<button class="login-btn" type="submit">
-<i class="fa fa-sign-in-alt"></i> Login
-</button>
+            <button class="login-btn-custom" type="submit" style="width:100%; padding:12px; border:none; border-radius:12px; background:linear-gradient(135deg,#2563eb,#7c3aed); color:white; font-weight:600; box-shadow:0 10px 30px rgba(37,99,235,0.35); transition:.3s;">
+                <i class="fa fa-sign-in-alt"></i> Login
+            </button>
 
-</form>
+        </form>
 
-<div id="loaderBox" class="loader-box">
-    <h5>Waiting for approval...</h5>
-    <div class="spinner-border text-primary" role="status"></div>
-    <p>Please wait while the authorized user allows or denies this login.</p>
-</div>
+        <div id="loaderBox" style="display:none; text-align:center; padding-top:10px;">
+            <h5 style="margin-bottom:16px; font-weight:600; color:#2563eb;">Waiting for approval...</h5>
+            <div class="spinner-border text-primary" role="status"></div>
+            <p style="font-size:14px; color:#6b7280; margin-top:12px;">Please wait while the authorized user allows or denies this login.</p>
+        </div>
 
-<div class="login-footer">
-Secure login for Flowra Task Manager
-</div>
+        <div style="margin-top:15px; text-align:center; font-size:13px; color:#6b7280;">
+            Secure login for Flowra Task Manager
+        </div>
 
-</div>
+    </div>
 
 </div>
 
@@ -244,25 +88,23 @@ Secure login for Flowra Task Manager
 <script>
 
 /* PARTICLES */
-
 particlesJS("particles-js",{
-particles:{
-number:{value:60},
-size:{value:3},
-color:{value:"#2563eb"},
-line_linked:{
-enable:true,
-color:"#2563eb",
-opacity:0.2
-},
-move:{
-speed:1.5
-}
-}
+    particles:{
+        number:{value:60},
+        size:{value:3},
+        color:{value:"#2563eb"},
+        line_linked:{
+            enable:true,
+            color:"#2563eb",
+            opacity:0.2
+        },
+        move:{
+            speed:1.5
+        }
+    }
 })
 
 /* SHOW PASSWORD */
-
 function togglePassword(){
     let pass = document.getElementById("password")
     if(pass.type === "password"){

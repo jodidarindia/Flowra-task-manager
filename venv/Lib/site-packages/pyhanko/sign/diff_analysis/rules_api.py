@@ -4,10 +4,13 @@ Module defining common API types for use by rules and policies.
 In principle, these aren't relevant to the high-level validation API.
 """
 
+from __future__ import annotations
+
 import logging
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
-from typing import Callable, Iterable, Optional, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING
 
 from pyhanko.pdf_utils.generic import (
     ArrayObject,
@@ -23,6 +26,12 @@ from ...pdf_utils import misc
 from ...pdf_utils.rw_common import PdfHandler
 from ...pdf_utils.xref import TrailerDictionary
 from .policy_api import ModificationLevel
+
+if TYPE_CHECKING:
+    # typing.Self is only available on Python 3.11+; fall back to the
+    # typing_extensions backport for 3.10. Guarded by TYPE_CHECKING so that
+    # neither is required at runtime (all annotations are lazy strings here).
+    from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -59,16 +68,16 @@ class Context:
     @classmethod
     def from_absolute(
         cls, pdf_handler: PdfHandler, absolute_path: RawPdfPath
-    ) -> 'AbsoluteContext':
+    ) -> AbsoluteContext:
         return AbsoluteContext(pdf_handler=pdf_handler, path=absolute_path)
 
     @classmethod
     def relative_to(
         cls,
-        start: Union[DictionaryObject, ArrayObject, TrailerDictionary],
-        path: Union[RawPdfPath, int, str],
-    ) -> 'RelativeContext':
-        container_ref: Optional[Dereferenceable] = start.container_ref
+        start: DictionaryObject | ArrayObject | TrailerDictionary,
+        path: RawPdfPath | int | str,
+    ) -> RelativeContext:
+        container_ref: Dereferenceable | None = start.container_ref
         assert container_ref is not None
         cur_ref: Dereferenceable = container_ref
         if isinstance(path, (int, str)):
@@ -85,7 +94,7 @@ class Context:
                 rel_path += node
         return RelativeContext(cur_ref, rel_path)
 
-    def descend(self, path: Union[RawPdfPath, int, str]) -> 'Context':
+    def descend(self, path: RawPdfPath | int | str) -> Context:
         raise NotImplementedError
 
 
@@ -102,7 +111,7 @@ class RelativeContext(Context):
     Path to the object from the container.
     """
 
-    def descend(self, path: Union[RawPdfPath, int, str]) -> 'RelativeContext':
+    def descend(self, path: RawPdfPath | int | str) -> RelativeContext:
         root = self.anchor.get_object()
         containers = (DictionaryObject, ArrayObject, TrailerDictionary)
         if not isinstance(root, containers):
@@ -142,7 +151,7 @@ class AbsoluteContext(Context):
             self.pdf_handler.trailer_view, self.path
         )
 
-    def descend(self, path: Union[RawPdfPath, int, str]) -> 'AbsoluteContext':
+    def descend(self, path: RawPdfPath | int | str) -> AbsoluteContext:
         return AbsoluteContext(self.path + path, self.pdf_handler)
 
 
@@ -152,9 +161,6 @@ class ApprovalType(misc.OrderedEnum):
     APPROVE_PATH = 2
 
 
-RefUpdateType = TypeVar('RefUpdateType', bound='ReferenceUpdate')
-
-
 @dataclass(frozen=True)
 class ReferenceUpdate:
     updated_ref: Reference
@@ -162,12 +168,10 @@ class ReferenceUpdate:
     Reference that was (potentially) updated.
     """
 
-    context_checked: Optional[Context] = None
+    context_checked: Context | None = None
 
     @classmethod
-    def curry_ref(
-        cls: Type[RefUpdateType], **kwargs
-    ) -> Callable[[Reference], RefUpdateType]:
+    def curry_ref(cls, **kwargs) -> Callable[[Reference], Self]:
         return lambda ref: cls(updated_ref=ref, **kwargs)
 
     @property
@@ -192,7 +196,7 @@ class QualifiedWhitelistRule:
 
     def apply_qualified(
         self, old: HistoricalResolver, new: HistoricalResolver
-    ) -> Iterable[Tuple[ModificationLevel, ReferenceUpdate]]:
+    ) -> Iterable[tuple[ModificationLevel, ReferenceUpdate]]:
         """
         Apply the rule to the changes between two revisions.
 
@@ -248,6 +252,6 @@ class _WrappingQualifiedWhitelistRule(QualifiedWhitelistRule):
 
     def apply_qualified(
         self, old: HistoricalResolver, new: HistoricalResolver
-    ) -> Iterable[Tuple[ModificationLevel, ReferenceUpdate]]:
+    ) -> Iterable[tuple[ModificationLevel, ReferenceUpdate]]:
         for ref in self.rule.apply(old, new):
             yield self.level, ref

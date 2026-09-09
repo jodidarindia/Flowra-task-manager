@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 import tzlocal
 from pyhanko.pdf_utils import layout
@@ -10,7 +9,10 @@ from pyhanko.pdf_utils.writer import BasePdfFileWriter
 
 from .base import BaseStamp, BaseStampStyle
 
-__all__ = ['TextStamp', 'TextStampStyle']
+__all__ = ['DEFAULT_TEXT_BOX_STYLE', 'TextStamp', 'TextStampStyle']
+
+
+DEFAULT_TEXT_BOX_STYLE = TextBoxStyle()
 
 
 @dataclass(frozen=True)
@@ -22,12 +24,12 @@ class TextStampStyle(BaseStampStyle):
     piece of text inside a text box, and possibly applies a background to it.
     """
 
-    text_box_style: TextBoxStyle = TextBoxStyle()
+    text_box_style: TextBoxStyle = DEFAULT_TEXT_BOX_STYLE
     """
     The text box style for the internal text box used.
     """
 
-    inner_content_layout: Optional[layout.SimpleBoxLayoutRule] = None
+    inner_content_layout: layout.SimpleBoxLayoutRule | None = None
     """
     Rule determining the position and alignment of the inner text box within
     the stamp.
@@ -74,12 +76,12 @@ class TextStamp(BaseStamp):
         writer: BasePdfFileWriter,
         style,
         text_params=None,
-        box: Optional[layout.BoxConstraints] = None,
+        box: layout.BoxConstraints | None = None,
     ):
         super().__init__(box=box, style=style, writer=writer)
         self.text_params = text_params
 
-        self.text_box: Optional[TextBox] = None
+        self.text_box: TextBox | None = None
 
     def get_default_text_params(self):
         """

@@ -417,10 +417,12 @@ cdef class _TempStore:
 @cython.internal
 cdef class _ExceptionContext:
     cdef object _exc_info
+
     cdef int clear(self) except -1:
         self._exc_info = None
         return 0
 
+    @cython.final
     cdef void _store_raised(self) noexcept:
         try:
             self._exc_info = sys.exc_info()
@@ -429,13 +431,16 @@ cdef class _ExceptionContext:
         finally:
             return  # and swallow any further exceptions
 
+    @cython.final
     cdef int _store_exception(self, exception) except -1:
         self._exc_info = (exception, None, None)
         return 0
 
+    @cython.final
     cdef bint _has_raised(self) except -1:
         return self._exc_info is not None
 
+    @cython.final
     cdef int _raise_if_stored(self) except -1:
         if self._exc_info is None:
             return 0
@@ -473,6 +478,7 @@ cdef public class _Document [ type LxmlDocumentType, object LxmlDocument ]:
     cdef int _ns_counter
     cdef bytes _prefix_tail
     cdef xmlDoc* _c_doc
+    # -- End of public part, '_c_doc' is the only publicly exposed struct field.
     cdef _BaseParser _parser
 
     def __dealloc__(self):
@@ -657,7 +663,7 @@ cdef class DocInfo:
         return root_name
 
     @cython.final
-    cdef tree.xmlDtd* _get_c_dtd(self):
+    cdef tree.xmlDtd* _get_c_dtd(self) noexcept:
         """"Return the DTD. Create it if it does not yet exist."""
         cdef xmlDoc* c_doc = self._doc._c_doc
         cdef xmlNode* c_root_node
@@ -866,7 +872,7 @@ cdef public class _Element [ type LxmlElementType, object LxmlElement ]:
                 left_to_right = 1
             else:
                 left_to_right = 0
-                step = -step
+                step = -step if step != python.PY_SSIZE_T_MIN else python.PY_SSIZE_T_MAX
             _replaceSlice(self, c_node, slicelength, step, left_to_right, value)
             return
         else:
@@ -1281,7 +1287,7 @@ cdef public class _Element [ type LxmlElementType, object LxmlElement ]:
             if step > 0:
                 next_element = _nextElement
             else:
-                step = -step
+                step = -step if step != python.PY_SSIZE_T_MIN else python.PY_SSIZE_T_MAX
                 next_element = _previousElement
             result = []
             c = 0
@@ -3156,7 +3162,7 @@ cdef class ElementTextIterator:
         return result
 
 
-cdef xmlNode* _createElement(xmlDoc* c_doc, object name_utf) except NULL:
+cdef xmlNode* _createElement(xmlDoc* c_doc, object name_utf) noexcept:
     cdef xmlNode* c_node
     c_node = tree.xmlNewDocNode(c_doc, NULL, _xcstr(name_utf), NULL)
     return c_node

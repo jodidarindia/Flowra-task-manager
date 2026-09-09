@@ -57,24 +57,24 @@ class TrustQualifiers:
     the PKIX validation process.
     """
 
-    max_path_length: Optional[int] = None
+    max_path_length: int | None = None
     """
     Maximal allowed path length for this trust root, excluding self-issued
     intermediate CA certificates. If ``None``, any path length will be accepted.
     """
 
-    max_aa_path_length: Optional[int] = None
+    max_aa_path_length: int | None = None
     """
     Maximal allowed path length for this trust root for the purposes of
     AAControls. If ``None``, any path length will be accepted.
     """
 
-    valid_from: Optional[datetime] = None
+    valid_from: datetime | None = None
     """
     Lower bound of the trust anchor's validity period, if any.
     """
 
-    valid_until: Optional[datetime] = None
+    valid_until: datetime | None = None
     """
     Upper bound of the trust anchor's validity period, if any.
     """
@@ -124,7 +124,7 @@ class Authority(abc.ABC):
         return self.hashable == other.hashable
 
     @property
-    def key_id(self) -> Optional[bytes]:
+    def key_id(self) -> bytes | None:
         """
         Key ID as (potentially) referenced in an authorityKeyIdentifier
         extension. Only used to eliminate non-matching trust anchors,
@@ -143,10 +143,11 @@ class Authority(abc.ABC):
         """
         if cert.issuer != self.name:
             return False
-        if cert.authority_key_identifier and self.key_id:
-            if cert.authority_key_identifier != self.key_id:
-                return False
-        return True
+        return not (
+            cert.authority_key_identifier
+            and self.key_id
+            and cert.authority_key_identifier != self.key_id
+        )
 
 
 class TrustAnchor:
@@ -156,7 +157,7 @@ class TrustAnchor:
     """
 
     def __init__(
-        self, authority: Authority, quals: Optional[TrustQualifiers] = None
+        self, authority: Authority, quals: TrustQualifiers | None = None
     ):
         self._authority = authority
         self._quals = quals
@@ -278,7 +279,7 @@ class AuthorityWithCert(Authority):
         return cert.subject.hashable, cert.public_key.dump()
 
     @property
-    def key_id(self) -> Optional[bytes]:
+    def key_id(self) -> bytes | None:
         return self._cert.key_identifier
 
     @property
@@ -288,10 +289,10 @@ class AuthorityWithCert(Authority):
     def is_potential_issuer_of(self, cert: x509.Certificate):
         if not super().is_potential_issuer_of(cert):
             return False
-        if cert.authority_issuer_serial:
-            if cert.authority_issuer_serial != self._cert.issuer_serial:
-                return False
-        return True
+        return not (
+            cert.authority_issuer_serial
+            and cert.authority_issuer_serial != self._cert.issuer_serial
+        )
 
 
 class CertTrustAnchor(TrustAnchor):
@@ -312,7 +313,7 @@ class CertTrustAnchor(TrustAnchor):
     def __init__(
         self,
         cert: x509.Certificate,
-        quals: Optional[TrustQualifiers] = None,
+        quals: TrustQualifiers | None = None,
         derive_default_quals_from_cert: bool = False,
     ):
         authority = AuthorityWithCert(cert)
@@ -358,7 +359,7 @@ class NamedKeyAuthority(Authority):
         return self._public_key
 
     @property
-    def key_id(self) -> Optional[bytes]:
+    def key_id(self) -> bytes | None:
         return None
 
     @property

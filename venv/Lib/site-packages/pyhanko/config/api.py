@@ -9,7 +9,6 @@ user-provided configuration (e.g. from a Yaml file).
 
 import dataclasses
 import re
-from typing import Optional, Set, Type, Union
 
 from asn1crypto.core import BitString, ObjectIdentifier
 
@@ -27,24 +26,21 @@ __all__ = [
 _noneType = type(None)
 
 
-def _unwrap_type_annot(thing) -> Optional[type]:
+def _unwrap_type_annot(thing) -> type | None:
     if isinstance(thing, type):
-        the_type = thing
-    else:
-        from typing import get_args, get_origin
+        return thing
 
-        # is it an optional? (i.e. Union[X, None])
-        # if so, retrieve the wrapped type
-        if get_origin(thing) is not Union:
-            return None
-        try:
-            type1, type2 = get_args(thing)
-            if type2 is not _noneType:
-                return None
-        except (ValueError, TypeError):
-            return None
-        the_type = type1
-    return the_type if isinstance(the_type, type) else None
+    # get_args() treats old-style Optional[X]/Union[X, None] and new-style
+    # X | None uniformly, so there's no need to special-case either spelling.
+    # An "optional of a single concrete type" always yields exactly two
+    # args, one of which is NoneType.
+    from typing import get_args
+
+    args = get_args(thing)
+    if len(args) == 2 and _noneType in args:
+        (the_type,) = (arg for arg in args if arg is not _noneType)
+        return the_type if isinstance(the_type, type) else None
+    return None
 
 
 def _has_default(f: dataclasses.Field):
@@ -74,7 +70,6 @@ class ConfigurableMixin:
         :raises ConfigurationError:
             when there is a problem processing a relevant entry.
         """
-        pass
 
     @classmethod
     def _process_configurable_fields(cls, config_dict):
@@ -100,7 +95,7 @@ class ConfigurableMixin:
             config_dict[f.name] = field_value
 
     @classmethod
-    def check_config_keys(cls, keys_supplied: Set[str]):
+    def check_config_keys(cls, keys_supplied: set[str]):
         """
         Check whether all supplied keys are meaningful.
 
@@ -200,7 +195,7 @@ OID_REGEX = re.compile(r'\d(\.\d+)+')
 
 
 def process_oid(
-    asn1crypto_class: Type[ObjectIdentifier], id_string, param_name
+    asn1crypto_class: type[ObjectIdentifier], id_string, param_name
 ):
     if not isinstance(id_string, str):
         raise ConfigurationError(
@@ -235,14 +230,14 @@ def _ensure_strings(strings, param_name):
     return strings
 
 
-def process_oids(asn1crypto_class: Type[ObjectIdentifier], strings, param_name):
+def process_oids(asn1crypto_class: type[ObjectIdentifier], strings, param_name):
     strings = _ensure_strings(strings, param_name)
     for usage_string in strings:
         yield process_oid(asn1crypto_class, usage_string, param_name)
 
 
 def process_bit_string_flags(
-    asn1crypto_class: Type[BitString], strings, param_name
+    asn1crypto_class: type[BitString], strings, param_name
 ):
     strings = _ensure_strings(strings, param_name)
     valid_values = asn1crypto_class._map.values()

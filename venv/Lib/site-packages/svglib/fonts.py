@@ -12,9 +12,10 @@ The module includes:
 """
 
 import os
+import shutil
 import subprocess
 import sys
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Union
 
 from reportlab.pdfbase.pdfmetrics import registerFont
 from reportlab.pdfbase.ttfonts import TTFError, TTFont
@@ -38,7 +39,7 @@ STANDARD_FONT_NAMES = (
 DEFAULT_FONT_NAME = "Helvetica"
 DEFAULT_FONT_WEIGHT = "normal"
 DEFAULT_FONT_STYLE = "normal"
-DEFAULT_FONT_SIZE = 12
+DEFAULT_FONT_SIZE = 12  # points (CSS/SVG default: 12 pt = 16 px)
 
 
 class FontMap:
@@ -70,7 +71,8 @@ class FontMap:
         Internal names are normalized for efficient lookup and follow the pattern:
         'Family-WeightStyle' (e.g., 'Arial-BoldItalic').
         """
-        self._map: Dict[str, Dict[str, Union[str, bool, int]]] = {}
+        self._map: dict[str, dict[str, Union[str, bool, int]]] = {}
+        self._family_index: dict[str, str] = {}  # lowercase family → canonical family
 
         self.register_default_fonts()
 
@@ -152,7 +154,7 @@ class FontMap:
 
     def use_fontconfig(
         self, font_name: str, weight: str = "normal", style: str = "normal"
-    ) -> Tuple[Optional[str], bool]:
+    ) -> tuple[Optional[str], bool]:
         """Find and register a font using system fontconfig.
 
         Uses the system's fontconfig utility to locate and register fonts that
@@ -178,19 +180,31 @@ class FontMap:
         """
         NOT_FOUND = (None, False)
         # Searching with Fontconfig
+        font_name_expr = font_name
+        if weight != "normal":
+            font_name_expr = f"{font_name_expr}:{weight}"
+        if style != "normal":
+            font_name_expr = f"{font_name_expr}:{style}"
+        if font_name_expr != font_name and font_name not in self._map:
+            # Ensure the "normal" version of the font is registered first
+            self.use_fontconfig(font_name)
+        fc_match = shutil.which("fc-match")
+        if fc_match is None:
+            return NOT_FOUND
         try:
             pipe = subprocess.Popen(
-                ["fc-match", "-s", "--format=%{file}\\n", font_name],
+                [fc_match, "-s", "--format=%{file}\\n", "--", font_name_expr],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
             output = pipe.communicate()[0].decode(sys.getfilesystemencoding())
         except OSError:
             return NOT_FOUND
+        internal_name = FontMap.build_internal_name(font_name, weight, style)
         font_paths = output.split("\n")
         for font_path in font_paths:
             try:
-                registerFont(TTFont(font_name, font_path))
+                registerFont(TTFont(internal_name, font_path))
             except TTFError:
                 continue
             else:
@@ -200,15 +214,15 @@ class FontMap:
             return NOT_FOUND
         # Fontconfig may return a default font totally unrelated with font_name
         exact = font_name.lower() in os.path.basename(success_font_path).lower()
-        internal_name = FontMap.build_internal_name(font_name, weight, style)
         self._map[internal_name] = {
             "svg_family": font_name,
             "svg_weight": weight,
             "svg_style": style,
-            "rlgFont": font_name,
+            "rlgFont": internal_name,
             "exact": exact,
         }
-        return font_name, exact
+        self._family_index.setdefault(font_name.lower(), font_name)
+        return internal_name, exact
 
     def register_default_fonts(self) -> None:
         """Register mappings for standard PDF fonts and common font families.
@@ -338,7 +352,7 @@ class FontMap:
         weight: str = "normal",
         style: str = "normal",
         rlgFontName: Optional[str] = None,
-    ) -> Tuple[Optional[str], bool]:
+    ) -> tuple[Optional[str], bool]:
         """Register a font or create a mapping to a ReportLab font name.
 
         This method handles two scenarios:
@@ -389,6 +403,7 @@ class FontMap:
                 "rlgFont": rlgFontName,
                 "exact": True,
             }
+            self._family_index.setdefault(font_family.lower(), font_family)
             return internal_name, True
 
         if internal_name not in STANDARD_FONT_NAMES and font_path is not None:
@@ -401,6 +416,7 @@ class FontMap:
                     "rlgFont": rlgFontName,
                     "exact": True,
                 }
+                self._family_index.setdefault(font_family.lower(), font_family)
                 return internal_name, True
             except TTFError:
                 return NOT_FOUND
@@ -410,7 +426,7 @@ class FontMap:
 
     def find_font(
         self, font_name: str, weight: str = "normal", style: str = "normal"
-    ) -> Tuple[str, bool]:
+    ) -> tuple[str, bool]:
         """Find the best matching ReportLab font for given specifications.
 
         Searches through the font registry to find the most appropriate font match.
@@ -430,6 +446,7 @@ class FontMap:
             If no suitable font is found, falls back to DEFAULT_FONT_NAME (Helvetica).
             The search prioritizes exact matches over approximate ones.
         """
+        font_name = self._family_index.get(font_name.lower(), font_name)
         internal_name = FontMap.build_internal_name(font_name, weight, style)
         # Step 1 check if the font is one of the buildin standard fonts
         if internal_name in STANDARD_FONT_NAMES:
@@ -463,7 +480,7 @@ def register_font(
     weight: str = "normal",
     style: str = "normal",
     rlgFontName: Optional[str] = None,
-) -> Tuple[Optional[str], bool]:
+) -> tuple[Optional[str], bool]:
     """Register a font with the global font map.
 
     Convenience function that delegates to the global FontMap instance.
@@ -488,7 +505,7 @@ def register_font(
 
 def find_font(
     font_name: str, weight: str = "normal", style: str = "normal"
-) -> Tuple[str, bool]:
+) -> tuple[str, bool]:
     """Find the best matching font from the global font registry.
 
     Convenience function that delegates to the global FontMap instance.

@@ -7,7 +7,7 @@ import binascii
 from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
-from typing import IO, Optional, Union
+from typing import IO
 
 from asn1crypto import cms
 from cryptography.hazmat.primitives import hashes
@@ -146,9 +146,7 @@ class PreparedByteRangeDigest:
     ``/ByteRange``.
     """
 
-    def fill_with_cms(
-        self, output: IO, cms_data: Union[bytes, cms.ContentInfo]
-    ):
+    def fill_with_cms(self, output: IO, cms_data: bytes | cms.ContentInfo):
         """
         Write a DER-encoded CMS object to the reserved region indicated
         by :attr:`reserved_region_start` and :attr:`reserved_region_end` in the
@@ -214,6 +212,9 @@ class PreparedByteRangeDigest:
         return content_bytes + padding
 
 
+CONTENTS = pdf_name('/Contents')
+
+
 class PdfByteRangeDigest(generic.DictionaryObject):
     """
     General class to model a PDF Dictionary that has a ``/ByteRange`` entry
@@ -233,7 +234,9 @@ class PdfByteRangeDigest(generic.DictionaryObject):
         estimate the size as accurately as possible.
     """
 
-    def __init__(self, data_key=pdf_name('/Contents'), *, bytes_reserved=None):
+    def __init__(
+        self, data_key: generic.NameObject = CONTENTS, *, bytes_reserved=None
+    ):
         super().__init__()
         if bytes_reserved is not None and bytes_reserved % 2 == 1:
             raise ValueError('bytes_reserved must be even')
@@ -294,7 +297,7 @@ class PdfByteRangeDigest(generic.DictionaryObject):
         else:
             try:
                 output_buffer = memoryview(output)
-            except (TypeError, IOError):
+            except (OSError, TypeError):
                 pass
 
         if output_buffer is not None:
@@ -348,7 +351,7 @@ class PdfSignedData(PdfByteRangeDigest):
         self,
         obj_type,
         subfilter: SigSeedSubFilter = constants.DEFAULT_SIG_SUBFILTER,
-        timestamp: Optional[datetime] = None,
+        timestamp: datetime | None = None,
         bytes_reserved=None,
     ):
         super().__init__(bytes_reserved=bytes_reserved)
@@ -376,7 +379,7 @@ class BuildProps:
     The application's name.
     """
 
-    revision: Optional[str] = None
+    revision: str | None = None
     """
     The application's revision ID string.
 
@@ -438,15 +441,15 @@ class SignatureObject(PdfSignedData):
 
     def __init__(
         self,
-        timestamp: Optional[datetime] = None,
+        timestamp: datetime | None = None,
         subfilter: SigSeedSubFilter = constants.DEFAULT_SIG_SUBFILTER,
         name=None,
         location=None,
         reason=None,
         contact_info=None,
-        app_build_props: Optional[BuildProps] = None,
-        prop_auth_time: Optional[int] = None,
-        prop_auth_type: Optional[SigAuthType] = None,
+        app_build_props: BuildProps | None = None,
+        prop_auth_time: int | None = None,
+        prop_auth_type: SigAuthType | None = None,
         bytes_reserved=None,
     ):
         super().__init__(

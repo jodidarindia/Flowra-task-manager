@@ -1,12 +1,19 @@
-# coding: utf-8
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List, Optional, Type, TypeVar
+from typing import TYPE_CHECKING
 
 from asn1crypto.crl import CRLReason
 from cryptography.exceptions import InvalidSignature
 
 from pyhanko_certvalidator._state import ValProcState
 from pyhanko_certvalidator.path import ValidationPath
+
+if TYPE_CHECKING:
+    # typing.Self is only available on Python 3.11+; fall back to the
+    # typing_extensions backport for 3.10. Guarded by TYPE_CHECKING so that
+    # neither is required at runtime (all annotations are lazy strings here).
+    from typing_extensions import Self
 
 
 class PathError(Exception):
@@ -37,8 +44,8 @@ class CRLValidationIndeterminateError(CRLValidationError):
     def __init__(
         self,
         msg: str,
-        failures: List[str],
-        suspect_stale: Optional[datetime] = None,
+        failures: list[str],
+        suspect_stale: datetime | None = None,
     ):
         self.msg = msg
         self.failures = failures
@@ -58,8 +65,8 @@ class OCSPValidationIndeterminateError(OCSPValidationError):
     def __init__(
         self,
         msg: str,
-        failures: List[str],
-        suspect_stale: Optional[datetime] = None,
+        failures: list[str],
+        suspect_stale: datetime | None = None,
     ):
         self.msg = msg
         self.failures = failures
@@ -77,14 +84,9 @@ class ValidationError(Exception):
         super().__init__(message)
 
 
-TPathErr = TypeVar('TPathErr', bound='PathValidationError')
-
-
 class PathValidationError(ValidationError):
     @classmethod
-    def from_state(
-        cls: Type[TPathErr], msg: str, proc_state: ValProcState
-    ) -> TPathErr:
+    def from_state(cls, msg: str, proc_state: ValProcState) -> Self:
         return cls(msg, proc_state=proc_state)
 
     def __init__(self, msg: str, *, proc_state: ValProcState):
@@ -198,9 +200,7 @@ class InvalidCertificateError(ValidationError):
 
 
 class DisallowedAlgorithmError(PathValidationError):
-    def __init__(
-        self, *args, banned_since: Optional[datetime] = None, **kwargs
-    ):
+    def __init__(self, *args, banned_since: datetime | None = None, **kwargs):
         self.banned_since = banned_since
         super().__init__(*args, **kwargs)
 
@@ -209,8 +209,8 @@ class DisallowedAlgorithmError(PathValidationError):
         cls,
         msg: str,
         proc_state: ValProcState,
-        banned_since: Optional[datetime] = None,
-    ) -> 'DisallowedAlgorithmError':
+        banned_since: datetime | None = None,
+    ) -> DisallowedAlgorithmError:
         return cls(msg, banned_since=banned_since, proc_state=proc_state)
 
 

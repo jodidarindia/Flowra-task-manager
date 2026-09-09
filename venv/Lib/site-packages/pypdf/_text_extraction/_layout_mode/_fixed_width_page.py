@@ -12,6 +12,9 @@ from .. import LAYOUT_NEW_BT_GROUP_SPACE_WIDTHS
 from ._text_state_manager import TextStateManager
 from ._text_state_params import TextStateParams
 
+WHITESPACE_LIMIT = 10_000
+NEWLINE_LIMIT = 1_000
+
 
 class BTGroup(TypedDict):
     """
@@ -38,7 +41,32 @@ class BTGroup(TypedDict):
     flip_sort: Literal[-1, 1]
 
 
-def bt_group(tj_op: TextStateParams, rendered_text: str, dispaced_tx: float) -> BTGroup:
+def resolve_font(fonts: dict[str, Font], name: str) -> Font:
+    """
+    Resolve a Tf font name to a layout mode Font.
+
+    A content stream may select a font name that is not declared in the page
+    resources. Fall back to an uninterpretable font so extraction degrades to
+    the existing incomplete-output path instead of raising KeyError.
+
+    Args:
+        fonts: font dictionary as returned by PageObject._layout_mode_fonts()
+        name: font name supplied by a Tf operator
+
+    Returns:
+        Font: the matching font, or an uninterpretable placeholder font.
+
+    """
+    if name in fonts:
+        return fonts[name]
+    logger_warning(
+        "Font %(name)s is not in the page resources.",
+        name=name, source=__name__
+    )
+    return Font("Unknown", encoding={}, interpretable=False)
+
+
+def bt_group(tj_op: TextStateParams, rendered_text: str, displaced_tx: float) -> BTGroup:
     """
     BTGroup constructed from a TextStateParams instance, rendered text, and
     displaced tx value.
@@ -46,7 +74,7 @@ def bt_group(tj_op: TextStateParams, rendered_text: str, dispaced_tx: float) -> 
     Args:
         tj_op (TextStateParams): TextStateParams instance
         rendered_text (str): rendered text
-        dispaced_tx (float): x coordinate of last character in BTGroup
+        displaced_tx (float): x coordinate of last character in BTGroup
 
     """
     return BTGroup(
@@ -55,12 +83,12 @@ def bt_group(tj_op: TextStateParams, rendered_text: str, dispaced_tx: float) -> 
         font_size=tj_op.font_size,
         font_height=tj_op.font_height,
         text=rendered_text,
-        displaced_tx=dispaced_tx,
+        displaced_tx=displaced_tx,
         flip_sort=-1 if tj_op.flip_vertical else 1,
     )
 
 
-def recurs_to_target_op(
+def recurse_to_target_op(
     ops: Iterator[tuple[list[Any], bytes]],
     text_state_mgr: TextStateManager,
     end_target: Literal[b"Q", b"ET"],
@@ -140,8 +168,14 @@ def recurs_to_target_op(
                     # applied to the first tj of a BTGroup in fixed_width_page().
                     excess_tx = round(_tj.tx - last_displaced_tx, 3) * (_idx != bt_idx)
                     # space_tx could be 0 if either Tz or font_size was 0 for this _tj.
-                    spaces = int(excess_tx // _tj.space_tx) if _tj.space_tx else 0
-                    new_text = f'{" " * spaces}{_tj.txt}'
+                    spaces = round(excess_tx / _tj.space_tx) if excess_tx > 0 else 0
+                    if spaces > WHITESPACE_LIMIT:
+                        logger_warning(
+                            "Limiting excessive whitespace from %(actual)d to %(limit)d characters.",
+                            actual=spaces, limit=WHITESPACE_LIMIT, source=__name__
+                        )
+                        spaces = WHITESPACE_LIMIT
+                    new_text = f'{" " * spaces}{_tj.text}'
 
                     last_ty = _tj.ty
                     _text = f"{_text}{new_text}"
@@ -151,7 +185,7 @@ def recurs_to_target_op(
                 text_state_mgr.reset_tm()
             break
         if op == b"q":
-            bts, tjs = recurs_to_target_op(
+            bts, tjs = recurse_to_target_op(
                 ops, text_state_mgr, b"Q", fonts, strip_rotated
             )
             bt_groups.extend(bts)
@@ -159,7 +193,7 @@ def recurs_to_target_op(
         elif op == b"cm":
             text_state_mgr.add_cm(*operands)
         elif op == b"BT":
-            bts, tjs = recurs_to_target_op(
+            bts, tjs = recurse_to_target_op(
                 ops, text_state_mgr, b"ET", fonts, strip_rotated
             )
             bt_groups.extend(bts)
@@ -194,13 +228,14 @@ def recurs_to_target_op(
                 operands = [0, -text_state_mgr.TL]
             text_state_mgr.add_tm(operands)
         elif op == b"Tf":
-            text_state_mgr.set_font(fonts[operands[0]], operands[1])
+            text_state_mgr.set_font(resolve_font(fonts, operands[0]), operands[1])
         else:  # handle Tc, Tw, Tz, TL, and Ts operators
             text_state_mgr.set_state_param(op, operands)
     else:
         logger_warning(
-            f"Unbalanced target operations, expected {end_target!r}.",
-            __name__,
+            "Unbalanced target operations, expected %(end_target)r.",
+            source=__name__,
+            end_target=end_target,
         )
     return bt_groups, tj_ops
 
@@ -277,28 +312,28 @@ def text_show_operations(
     tj_ops: list[TextStateParams] = []  # Tj/TJ operator data
     for operands, op in ops:
         if op in (b"BT", b"q"):
-            bts, tjs = recurs_to_target_op(
+            bts, tjs = recurse_to_target_op(
                 ops, state_mgr, b"ET" if op == b"BT" else b"Q", fonts, strip_rotated
             )
             bt_groups.extend(bts)
             tj_ops.extend(tjs)
         elif op == b"Tf":
-            state_mgr.set_font(fonts[operands[0]], operands[1])
+            state_mgr.set_font(resolve_font(fonts, operands[0]), operands[1])
         else:  # set Tc, Tw, Tz, TL, and Ts if required. ignores all other ops
             state_mgr.set_state_param(op, operands)
 
     if any(tj.rotated for tj in tj_ops):
         if strip_rotated:
             logger_warning(
-                "Rotated text discovered. Output will be incomplete.", __name__
+                "Rotated text discovered. Output will be incomplete.", source=__name__
             )
         else:
             logger_warning(
-                "Rotated text discovered. Layout will be degraded.", __name__
+                "Rotated text discovered. Layout will be degraded.", source=__name__
             )
     if not all(tj.font.interpretable for tj in tj_ops):
         logger_warning(
-            "PDF contains an uninterpretable font. Output will be incomplete.", __name__
+            "PDF contains an uninterpretable font. Output will be incomplete.", source=__name__
         )
 
     # left align the data, i.e. decrement all tx values by min(tx)
@@ -371,6 +406,12 @@ def fixed_width_page(
             blank_lines = 0 if fh == 0 else (
                 int(abs(y_coord - last_y_coord) / (fh * font_height_weight)) - 1
             )
+            if blank_lines > NEWLINE_LIMIT:
+                logger_warning(
+                    "Limiting excessive newlines from %(actual)d to %(limit)d.",
+                    actual=blank_lines, limit=NEWLINE_LIMIT, source=__name__
+                )
+                blank_lines = NEWLINE_LIMIT
             lines.extend([""] * blank_lines)
 
         line_parts = []  # It uses a list to construct the line, avoiding string concatenation.
@@ -381,6 +422,12 @@ def fixed_width_page(
             offset = int(tx // char_width)
             needed_spaces = offset - current_len
             if needed_spaces > 0 and ceil(last_disp) < int(tx):
+                if needed_spaces > WHITESPACE_LIMIT:
+                    logger_warning(
+                        "Limiting excessive whitespace from %(actual)d to %(limit)d characters.",
+                        actual=needed_spaces, limit=WHITESPACE_LIMIT, source=__name__
+                    )
+                    needed_spaces = WHITESPACE_LIMIT
                 padding = " " * needed_spaces
                 line_parts.append(padding)
                 current_len += needed_spaces
