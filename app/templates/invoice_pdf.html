@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Invoice {{ invoice_no }}</title>
+<style>
+@page { size: A4; margin: 28px; }
+body{ font-family:Helvetica,Arial,sans-serif; color:#0f172a; margin:0; padding:0; font-size:13px; }
+.hdr{ display:flex; justify-content:space-between; align-items:flex-start; }
+.brand{ font-size:26px; font-weight:800; color:#2563eb; }
+.brand-sub{ font-size:10.5px; color:#64748b; margin-top:2px; }
+.inv-label{ text-align:right; }
+.inv-label .big{ font-size:20px; font-weight:800; color:#2563eb; }
+.inv-label .no{ font-size:12px; color:#64748b; margin-top:2px; }
+.grid2{ display:flex; gap:26px; margin-top:26px; border-bottom:2px solid #2563eb; padding-bottom:18px; }
+.grid2 > div{ flex:1; }
+.sec-label{ font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:#64748b; }
+.co-name{ font-size:15px; font-weight:700; margin-top:6px; }
+.muted{ color:#64748b; font-size:12px; }
+.amt-row{ margin-top:20px; display:flex; justify-content:space-between; }
+.amt-row .lbl{ color:#64748b; font-size:12px; }
+.amt-row .val{ font-size:14px; font-weight:700; }
+table{ width:100%; border-collapse:collapse; margin-top:18px; font-size:13px; }
+th{ background:#f1f5f9; color:#64748b; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; text-align:left; padding:9px 10px; }
+td{ padding:10px; border-bottom:1px solid #e2e8f0; }
+td.r, th.r{ text-align:right; }
+td.c, th.c{ text-align:center; }
+.total-row{ background:#f8fafc; }
+.total-row td{ font-size:18px; font-weight:800; color:#2563eb; }
+.title-td{ font-weight:700; }
+.foot{ margin-top:26px; display:flex; justify-content:space-between; color:#64748b; font-size:11px; }
+.pmt-row{ margin-top:8px; padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; }
+.pill{ display:inline-block; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:600; }
+.pill.paid{ background:#dcfce7; color:#15803d; }
+.pill.pending{ background:#fef3c7; color:#b45309; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+    <div>
+        <div class="brand">FLOWRA</div>
+        <div class="brand-sub">Task Manager &middot; Jodidar India</div>
+    </div>
+    <div class="inv-label">
+        <div class="big">INVOICE</div>
+        <div class="no">{{ invoice_no }}</div>
+    </div>
+</div>
+
+<div class="grid2">
+    <div>
+        <div class="sec-label">BILLED TO</div>
+        <div class="co-name">{{ company.get('company_name') or payment.get('company_name') }}</div>
+        <div class="muted" style="margin-top:5px;line-height:1.6;">
+            {% if company.get('address') %}{{ company.get('address') }}<br>{% endif %}
+            {% if company.get('city') %}{{ company.get('city') }}{% endif %}
+            {% if company.get('gstin') %}<br>GSTIN: {{ company.get('gstin') }}{% endif %}
+        </div>
+    </div>
+    <div>
+        <div class="sec-label">ADMIN ACCOUNT</div>
+        <div style="font-size:14px;font-weight:700;margin-top:6px;">{{ payment.get('admin_username') or '&mdash;' }}</div>
+        {% if payment.get('admin_email') %}<div class="muted" style="margin-top:2px;">{{ payment.get('admin_email') }}</div>{% endif %}
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th class="c">Qty</th>
+            <th class="r">Rate</th>
+            <th class="r">Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="title-td">Employee plan &middot; {{ payment.get('slots') or 0 }} slots for {{ payment.get('company_name') }} ({{ payment.get('employees') or 0 }} employees joined)</td>
+            <td class="c">{{ payment.get('slots') or 0 }}</td>
+            <td class="r">&#8377;{{ "{:,}".format(payment.get('charge_per') or 0) }}</td>
+            <td class="r" style="font-weight:600;">&#8377;{{ "{:,}".format(payment.get('amount') or 0) }}</td>
+        </tr>
+        {% if payment.get('period') %}
+        <tr>
+            <td class="title-td">Billing period</td>
+            <td class="c">1</td>
+            <td class="r">&#8377;0</td>
+            <td class="r">&#8377;0</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td colspan="3" class="r muted">Subtotal</td>
+            <td class="r" style="font-weight:600;">&#8377;{{ "{:,}".format(payment.get('amount') or 0) }}</td>
+        </tr>
+        <tr class="total-row">
+            <td colspan="3" class="r" style="padding-left:10px;">TOTAL DUE</td>
+            <td class="r">&#8377;{{ "{:,}".format(payment.get('amount') or 0) }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="pmt-row">
+    <strong>Status:</strong> <span class="pill {{ 'paid' if (payment.get('status') or '') == 'Paid' else 'pending' }}">{{ payment.get('status') or 'Pending' }}</span>
+    {% if (payment.get('status') or '') == 'Paid' %}
+    &nbsp;&nbsp;<strong>Received:</strong> {{ payment.get('paid_ist') or payment.get('created_ist') }}
+    {% if payment.get('method_display') and payment.get('method_display') != '—' %} &middot; via {{ payment.get('method_display') }}{% endif %}
+    {% endif %}
+    {% if payment.get('reference') %}<br><strong>Reference:</strong> {{ payment.get('reference') }}{% endif %}
+</div>
+
+<div class="foot">
+    <div>
+        <div>Flowra UPI ID: flowra@jodidarindia</div>
+        <div>Jodidar India &middot; Raipur, Chhattisgarh</div>
+    </div>
+    <div style="text-align:right;">
+        Issued {{ payment.get('created_ist') or '&mdash;' }}<br>
+        This is a computer-generated invoice.
+    </div>
+</div>
+
+</body>
+</html>

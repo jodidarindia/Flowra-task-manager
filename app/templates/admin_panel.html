@@ -1,564 +1,1179 @@
 {% extends "base.html" %}
-{% block title %}Admin Panel{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
 
 <style>
 
-/* PAGE BACKGROUND */
-
-.admin-page{
-display:flex;
-flex-direction:column;
-height:100vh;
-background:linear-gradient(270deg,#eef2ff,#f5f3ff,#e0f2fe,#ede9fe);
-overflow:hidden;
+.sys-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
 }
 
-@keyframes gradientMove{
-0%{background-position:0% 50%;}
-50%{background-position:100% 50%;}
-100%{background-position:0% 50%;}
+/* ---------------- HEADER ---------------- */
+
+.dash-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+    margin:22px 0;
 }
 
-/* CONTENT */
-
-.content{
-padding:40px;
-overflow-y:auto;
-flex:1;
+.dash-head .dash-eyebrow{
+    font-size:12px;
+    font-weight:500;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+    color:#94a3b8;
 }
 
-/* NAVBAR */
-.top-banner{
-position:sticky;
-top:80px; /* navbar ki height ke hisaab se */
-z-index:999;
+.dash-head h1{
+    font-size:24px;
+    font-weight:500;
+    color:var(--fw-text);
+    margin:4px 0 2px;
+    letter-spacing:-0.3px;
 }
 
-
-.topbar{
-display:flex;
-justify-content:space-between;
-align-items:center;
-background:white;
-padding:14px 25px;
-border-radius:14px;
-box-shadow:0 6px 20px rgba(0,0,0,0.08);
-margin-bottom:25px;
-flex-wrap:wrap;
-gap:12px;
-position:sticky;
-top:0;
-z-index:1000;
+.dash-head p{
+    margin:0;
+    font-size:13px;
+    color:#64748b;
 }
 
-.panel-title{
-font-weight:700;
-color:#2563eb;
-margin:0;
+.dash-head-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
 }
 
-.nav-menu{
-display:flex;
-gap:16px;
-flex-wrap:wrap;
-align-items:center;
+.dash-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:11px 18px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:500;
+    text-decoration:none;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    white-space:nowrap;
 }
 
-.nav-menu > a{
-text-decoration:none;
-font-size:14px;
-color:#475569;
-padding:6px 10px;
-border-radius:8px;
-transition:0.2s;
+.dash-btn:hover{
+    transform:translateY(-1px);
 }
 
-.nav-menu a:hover{
-background:#eef2ff;
-color:#2563eb;
+.dash-btn.solid{
+    background:linear-gradient(135deg,#2563eb,#4f46e5);
+    color:#fff;
+    box-shadow:0 8px 18px rgba(37,99,235,.25);
 }
 
-.logout-link{
-background:#ef4444;
-color:white !important;
-padding:6px 12px;
-border-radius:8px;
-}
-.dropdown{
-    position: relative;
+.dash-btn.solid:hover{
+    background:linear-gradient(135deg,#1d4ed8,#4338ca);
+    color:#fff;
+    box-shadow:0 10px 22px rgba(37,99,235,.3);
 }
 
-.dropdown-menu{
-position: absolute;
-top: 100%;
-min-width:180px;
-padding:6px;
-left: 0;
-z-index: 1000;
-border-radius:10px;
-border:none;
-box-shadow:0 8px 20px rgba(0,0,0,0.1);
+.dash-btn.ghost{
+    background:#fff;
+    border:1px solid var(--fw-border);
+    color:#475569;
+    box-shadow:var(--fw-shadow);
 }
 
-.dropdown-item{
-font-size:14px;
-color:#475569;
+.dash-btn.ghost:hover{
+    border-color:#bfdbfe;
+    color:var(--fw-primary);
+    box-shadow:0 8px 18px rgba(2,12,27,.1);
 }
 
-.dropdown-item:hover{
-background:#eef2ff;
-color:#2563eb;
+/* ---------------- KPI CARDS ---------------- */
+
+.sys-kpis{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:14px;
+    margin-bottom:18px;
 }
 
-/* BANNER */
-
-.top-banner{
-background:linear-gradient(135deg,#2563eb,#7c3aed);
-border-radius:18px;
-padding:30px;
-color:white;
-margin-bottom:30px;
-box-shadow:0 15px 35px rgba(0,0,0,0.2);
+.sys-kpi{
+    background:#fff;
+    border:1px solid var(--fw-border);
+    border-radius:16px;
+    padding:18px 16px;
+    box-shadow:var(--fw-shadow);
+    display:flex;
+    gap:13px;
+    align-items:flex-start;
 }
 
-.top-banner h2{
-font-weight:700;
-color:#ede9fe;
-text-shadow:0 2px 8px rgba(0,0,0,0.35);
+.sys-kpi .kpi-icon{
+    width:44px;
+    height:44px;
+    border-radius:13px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    flex-shrink:0;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);
 }
 
-/* GRID */
-
-.departments-grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
-gap:24px;
+.sys-kpi .kpi-top{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
 }
 
-/* CARD */
-
-.department-card{
-background:white;
-border-radius:18px;
-box-shadow:0 10px 25px rgba(0,0,0,0.08);
-overflow:hidden;
-display:flex;
-flex-direction:column;
-height:520px;
+.sys-kpi .kpi-num{
+    font-size:24px;
+    font-weight:700;
+    line-height:1;
+    letter-spacing:-.4px;
+    color:var(--fw-text);
 }
 
-.department-header{
-background:#f1f5f9;
-padding:16px;
-font-weight:600;
-border-bottom:1px solid #e5e7eb;
+.sys-kpi .kpi-label{
+    font-size:11px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:#64748b;
+    margin-top:5px;
 }
 
-.card-body{
-padding:20px;
-overflow-y:auto;
-display:flex;
-flex-direction:column;
-gap:16px;
+.sys-kpi .kpi-sub{
+    font-size:11.5px;
+    color:#94a3b8;
+    margin-top:6px;
 }
 
-/* TASK */
-
-.task-card{
-background:#ffffff;
-border-radius:14px;
-border:1px solid #e5e7eb;
-padding:16px;
-transition:0.2s;
+.kpi-delta{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:10.5px;
+    font-weight:600;
+    border-radius:8px;
+    padding:3px 8px;
 }
 
-.task-card:hover{
-transform:translateY(-3px);
-box-shadow:0 8px 20px rgba(0,0,0,0.1);
+.kpi-delta.up{background:#dcfce7;color:#16a34a;}
+.kpi-delta.down{background:#fee2e2;color:#dc2626;}
+.kpi-delta.flat{background:#f1f5f9;color:#64748b;}
+
+.kpi-blue{background:linear-gradient(135deg,#dbeafe,#c7d2fe);color:#1d4ed8;--kpi-accent:#3b82f6;}
+.kpi-violet{background:linear-gradient(135deg,#ede9fe,#ddd6fe);color:#7c3aed;--kpi-accent:#8b5cf6;}
+.kpi-cyan{background:linear-gradient(135deg,#cffafe,#a5f3fc);color:#0891b2;--kpi-accent:#06b6d4;}
+.kpi-green{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#16a34a;--kpi-accent:#22c55e;}
+.kpi-red{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626;--kpi-accent:#ef4444;}
+.kpi-amber{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706;--kpi-accent:#f59e0b;}
+
+/* ---------------- GRID + CARDS ---------------- */
+
+.sys-row{
+    display:grid;
+    gap:18px;
+    margin-bottom:18px;
 }
 
-.task-main{
-display:flex;
-justify-content:space-between;
-gap:12px;
+.sys-row-charts{grid-template-columns:3fr 2fr;}
+.sys-row-2{grid-template-columns:1fr 1fr;}
+.sys-row-3{grid-template-columns:1fr 1fr 1fr;}
+
+.sys-row-3-super{
+    grid-template-columns:1fr 1fr 1fr;
+    padding:0 20px;
 }
 
-.task-right{
-width:160px;
-display:flex;
-flex-direction:column;
-gap:8px;
+.sys-card{
+    background:#fff;
+    border:1px solid var(--fw-border);
+    border-radius:16px;
+    box-shadow:var(--fw-shadow);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    min-height:100%;
 }
 
-.subtask-box{
-margin-top:12px;
-padding-top:10px;
-border-top:1px solid #e5e7eb;
+.sys-card-head{
+    padding:14px 18px;
+    border-bottom:1px solid var(--fw-border);
+    display:flex;
+    
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    flex-wrap:wrap;
 }
 
-.subtask-list{
-padding-left:18px;
-margin-bottom:10px;
+.sys-card-head h5{
+    margin:0;
+    font-size:14px;
+    font-weight:500;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    color:var(--fw-text);
 }
 
-.btn-primary{
-background:linear-gradient(135deg,#2563eb,#7c3aed);
-border:none;
+.sys-card-head h5 small{
+    display:block;
+    font-size:11.5px;
+    font-weight:500;
+    color:#94a3b8;
+    margin-top:5px;
 }
 
-.form-control{
-border-radius:10px;
+.sys-card-head .head-action{
+    font-size:12px;
+    font-weight:500;
+    color:var(--fw-primary);
+    text-decoration:none;
+    white-space:nowrap;
+    margin-top:4px;
 }
 
-.modal-content{
-border-radius:18px;
+.sys-card-head .head-action:hover{
+    text-decoration:underline;
+}
+
+.sys-card-body{
+    padding:18px;
+    flex:1;
+}
+
+.chart-box{
+    position:relative;
+    height:260px;
+}
+
+.chart-donut-wrap{
+    position:relative;
+    height:190px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.chart-donut-wrap canvas{
+    max-width:190px;
+    max-height:190px;
+}
+
+/* LEGENDS */
+
+.legend-chips{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+}
+
+.legend-chips span{
+    font-size:12px;
+    color:#64748b;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-weight:500;
+}
+
+.sys-legend{
+    list-style:none;
+    padding:0;
+    margin:14px 0 0 0;
+}
+
+.sys-legend li{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-size:12.5px;
+    padding:8px 0;
+    border-bottom:1px dashed #f1f5f9;
+}
+
+.sys-legend li:last-child{
+    border-bottom:none;
+}
+
+.sys-legend .dot{
+    width:10px;
+    height:10px;
+    border-radius:3px;
+    display:inline-block;
+    flex-shrink:0;
+}
+
+.sys-legend .lbl{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#475569;
+}
+
+.sys-legend .val{
+    font-weight:500;
+    color:var(--fw-text);
+}
+
+.sys-legend .val .pct{
+    font-weight:500;
+    color:#94a3b8;
+    margin-left:8px;
+}
+
+.dot-o0{background:#22c55e;}
+.dot-o1{background:#2563eb;}
+.dot-o2{background:#f59e0b;}
+.dot-o3{background:#ef4444;}
+
+/* TABLE */
+
+.sys-table{
+    width:100%;
+    font-size:13px;
+    border-collapse:collapse;
+}
+
+.sys-table th{
+    text-align:left;
+    font-size:11px;
+    font-weight:500;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:#94a3b8;
+    padding:8px 10px;
+    border-bottom:1px solid var(--fw-border);
+    white-space:nowrap;
+}
+
+.sys-table td{
+    padding:11px 10px;
+    border-bottom:1px solid #f1f5f9;
+    vertical-align:middle;
+    color:var(--fw-text);
+}
+
+.sys-table tr:last-child td{
+    border-bottom:none;
+}
+
+.sys-table .t-title{
+    font-weight:500;
+    word-break:break-word;
+    max-width:240px;
+}
+
+.sys-table .t-assignee{
+    white-space:nowrap;
+}
+
+.avatar-mini{
+    width:28px;
+    height:28px;
+    border-radius:8px;
+    background:var(--fw-grad);
+    color:#fff;
+    font-size:11px;
+    font-weight:500;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    margin-right:8px;
+}
+
+/* PRIORITY BADGES */
+
+.pri-high{background:#fee2e2;color:#dc2626;}
+.pri-medium{background:#fef3c7;color:#b45309;}
+.pri-low{background:#dbeafe;color:#1d4ed8;}
+
+/* DEADLINES */
+
+.deadline-list{
+    list-style:none;
+    padding:0;
+    margin:0;
+}
+
+.deadline-list li{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 0;
+    border-bottom:1px solid #f1f5f9;
+}
+
+.deadline-list li:last-child{
+    border-bottom:none;
+}
+
+.deadline-list .d-date-box{
+    width:46px;
+    flex-shrink:0;
+    text-align:center;
+    background:#f8fafc;
+    border:1px solid var(--fw-border);
+    border-radius:10px;
+    padding:6px 4px;
+    line-height:1.15;
+}
+
+.deadline-list .d-date-box .d-d{
+    font-size:15px;
+    font-weight:500;
+    color:var(--fw-text);
+}
+
+.deadline-list .d-date-box .d-m{
+    font-size:10px;
+    text-transform:uppercase;
+    color:#94a3b8;
+}
+
+.deadline-list .d-title{
+    font-size:13px;
+    font-weight:500;
+    color:var(--fw-text);
+    word-break:break-word;
+    flex:1;
+    min-width:0;
+}
+
+.deadline-list .d-meta{
+    font-size:11.5px;
+    color:#94a3b8;
+    margin-top:3px;
+}
+
+.deadline-list .d-badge{
+    flex-shrink:0;
+    font-size:11.5px;
+    font-weight:500;
+    border-radius:8px;
+    padding:4px 9px;
+}
+
+.d-badge.late{background:#fee2e2;color:#dc2626;}
+.d-badge.today{background:#fef3c7;color:#b45309;}
+.d-badge.upcoming{background:#eef2ff;color:#4338ca;}
+
+/* PROGRESS BARS */
+
+.dept-progress{
+    margin-bottom:18px;
+}
+
+.dept-progress:last-child{
+    margin-bottom:0;
+}
+
+.dept-progress .dp-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    font-size:12.5px;
+    margin-bottom:7px;
+}
+
+.dept-progress .dp-head .dp-name{
+    font-weight:500;
+    color:var(--fw-text);
+}
+
+.dept-progress .dp-head .dp-rate{
+    font-weight:500;
+    color:var(--fw-primary);
+}
+
+.dept-progress .dp-bar{
+    height:8px;
+    border-radius:6px;
+    background:#eef2f7;
+    overflow:hidden;
+}
+
+.dept-progress .dp-fill{
+    height:100%;
+    border-radius:6px;
+    background:linear-gradient(90deg,#2563eb,#7c3aed);
+    transition:width .4s ease;
+}
+
+.dept-progress .dp-sub{
+    font-size:11.5px;
+    color:#94a3b8;
+    margin-top:5px;
+}
+
+/* FEED */
+
+.sys-feed{
+    list-style:none;
+    padding:0;
+    margin:0;
+}
+
+.sys-feed li{
+    display:flex;
+    gap:12px;
+    padding:11px 0;
+    border-bottom:1px solid #f1f5f9;
+    align-items:flex-start;
+}
+
+.sys-feed li:last-child{
+    border-bottom:none;
+}
+
+.sys-feed .feed-icon{
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    flex-shrink:0;
+    background:#eef2ff;
+    color:#4338ca;
+}
+
+.sys-feed .feed-body{
+    flex:1;
+    min-width:0;
+}
+
+.sys-feed .feed-title{
+    font-size:13px;
+    font-weight:500;
+    color:var(--fw-text);
+    word-break:break-word;
+}
+
+.sys-feed .feed-meta{
+    font-size:11.5px;
+    color:#94a3b8;
+    margin-top:2px;
+}
+
+.sys-feed .feed-action{
+    flex-shrink:0;
+}
+
+/* ANNOUNCEMENT CARDS */
+
+.ann-card{
+    border:1px solid #f1f5f9;
+    background:#f8fafc;
+    border-radius:12px;
+    padding:13px 15px;
+    margin-bottom:12px;
+}
+
+.ann-card:last-child{
+    margin-bottom:0;
+}
+
+.ann-card .ann-msg{
+    font-size:13px;
+    font-weight:500;
+    color:var(--fw-text);
+    line-height:1.45;
+    word-break:break-word;
+}
+
+.ann-card .ann-meta{
+    font-size:11.5px;
+    color:#94a3b8;
+    margin-top:7px;
+}
+
+.ann-card .ann-meta .a-chip{
+    background:#e0e7ff;
+    color:#4338ca;
+    font-size:10.5px;
+    font-weight:500;
+    border-radius:6px;
+    padding:2px 7px;
+    margin-left:6px;
+}
+
+@media(max-width:1280px){
+    .sys-kpis{grid-template-columns:repeat(3,1fr);}
+    .sys-row-charts,
+    .sys-row-3{grid-template-columns:1fr 1fr;}
+}
+
+@media(max-width:900px){
+    .sys-row-charts,
+    .sys-row-2,
+    .sys-row-3{grid-template-columns:1fr;}
 }
 
 @media(max-width:768px){
-.content{
-padding:20px;
+    .sys-kpis{grid-template-columns:repeat(2,1fr);}
 }
-.topbar{
-padding:14px 16px;
-}
-.task-main{
-flex-direction:column;
-}
-.task-right{
-width:100%;
-}
-.department-card{
-height:auto;
-min-height:420px;
-}
+
+@media(max-width:520px){
+    .sys-kpis{grid-template-columns:1fr;}
 }
 
 </style>
 
-<div class="admin-page">
+<div class="sys-content">
 
-<div class="content">
+<!-- HEADER -->
 
-<!-- NAVBAR -->
-
-<div class="topbar">
-
-<h4 class="panel-title">Flowra Admin</h4>
-
-<div class="nav-menu">
-
-<a href="{{ url_for('main.department_dashboard') }}">Dashboard</a>
-
-<!-- USERS DROPDOWN -->
-
-<div class="dropdown">
-
-<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-Users
-</a>
-
-<ul class="dropdown-menu">
-
-<li>
-<a class="dropdown-item" href="{{ url_for('main.create_user') }}">
-Create User
-</a>
-</li>
-
-<li>
-<a class="dropdown-item" href="{{ url_for('main.manage_users') }}">
-Manage Users
-</a>
-</li>
-
-</ul>
-
+<div class="dash-head">
+    <div>
+        <div class="dash-eyebrow">Dashboard</div>
+        <h1>{{ greeting }}, <span style="text-transform:capitalize;">{{ admin_name }}</span></h1>
+        <p>Company-wide activity across all departments.</p>
+    </div>
+    {% if not is_super_admin %}
+    <div class="dash-head-actions">
+        <a class="dash-btn ghost" href="{{ url_for('main.task_history') }}">
+            <i class="fa-solid fa-list-check"></i> My Tasks
+        </a>
+        <a class="dash-btn solid" href="{{ url_for('main.create_task') }}">
+            <i class="fa-solid fa-circle-plus"></i> Assign Task
+        </a>
+    </div>
+    {% endif %}
 </div>
 
-<a href="{{ url_for('main.create_department') }}">Create Department</a>
-
-<a href="{{ url_for('main.create_task') }}">Assign Task</a>
-
-<!-- REMINDERS DROPDOWN -->
-
-<div class="dropdown">
-
-<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-Reminders
-</a>
-
-<ul class="dropdown-menu">
-
-<li>
-<a class="dropdown-item" href="{{ url_for('main.my_reminders') }}">
-My Reminder
-</a>
-</li>
-
-<li>
-<a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#reminderModal">
-Set Reminder
-</a>
-</li>
-
-<li>
-<a class="dropdown-item" href="{{ url_for('main.create_recurring_task') }}">
-Recurring Task
-</a>
-</li>
-
-</ul>
-
-</div>
-
-<a href="{{ url_for('main.task_history') }}">Task History</a>
-
-<a href="{{ url_for('main.analytics') }}">Analytics</a>
-
-<a href="{{ url_for('main.logout') }}" class="logout-link">Logout</a>
-
-</div>
-</div>
-
-<!-- BANNER -->
-
-<div class="top-banner">
-
-<h2>Welcome to Flowra Admin Dashboard</h2>
-
-<p>Monitor departments, manage employees, and track work progress.</p>
-
-</div>
-
-<h3 class="mb-4">Department Tasks</h3>
-
-<div class="departments-grid">
-
-{% for dept, tasks in department_tasks.items() %}
-
-<div class="department-card">
-
-<div class="department-header">
-{{ dept }} Department
-</div>
-
-<div class="card-body">
-
-{% if tasks %}
-
-{% for task in tasks %}
-
-<div class="task-card">
-
-<div class="task-main">
-
-<div>
-
-<h6 class="fw-bold">{{ task.title }}</h6>
-
-<p class="small">{{ task.description or '-' }}</p>
-
-<div class="small">
-Employee :
-{{ task.assignee.username if task.assignee else '-' }}
-
-<br>
-
-Due :
-{{ task.due_date.strftime('%d %b %Y') if task.due_date else '-' }}
-
-<br>
-
-Status :
-{% if task.status == 'Approved' %}
-<span class="badge bg-success">Approved</span>
-{% elif task.status == 'Rejected' %}
-<span class="badge bg-danger">Rejected</span>
-{% elif task.status == 'Submitted' %}
-<span class="badge bg-info text-dark">Submitted</span>
-{% else %}
-<span class="badge bg-secondary">Pending</span>
-{% endif %}
-
-<br>
-
-Work :
-
-{% if task.status == "Approved" %}
-<span class="badge bg-success">Completed</span>
-
-{% elif task.work_status == "Started" %}
-<span class="badge bg-success">Started</span>
-
-{% elif task.work_status == "Stopped" %}
-<span class="badge bg-warning text-dark">Stopped</span>
-
-{% else %}
-<span class="badge bg-secondary">Not Started</span>
-
-{% endif %}
-</div>
-
-</div>
-
-<div class="task-right">
-
-{% if task.proof_file %}
-<a href="{{ url_for('main.download_proof', filename=task.proof_file) }}"
-   class="btn btn-info btn-sm text-white"
-   target="_blank">
-   View Proof
-</a>
-{% endif %}
-
-{% if task.status == 'Submitted' %}
-<a href="{{ url_for('main.approve_task', id=task.id) }}" class="btn btn-success btn-sm">
-Approve
-</a>
-{% endif %}
-
-<button
-class="btn btn-primary btn-sm"
-type="button"
-onclick="toggleSubTaskForm('subtask-form-{{ task.id }}')">
-Add Sub Task
-</button>
-
-<form class="delete-task-form" data-task-id="{{ task.id }}">
-<button type="submit" class="btn btn-danger btn-sm">
-Delete
-</button>
-</form>
-
-</div>
-
-</div>
-
-<div class="subtask-box">
-
-<strong>Sub Tasks</strong>
-
-{% if task.subtasks %}
-
-<ul class="subtask-list">
-
-{% for sub in task.subtasks %}
-
-<li>{{ sub.title }} ({{ sub.status }})</li>
-
-{% endfor %}
-
-</ul>
-
-{% else %}
-
-<p class="small text-muted">No sub tasks</p>
-
-{% endif %}
-
-<form
-method="POST"
-action="{{ url_for('main.create_subtask', task_id=task.id) }}"
-id="subtask-form-{{ task.id }}"
-class="d-none mt-2">
-
-<div class="d-flex gap-2">
-
-<input
-type="text"
-name="title"
-class="form-control form-control-sm"
-placeholder="Add Sub Task"
-required>
-
-<button class="btn btn-primary btn-sm" type="submit">Save</button>
-
-</div>
-
-</form>
-
-</div>
-
-</div>
-
-{% endfor %}
-
-{% else %}
-
-<p>No tasks assigned</p>
-
-{% endif %}
-
-</div>
-
-</div>
-
-{% endfor %}
-
-</div>
-
-</div>
-
-</div>
-
-<!-- SET REMINDER MODAL -->
-
-<div class="modal fade" id="reminderModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content rounded-4 border-0">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title">Set Reminder</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+{% if is_super_admin %}
+<!-- KPI CARDS -->
+<div class="sys-kpis">
+
+    <div class="sys-kpi">
+        <div class="kpi-icon kpi-blue"><i class="fa-solid fa-users"></i></div>
+        <div>
+            <div class="kpi-top">
+                <span class="kpi-num">{{ admin_count if is_super_admin else total_users }}</span>
             </div>
-
-            <div class="modal-body">
-                <form method="POST" action="{{ url_for('main.create_reminder') }}">
-                    <div class="row g-3">
-
-                        <div class="col-md-6">
-                            <label class="form-label">Reason</label>
-                            <input type="text" name="reason" class="form-control" required>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Remind At</label>
-                            <input type="datetime-local" name="remind_at" class="form-control" required>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">End At</label>
-                            <input type="datetime-local" name="end_at" class="form-control" required>
-                        </div>
-
-                        <div class="col-md-12">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="is_daily" id="dailyCheck">
-                                <label class="form-check-label" for="dailyCheck">
-                                    Daily Reminder
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="col-md-12 text-end">
-                            <button class="btn btn-primary" type="submit">Set Reminder</button>
-                        </div>
-
-                    </div>
-                </form>
-            </div>
+            <div class="kpi-label">{% if is_super_admin %}Total Admins{% else %}Total Users{% endif %}</div>
+            <div class="kpi-sub">{% if is_super_admin %}admin accounts on Flowra{% else %}across {{ total_departments }} department{{ '' if total_departments == 1 else 's' }}{% endif %}</div>
         </div>
     </div>
+
+    <div class="sys-kpi">
+        <div class="kpi-icon kpi-violet"><i class="fa-solid fa-building"></i></div>
+        <div>
+            <div class="kpi-top">
+                <span class="kpi-num">{{ companies_count }}</span>
+            </div>
+            <div class="kpi-label">Companies</div>
+            <div class="kpi-sub">registered on Flowra</div>
+        </div>
+    </div>
+
+    <div class="sys-kpi">
+        <div class="kpi-icon kpi-amber"><i class="fa-solid fa-bullhorn"></i></div>
+        <div>
+            <div class="kpi-top">
+                <span class="kpi-num" style="font-size:15px;line-height:1.3;">
+                    {{ latest_announcements[0].title if latest_announcements else 'No announcements yet' }}
+                </span>
+            </div>
+            <div class="kpi-label">Latest Announcement</div>
+            <div class="kpi-sub">{{ latest_announcements[0].time_ago if latest_announcements else '' }}</div>
+        </div>
+    </div>
+
 </div>
 
-<div class="modal fade" id="loginApprovalModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow">
+</div>
 
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title">New Login Request</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+
+{% else %}
+<!-- KPI CARDS -->
+<div class="sys-kpis">
+
+    <div class="sys-kpi">
+        <div class="kpi-icon kpi-blue"><i class="fa-solid fa-list-check"></i></div>
+        <div>
+            <div class="kpi-top">
+                <span class="kpi-num">{{ total_tasks }}</span>
+                {% if tasks_delta_pct is not none %}
+                <span class="kpi-delta {{ 'up' if tasks_delta_pct >= 0 else 'down' }}">
+                    <i class="fa-solid fa-{{ 'arrow-trend-up' if tasks_delta_pct >= 0 else 'arrow-trend-down' }}"></i>
+                    {{ tasks_delta_pct }}%
+                </span>
+                {% endif %}
+            </div>
+            <div class="kpi-label">Total Tasks</div>
+            <div class="kpi-sub">vs last month</div>
+        </div>
+    </div>
+
+    <div class="sys-kpi">
+        <div class="kpi-icon kpi-amber"><i class="fa-regular fa-clock"></i></div>
+        <div>
+            <div class="kpi-top">
+                <span class="kpi-num">{{ pending }}</span>
+                {% if pending_pct is not none %}
+                <span class="kpi-delta {{ 'up' if pending_pct >= 0 else 'down' }}">
+                    <i class="fa-solid fa-{{ 'arrow-trend-up' if pending_pct >= 0 else 'arrow-trend-down' }}"></i>
+                    {{ pending_pct }}%
+                </span>
+                {% endif %}
+            </div>
+            <div class="kpi-label">Pending</div>
+            <div class="kpi-sub">tasks not started</div>
+        </div>
+    </div>
+
+    <div class="sys-kpi">
+        <div class="kpi-icon kpi-sky"><i class="fa-solid fa-spinner"></i></div>
+        <div>
+            <div class="kpi-top">
+                <span class="kpi-num">{{ in_progress }}</span>
+                {% if in_progress_pct is not none %}
+                <span class="kpi-delta {{ 'up' if in_progress_pct >= 0 else 'down' }}">
+                    <i class="fa-solid fa-{{ 'arrow-trend-up' if in_progress_pct >= 0 else 'arrow-trend-down' }}"></i>
+                    {{ in_progress_pct }}%
+                </span>
+                {% endif %}
+            </div>
+            <div class="kpi-label">In Progress</div>
+            <div class="kpi-sub">currently being worked on</div>
+        </div>
+    </div>
+
+    <div class="sys-kpi">
+        <div class="kpi-icon kpi-green"><i class="fa-solid fa-circle-check"></i></div>
+        <div>
+            <div class="kpi-top">
+                <span class="kpi-num">{{ completed }}</span>
+                {% if completed_delta_pct is not none %}
+                <span class="kpi-delta {{ 'up' if completed_delta_pct >= 0 else 'down' }}">
+                    <i class="fa-solid fa-{{ 'arrow-trend-up' if completed_delta_pct >= 0 else 'arrow-trend-down' }}"></i>
+                    {{ completed_delta_pct }}%
+                </span>
+                {% endif %}
+            </div>
+            <div class="kpi-label">Completed</div>
+            <div class="kpi-sub">finished this month</div>
+        </div>
+    </div>
+
+    <div class="sys-kpi">
+        <div class="kpi-icon kpi-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div>
+            <div class="kpi-top">
+                <span class="kpi-num">{{ overdue }}</span>
+                {% if overdue_delta_pct is not none %}
+                <span class="kpi-delta {{ 'up' if overdue_delta_pct >= 0 else 'down' }}">
+                    <i class="fa-solid fa-{{ 'arrow-trend-up' if overdue_delta_pct >= 0 else 'arrow-trend-down' }}"></i>
+                    {{ overdue_delta_pct }}%
+                </span>
+                {% endif %}
+            </div>
+            <div class="kpi-label">Overdue</div>
+            <div class="kpi-sub">past their deadline</div>
+        </div>
+    </div>
+
+    <div class="sys-kpi">
+        <div class="kpi-icon kpi-violet"><i class="fa-solid fa-users"></i></div>
+        <div>
+            <div class="kpi-top">
+                <span class="kpi-num">{{ total_users }}</span>
+            </div>
+            <div class="kpi-label">Total Users</div>
+            <div class="kpi-sub">company members</div>
+        </div>
+    </div>
+
+</div>
+
+{% endif %}
+{% if not is_super_admin %}
+{% if not is_super_admin %}
+{% if not is_super_admin %}
+<!-- CHARTS ROW -->
+
+<div class="sys-row sys-row-charts">
+
+    <div class="sys-card">
+        <div class="sys-card-head">
+            <h5>
+                <i class="fa-solid fa-chart-column text-primary"></i>
+                <span>Task Completion Trend <small>Assigned against completed, last 8 weeks</small></span>
+            </h5>
+            <div class="legend-chips">
+                <span><span class="dot" style="background:#2563eb;"></span> Completed</span>
+                <span><span class="dot" style="background:#a5b4fc;"></span> Assigned</span>
+            </div>
+        </div>
+        <div class="sys-card-body">
+            <div class="chart-box"><canvas id="trendChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="sys-card">
+        <div class="sys-card-head">
+            <h5><i class="fa-solid fa-chart-pie text-violet"></i> Task Status Overview <small>Live split across {{ total_tasks }} tasks</small></h5>
+        </div>
+        <div class="sys-card-body">
+            <div class="chart-donut-wrap">
+                <canvas id="statusChart"></canvas>
+            </div>
+            <ul class="sys-legend">
+                {% for row in task_overview %}
+                <li>
+                    <span class="lbl">
+                        <i class="dot dot-o{{ loop.index0 }}"></i>
+                        {{ row.label }}
+                    </span>
+                    <span class="val">{{ row.count }}<span class="pct">{{ row.pct }}%</span></span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+{% endif %}
+{% endif %}
+{% endif %}
+{% if not is_super_admin %}
+<!-- RECENT TASKS + UPCOMING DEADLINES -->
+
+<div class="sys-row sys-row-2">
+
+    <div class="sys-card">
+        <div class="sys-card-head">
+            <h5><i class="fa-solid fa-file-lines text-primary"></i> Recent Tasks <small>Newest first</small></h5>
+            <a href="{{ url_for('main.task_history') }}" class="head-action">View all <i class="fa-solid fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="sys-card-body" style="padding-top:0;">
+
+        {% if recent_tasks %}
+
+        <div style="overflow-x:auto;">
+        <table class="sys-table" id="recentTasksTable">
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Assigned To</th>
+                    <th>Priority</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for task in recent_tasks %}
+                <tr data-search="{{ (task.title ~ ' ' ~ task.employee ~ ' ' ~ task.department) | lower }}">
+                    <td class="t-title">{{ task.title }}</td>
+                    <td class="t-assignee">
+                        <span class="avatar-mini">{{ task.employee[:1] | upper }}</span>{{ task.employee }}
+                    </td>
+                    <td>
+                        <span class="fw-badge {{ 'pri-high' if task.priority == 'High' else ('pri-medium' if task.priority == 'Medium' else 'pri-low') }}">
+                            {{ task.priority }}
+                        </span>
+                    </td>
+                    <td style="white-space:nowrap;">{{ task.due_date.strftime('%d %b %Y') if task.due_date else '-' }}</td>
+                    <td>
+                        {% if task.status == 'Approved' %}
+                        <span class="fw-badge fw-badge-success">Approved</span>
+                        {% elif task.status == 'Rejected' %}
+                        <span class="fw-badge fw-badge-danger">Rejected</span>
+                        {% elif task.status == 'Submitted' %}
+                        <span class="fw-badge fw-badge-info">Submitted</span>
+                        {% elif task.status == 'Pending' %}
+                        <span class="fw-badge fw-badge-secondary">Pending</span>
+                        {% else %}
+                        <span class="fw-badge fw-badge-primary">{{ task.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;white-space:nowrap;">
+                        {% if task.proof_file %}
+                        <a href="{{ url_for('main.download_proof', filename=task.proof_file) }}" target="_blank" class="fw-btn fw-btn-info fw-btn-sm">
+                            <i class="fa-solid fa-eye"></i> Proof
+                        </a>
+                        {% endif %}
+                        {% if task.status == 'Submitted' %}
+                        <a href="{{ url_for('main.approve_task', id=task.id) }}" class="fw-btn fw-btn-success fw-btn-sm">
+                            <i class="fa-solid fa-check"></i> Approve
+                        </a>
+                        {% endif %}
+                        <button class="fw-btn fw-btn-danger fw-btn-sm delete-task-btn" data-task-id="{{ task.id }}">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <div class="fw-empty py-4 d-none" id="recentEmpty">
+            <i class="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
+            <div style="font-size:12.5px;color:#94a3b8;">No tasks match your search.</div>
+        </div>
+
+        {% else %}
+        <div class="fw-empty py-5">
+            <i class="fa-regular fa-folder-open fa-2x mb-3 d-block opacity-50"></i>
+            <div class="fw-semibold mb-1">No tasks yet</div>
+            <div style="font-size:12.5px;color:#94a3b8;">Tasks assigned by admins and managers appear here.</div>
+        </div>
+        {% endif %}
+
+        </div>
+    </div>
+
+    <div class="sys-card">
+        <div class="sys-card-head">
+            <h5><i class="fa-solid fa-calendar-day text-amber"></i> Upcoming Deadlines <small>Sorted by due date</small></h5>
+            <a href="{{ url_for('main.task_history', overdue='1') }}" class="head-action">View all <i class="fa-solid fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="sys-card-body" style="padding-top:0;">
+
+        {% if upcoming_deadlines %}
+
+        <ul class="deadline-list" id="deadlineList">
+        {% for t in upcoming_deadlines %}
+            <li data-search="{{ (t.title ~ ' ' ~ t.employee) | lower }}">
+                <div class="d-date-box">
+                    <div class="d-d">{{ t.due_date.strftime('%d') }}</div>
+                    <div class="d-m">{{ t.due_date.strftime('%b') }}</div>
+                </div>
+                <div class="d-title">
+                    {{ t.title }}
+                    <div class="d-meta">
+                        <i class="fa-solid fa-user me-1"></i>{{ t.employee }}
+                    </div>
+                </div>
+                <span class="d-badge {{ 'late' if t.is_late else ('today' if t.due_label == 'Due today' else 'upcoming') }}">{{ t.due_label }}</span>
+            </li>
+        {% endfor %}
+        </ul>
+
+        {% else %}
+        <div class="fw-empty py-5">
+            <i class="fa-regular fa-calendar-check fa-2x mb-3 d-block opacity-50"></i>
+            <div class="fw-semibold mb-1">Nothing due</div>
+            <div style="font-size:12.5px;color:#94a3b8;">Every task in the system is still within its due date.</div>
+        </div>
+        {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+{% endif %}
+
+<!-- DEPARTMENT PERFORMANCE + RECENT ACTIVITY + ANNOUNCEMENTS -->
+
+<div class="sys-row sys-row-3{% if is_super_admin %} sys-row-3-super{% endif %}">
+
+    {% if not is_super_admin %}
+    <div class="sys-card">
+        <div class="sys-card-head">
+            <h5><i class="fa-solid fa-building text-primary"></i> Department Performance <small>Completion rate by department</small></h5>
+        </div>
+        <div class="sys-card-body">
+
+        {% if dept_performance %}
+
+        {% for dept in dept_performance %}
+        <div class="dept-progress">
+            <div class="dp-head">
+                <span class="dp-name">{{ dept.name }}</span>
+                <span class="dp-rate">{{ dept.rate }}%</span>
+            </div>
+            <div class="dp-bar"><div class="dp-fill" style="width:{{ dept.rate }}%;"></div></div>
+            <div class="dp-sub">{{ dept.completed }} of {{ dept.total }} task{{ '' if dept.total == 1 else 's' }} completed</div>
+        </div>
+        {% endfor %}
+
+        {% else %}
+        <div class="fw-empty py-5">
+            <i class="fa-regular fa-building fa-2x mb-3 d-block opacity-50"></i>
+            <div class="fw-semibold mb-1">No departments</div>
+            <div style="font-size:12.5px;color:#94a3b8;">Create a department to route work through it.</div>
+        </div>
+        {% endif %}
+
+        </div>
+    </div>
+    {% else %}
+
+    <div class="sys-card">
+        <div class="sys-card-head">
+            <h5><i class="fa-solid fa-building-columns text-primary"></i> Company Performance <small>Completion rate by company</small></h5>
+        </div>
+        <div class="sys-card-body">
+
+        {% if company_performance %}
+
+        <div style="height:260px;position:relative;">
+            <canvas id="companyPerfChart"></canvas>
+        </div>
+        <script>
+        (function(){
+            var perf = {{ company_performance | tojson }};
+            if (typeof perf === 'undefined' || !perf.length) return;
+            function drawChart(){
+                if (!window.Chart){ setTimeout(drawChart, 120); return; }
+                var el = document.getElementById('companyPerfChart');
+                if (!el) return;
+                new Chart(el, {
+                    type: 'bar',
+                    data: {
+                        labels: perf.map(function(c){ return c.name; }),
+                        datasets: [{
+                            label: 'Completion rate (%)',
+                            data: perf.map(function(c){ return c.rate; }),
+                            backgroundColor: 'rgba(14,87,220,0.75)',
+                            borderColor: 'rgba(14,87,220,1)',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            maxBarThickness: 34
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx){
+                                        var c = perf[ctx.dataIndex];
+                                        return c.rate + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, max: 100,
+                                 ticks: { callback: function(v){ return v + '%'; } } }
+                        }
+                    }
+                });
+            }
+            drawChart();
+        })();
+        </script>
+
+        {% else %}
+        <div class="fw-empty py-5">
+            <i class="fa-regular fa-building-columns fa-2x mb-3 d-block opacity-50"></i>
+            <div class="fw-semibold mb-1">No companies yet</div>
+            <div style="font-size:12.5px;color:#94a3b8;">Company performance appears here once companies are created.</div>
+        </div>
+        {% endif %}
+
+        </div>
+    </div>
+
+    {% endif %}
+
+
+    <div class="sys-card">
+        <div class="sys-card-head">
+            <h5><i class="fa-solid fa-clock-rotate-left text-emerald"></i> Recent Activity <small>{% if not is_super_admin %}Task events across the system{% else %}Recently created accounts{% endif %}</small></h5>
+            {% if not is_super_admin %}
+            <a href="{{ url_for('main.task_history') }}" class="head-action">Open logs <i class="fa-solid fa-arrow-right ms-1"></i></a>
+            {% endif %}
+        </div>
+        <div class="sys-card-body">
+
+        {% if recent_activity %}
+
+        <ul class="sys-feed">
+        {% for evt in recent_activity %}
+            <li>
+                <div class="feed-icon"><i class="fa-solid fa-{{ evt.icon }}"></i></div>
+                <div class="feed-body">
+                    <div class="feed-title">{{ evt.text }}</div>
+                    <div class="feed-meta">
+                        {{ evt.time.strftime('%d %b %Y, %I:%M %p') if evt.time else '-' }}
+                    </div>
+                </div>
+            </li>
+        {% endfor %}
+        </ul>
+
+        {% else %}
+        <div class="fw-empty py-5">
+            <i class="fa-solid fa-bolt fa-2x mb-3 d-block opacity-50"></i>
+            <div class="fw-semibold mb-1">No activity yet</div>
+            <div style="font-size:12.5px;color:#94a3b8;">Task creation and assignment events appear here.</div>
+        </div>
+        {% endif %}
+
+        </div>
+    </div>
+
+    {% if not is_super_admin %}
+    <div class="sys-card">
+        <div class="sys-card-head">
+            <h5><i class="fa-solid fa-bullhorn text-amber"></i> Latest Announcements</h5>
+            <button class="head-action" style="background:none;border:none;padding:0;margin-top:4px;" data-bs-toggle="modal" data-bs-target="#announcementCreateModal">
+                <i class="fa-solid fa-plus me-1"></i>New
+            </button>
+        </div>
+        <div class="sys-card-body">
+
+        {% if latest_announcements %}
+
+        {% for a in latest_announcements %}
+        <div class="ann-card">
+            <div class="ann-msg">{{ a.message }}</div>
+            <div class="ann-meta">
+                {{ a.creator }}
+                <span class="mx-1">•</span>
+                {{ a.time_ago }}
+                <span class="a-chip">{{ a.audience }}</span>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% else %}
+        <div class="fw-empty py-5">
+            <i class="fa-regular fa-bell-slash fa-2x mb-3 d-block opacity-50"></i>
+            <div class="fw-semibold mb-1">No announcements</div>
+            <div style="font-size:12.5px;color:#94a3b8;">Publish a system announcement to reach every account.</div>
+        </div>
+        {% endif %}
+
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+</div>
+
+<!-- NEW LOGIN REQUEST MODAL -->
+
+<div class="modal fade fw-modal" id="loginApprovalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-key me-2"></i>New Login Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
@@ -566,14 +1181,103 @@ required>
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-success" id="approveBtn">Approve</button>
-                <button class="btn btn-danger" id="denyBtn">Deny</button>
+                <button class="fw-btn fw-btn-success" id="approveBtn"><i class="fa-solid fa-check me-1"></i>Approve</button>
+                <button class="fw-btn fw-btn-danger" id="denyBtn"><i class="fa-solid fa-xmark me-1"></i>Deny</button>
             </div>
 
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script type="application/json" id="chartData">
+{"labels": {{ week_labels | tojson }}, "assigned": {{ assigned_counts | tojson }}, "completed": {{ completed_counts | tojson }}, "overview": {{ task_overview | tojson }}}
+</script>
+
+<script>
+const CHART_DATA = JSON.parse(document.getElementById("chartData").textContent);
+const LABELS = CHART_DATA.labels;
+const ASSIGNED = CHART_DATA.assigned;
+const COMPLETED = CHART_DATA.completed;
+const OVERVIEW = CHART_DATA.overview;
+
+const OVERVIEW_COLORS = ["#22c55e", "#2563eb", "#f59e0b", "#ef4444"];
+
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+Chart.defaults.color = "#64748b";
+
+{% if not is_super_admin %}
+{% if not is_super_admin %}
+new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: {
+        labels: LABELS,
+        datasets: [
+            {
+                label: "Completed",
+                data: COMPLETED,
+                borderColor: "#2563eb",
+                backgroundColor: "rgba(37, 99, 235, 0.12)",
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2.5,
+                pointRadius: 3,
+                pointBackgroundColor: "#2563eb"
+            },
+            {
+                label: "Assigned",
+                data: ASSIGNED,
+                borderColor: "#a5b4fc",
+                backgroundColor: "rgba(165, 180, 252, 0.08)",
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2.5,
+                borderDash: [5, 5],
+                pointRadius: 3,
+                pointBackgroundColor: "#a5b4fc"
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { mode: "index", intersect: false }
+        },
+        scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+    }
+});
+{% endif %}
+
+{% endif %}
+
+{% if not is_super_admin %}
+{% if not is_super_admin %}
+new Chart(document.getElementById("statusChart"), {
+    type: "pie",
+    data: {
+        labels: OVERVIEW.map(o => o.label),
+        datasets: [{
+            data: OVERVIEW.map(o => o.count),
+            backgroundColor: OVERVIEW_COLORS,
+            borderWidth: 2,
+            borderColor: "#fff"
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+    }
+});
+{% endif %}
+
+{% endif %}
+</script>
 
 <script>
 let currentRequestId = null;
@@ -581,6 +1285,7 @@ let modalInstance = null;
 
 document.addEventListener("DOMContentLoaded", function () {
     const modalEl = document.getElementById("loginApprovalModal");
+    if (!modalEl) return;
     modalInstance = new bootstrap.Modal(modalEl);
 
     setInterval(function () {
@@ -595,7 +1300,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     modalInstance.show();
                 }
             });
-    }, 1000);
+    }, 3000);
 
     document.getElementById("approveBtn").onclick = function () {
         if (currentRequestId) {
@@ -625,43 +1330,30 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
-
-
 <script>
+document.querySelectorAll(".delete-task-btn").forEach(btn => {
+    btn.addEventListener("click", function () {
+        const taskId = this.dataset.taskId;
+        if (!confirm("Delete this task?")) return;
 
-/* SUBTASK TOGGLE */
-function toggleSubTaskForm(id){
-document.getElementById(id).classList.toggle("d-none");
-}
-
-/* DELETE TASK */
-document.querySelectorAll(".delete-task-form").forEach(form => {
-form.addEventListener("submit", function(e){
-e.preventDefault();
-
-const taskId = this.dataset.taskId;
-
-if(confirm("Delete this task?")){
-fetch(`/task/delete/${taskId}`,{
-method:"POST"
-})
-.then(res => res.json())
-.then(data => {
-if(data.success){
-this.closest(".task-card").remove();
-} else {
-alert(data.message || "Could not delete task");
-}
+        fetch(`/task/delete/${taskId}`, { method: "POST" })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    this.closest("tr").style.opacity = "0.4";
+                    setTimeout(function () { window.location.reload(); }, 500);
+                } else {
+                    alert(data.message || "Could not delete task");
+                }
+            });
+    });
 });
-}
-});
-});
-
 </script>
+
 <script>
-    setTimeout(function () {
-        window.location.reload();
-    }, 100000); // 100000 ms = 100 seconds
+setTimeout(function () {
+    window.location.reload();
+}, 120000);
 </script>
 
 {% endblock %}

@@ -2,31 +2,45 @@
 {% block title %}Task History{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="fw-container">
 
-<div class="card shadow-lg border-0 rounded-4">
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-solid fa-clock-rotate-left me-2"></i>Task History</h2>
+        <p>View the complete history of all tasks and their submission status.</p>
+    </div>
 
-<div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h4 class="mb-0">📜 Task History</h4>
-
-    <div class="d-flex gap-2">
-        {% if current_user.role in ['admin','manager'] %}
-        <a href="{{ url_for('main.export_task_history') }}" class="btn btn-success btn-sm">
-            ⬇ Export Excel
+    <div class="d-flex gap-2 flex-wrap">
+        {% if current_user.role in ['super_admin','admin','manager'] %}
+        <a href="{{ url_for('main.create_task') }}" class="fw-btn fw-btn-primary fw-btn-sm">
+            <i class="fa-solid fa-plus me-1"></i> Assign Task
+        </a>
+        <a href="{{ url_for('main.export_task_history') }}" class="fw-btn fw-btn-success fw-btn-sm">
+            <i class="fa-solid fa-file-excel me-1"></i> Export Excel
         </a>
         {% endif %}
 
-        <button onclick="history.back()" class="btn btn-secondary btn-sm">
-            ⬅ Back
+        <button onclick="history.back()" class="fw-btn fw-btn-outline fw-btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back
         </button>
     </div>
 </div>
 
-<div class="card-body p-4">
+<div class="fw-card">
+<div class="fw-card-head">
+    {% if overdue %}
+    <span><i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>Overdue Tasks</span>
+    {% else %}
+    <span><i class="fa-solid fa-file-lines me-2 text-primary"></i>All Tasks</span>
+    {% endif %}
+    <span class="fw-badge fw-badge-primary">{{ tasks|length }} Task{{ '' if tasks|length == 1 else 's' }}</span>
+</div>
+
+<div class="fw-card-body">
 <div class="table-responsive">
 
-<table class="table table-bordered table-striped align-middle">
-    <thead class="table-dark">
+<table class="table table-bordered table-striped fw-table align-middle">
+    <thead>
         <tr>
             <th>Task ID</th>
             <th>Title</th>
@@ -41,18 +55,19 @@
         </tr>
     </thead>
 
-    <tbody>
+    <tbody id="taskHistoryBody">
         {% for task in tasks %}
-        <tr>
+        <tr data-due="{{ task.due_date.strftime('%Y-%m-%dT%H:%M') if task.due_date else '' }}"
+            data-status="{{ task.status }}">
             <td>
                 <button
                     type="button"
-                    class="btn btn-link p-0 fw-bold text-primary text-decoration-none"
+                    class="btn btn-link p-0 fw-semibold text-primary text-decoration-none"
                     data-bs-toggle="modal"
                     data-bs-target="#taskModal"
                     data-id="{{ task.id }}"
                     data-title="{{ task.title }}"
-                    data-employee="{{ task.assignee.username if task.assignee else '-' }}"
+                    data-employee="{{ task.employee_name }}"
                     data-description="{{ task.description or '-' }}"
                     data-status="{{ task.status }}"
                     data-points="{{ task.reward_points or 0 }}"
@@ -63,10 +78,22 @@
                 </button>
             </td>
 
-            <td>{{ task.title }}</td>
-            <td>{{ task.employee_name or  "-" }}</td>
-            <td>{{ task.status }}</td>
-            <td>{{ task.reward_points or 0 }}</td>
+            <td class="fw-semibold">{{ task.title }}</td>
+            <td>{{ task.employee_name or "-" }}</td>
+            <td>
+                {% if task.status == 'Approved' %}
+                    <span class="fw-badge fw-badge-success">{{ task.status }}</span>
+                {% elif task.status == 'Rejected' %}
+                    <span class="fw-badge fw-badge-danger">{{ task.status }}</span>
+                {% elif task.status == 'Submitted' %}
+                    <span class="fw-badge fw-badge-info">{{ task.status }}</span>
+                {% elif task.status == 'Pending' %}
+                    <span class="fw-badge fw-badge-secondary">{{ task.status }}</span>
+                {% else %}
+                    <span class="fw-badge fw-badge-primary">{{ task.status }}</span>
+                {% endif %}
+            </td>
+            <td><span class="fw-badge fw-badge-success">{{ task.reward_points or 0 }} pts</span></td>
 
             <td>
                 {{ task.created_at_ist.strftime('%d %b %Y %I:%M %p') if task.created_at_ist else '-' }}
@@ -78,9 +105,9 @@
 
             <td>
                 {% if task.is_deleted %}
-                <span class="badge bg-danger">Deleted</span>
+                <span class="fw-badge fw-badge-danger">Deleted</span>
                 {% else %}
-                <span class="badge bg-success">Active</span>
+                <span class="fw-badge fw-badge-success">Active</span>
                 {% endif %}
             </td>
 
@@ -88,8 +115,8 @@
                 {% if task.proof_file %}
                 <a href="{{ url_for('main.download_proof', filename=task.proof_file) }}"
                    target="_blank"
-                   class="btn btn-primary btn-sm">
-                    View
+                   class="fw-btn fw-btn-info fw-btn-sm">
+                    <i class="fa-solid fa-eye me-1"></i> View
                 </a>
                 {% else %}
                 <span class="text-muted">No Proof</span>
@@ -98,20 +125,21 @@
 
             <td>
                 {% if task.status == "Approved" %}
-                <span class="badge bg-success">Completed</span>
+                <span class="fw-badge fw-badge-success">Completed</span>
                 {% elif task.work_status == "Started" %}
-                <span class="badge bg-primary">Started</span>
+                <span class="fw-badge fw-badge-primary">Started</span>
                 {% elif task.status == "Pending" %}
-                <span class="badge bg-warning text-dark">Pending</span>
+                <span class="fw-badge fw-badge-warning">Pending</span>
                 {% else %}
-                <span class="badge bg-secondary">Stopped</span>
+                <span class="fw-badge fw-badge-secondary">Stopped</span>
                 {% endif %}
             </td>
         </tr>
 
         {% else %}
         <tr>
-            <td colspan="10" class="text-center text-muted">
+            <td colspan="10" class="fw-empty">
+                <i class="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
                 No task history found
             </td>
         </tr>
@@ -125,24 +153,26 @@
 </div>
 
 <!-- MODAL -->
-<div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade fw-modal" id="taskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title">Task Details</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-file-lines me-2"></i>Task Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
-                <p><b>Task ID:</b> <span id="m_id"></span></p>
-                <p><b>Title:</b> <span id="m_title"></span></p>
-                <p><b>Employee:</b> <span id="m_employee"></span></p>
-                <p><b>Description:</b> <span id="m_desc"></span></p>
-                <p><b>Status:</b> <span id="m_status"></span></p>
-                <p><b>Points:</b> <span id="m_points"></span></p>
-                <p><b>Created At:</b> <span id="m_created"></span></p>
-                <p><b>Completed At:</b> <span id="m_completed"></span></p>
-                <p><b>Deleted:</b> <span id="m_deleted"></span></p>
+                <div class="row g-3">
+                    <div class="col-md-6"><p class="mb-0"><b>Task ID:</b> <span id="m_id"></span></p></div>
+                    <div class="col-md-6"><p class="mb-0"><b>Title:</b> <span id="m_title"></span></p></div>
+                    <div class="col-md-6"><p class="mb-0"><b>Employee:</b> <span id="m_employee"></span></p></div>
+                    <div class="col-md-6"><p class="mb-0"><b>Status:</b> <span id="m_status"></span></p></div>
+                    <div class="col-md-6"><p class="mb-0"><b>Points:</b> <span id="m_points"></span></p></div>
+                    <div class="col-md-6"><p class="mb-0"><b>Deleted:</b> <span id="m_deleted"></span></p></div>
+                    <div class="col-12"><p class="mb-0"><b>Description:</b> <span id="m_desc"></span></p></div>
+                    <div class="col-md-6"><p class="mb-0"><b>Created At:</b> <span id="m_created"></span></p></div>
+                    <div class="col-md-6"><p class="mb-0"><b>Completed At:</b> <span id="m_completed"></span></p></div>
+                </div>
             </div>
         </div>
     </div>

@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+<style>
+
+.td-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
+}
+
+.td-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+}
+
+.td-crumbs{
+    font-size:.82rem;
+    color:#64748b;
+    margin-bottom:6px;
+}
+
+.td-crumbs a{
+    color:#64748b;
+    text-decoration:none;
+}
+
+.td-title{
+    font-size:1.45rem;
+    font-weight:700;
+    margin:0;
+}
+
+.td-chips{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:10px;
+    align-items:center;
+}
+
+.chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:.78rem;
+    font-weight:600;
+    padding:4px 12px;
+    border-radius:12px;
+}
+
+.sty-completed, .ch-green{ background:#ecfdf5; color:#059669; }
+.sty-inprogress, .ch-blue{ background:#eff6ff; color:#2563eb; }
+.sty-pending, .ch-gray{ background:#f1f5f9; color:#64748b; }
+
+.ch-red{ background:#fef2f2; color:#dc2626; }
+.ch-amber{ background:#fffbeb; color:#b45309; }
+
+.td-card{
+    background:#fff;
+    border-radius:20px;
+    box-shadow:0 18px 45px rgba(2,12,27,0.1);
+    border:1px solid var(--fw-border);
+    overflow:hidden;
+    margin-bottom:20px;
+}
+
+.td-card h5{
+    font-size:.8rem;
+    font-weight:600;
+    color:#64748b;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    margin:0;
+}
+
+.td-card .sec-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 22px;
+    border-bottom:1px solid var(--fw-border);
+}
+
+.td-card .sec-body{
+    padding:20px 22px;
+}
+
+.td-notes{
+    background:#fff8e6;
+    border-radius:14px;
+    padding:14px 16px;
+    font-size:.9rem;
+}
+
+.td-notes .by{
+    font-size:.75rem;
+    color:#a16207;
+}
+
+.att-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 12px;
+    border:1px solid var(--fw-border);
+    border-radius:12px;
+    margin-bottom:8px;
+}
+
+.att-row i{
+    color:#2d6fff;
+    font-size:1.1rem;
+}
+
+.att-meta{
+    font-size:.72rem;
+    color:#94a3b8;
+}
+
+.att-dl{
+    color:#2d6fff;
+    font-size:.8rem;
+    text-decoration:none;
+    font-weight:600;
+}
+
+.msg-item{
+    display:flex;
+    gap:12px;
+    padding:12px 0;
+    border-bottom:1px solid var(--fw-border);
+}
+
+.msg-item:last-child{
+    border-bottom:none;
+}
+
+.msg-avatar{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-weight:700;
+    font-size:.85rem;
+    flex:none;
+}
+
+.msg-name{
+    font-size:.85rem;
+    font-weight:600;
+}
+
+.msg-time{
+    font-size:.72rem;
+    color:#94a3b8;
+}
+
+.msg-body{
+    font-size:.9rem;
+    margin-top:2px;
+}
+
+.comment-form{
+    margin-top:14px;
+}
+
+.comment-hint{
+    font-size:.75rem;
+    color:#94a3b8;
+    margin-top:6px;
+}
+
+.details-side{
+    position:sticky;
+    top:88px;
+}
+
+.dl-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+    padding:11px 0;
+    border-bottom:1px solid var(--fw-border);
+    font-size:.88rem;
+}
+
+.dl-row:last-child{
+    border-bottom:none;
+}
+
+.dl-row .lab{
+    color:#64748b;
+    font-size:.78rem;
+}
+
+.dl-row .val{
+    text-align:right;
+    font-weight:500;
+}
+
+.rem-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    font-size:.83rem;
+    padding:7px 0;
+}
+
+.rem-row .when{
+    color:#64748b;
+    font-size:.75rem;
+}
+
+.rem-add-btn{
+    background:none;
+    border:1px dashed #cbd5e1;
+    border-radius:10px;
+    color:#2d6fff;
+    font-size:.8rem;
+    font-weight:600;
+    padding:6px 12px;
+    width:100%;
+    margin-top:4px;
+}
+
+.avatar-mini{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-size:.68rem;
+    font-weight:700;
+    margin-right:6px;
+}
+
+</style>
+
+<div class="td-content pt-4">
+
+<div class="td-head">
+
+<div>
+<div class="td-crumbs">
+    <a href="{{ url_for('main.my_tasks') }}">Tasks</a>
+    <i class="fa-solid fa-chevron-right mx-1" style="font-size:.65rem"></i>
+    {{ task_code }}
+</div>
+<h1 class="td-title">{{ title }}</h1>
+
+<div class="td-chips">
+    <span class="chip sty-{{ display_status | replace(' ','') | lower }}">{{ display_status }}</span>
+    <span class="chip {{ 'ch-red' if priority=='High' else 'ch-amber' if priority=='Medium' else 'ch-green' }}">{{ priority }}</span>
+    <span class="chip ch-gray"><i class="fa-regular fa-calendar me-1"></i>Due {{ due_date }}</span>
+    <span class="chip ch-gray"><i class="fa-solid fa-building me-1"></i>{{ department }}</span>
+</div>
+
+</div>
+
+{% if actual_status != 'Approved' %}
+<div>
+<form method="POST" action="{{ url_for('main.task_mark_complete', task_id=task_id) }}" onsubmit="return confirm('Mark this task as complete?')">
+<button class="fw-btn fw-btn-primary"><i class="fa-solid fa-check me-1"></i> Mark complete</button>
+</form>
+</div>
+{% endif %}
+
+</div>
+
+<div class="row g-4">
+<div class="col-lg-8">
+
+<!-- Description -->
+<div class="td-card">
+<div class="sec-head"><h5>Description</h5></div>
+<div class="sec-body">
+    <p class="mb-0" style="color:#334155">{{ description }}</p>
+</div>
+</div>
+
+<!-- Notes -->
+{% if notes %}
+<div class="td-card">
+<div class="sec-head"><h5>Notes from {{ notes_by or 'assigner' }}</h5></div>
+<div class="sec-body">
+    <div class="td-notes"><i class="fa-solid fa-note-sticky me-2" style="color:#a16207"></i>{{ notes }}</div>
+</div>
+</div>
+{% endif %}
+
+<!-- Attachments -->
+<div class="td-card">
+<div class="sec-head">
+    <h5><i class="fa-solid fa-paperclip me-1"></i> {{ attachments | length }} {{ 'file' if attachments | length == 1 else 'files' }}</h5>
+    <form method="POST" action="{{ url_for('main.upload_task_attachment', task_id=task_id) }}" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
+        <input type="file" name="attachment" class="form-control form-control-sm fw-form-control" style="max-width:280px" required>
+        <button class="fw-btn fw-btn-outline btn-sm"><i class="fa-solid fa-upload me-1"></i>Upload</button>
+    </form>
+</div>
+<div class="sec-body">
+    {% for a in attachments %}
+    <div class="att-row">
+        <div class="d-flex align-items-center gap-3">
+            <i class="fa-solid fa-file-lines"></i>
+            <div>
+                <div>{{ a.filename }}</div>
+                <div class="att-meta">added {{ fmt_dt(a.uploaded_at) }}</div>
+            </div>
+        </div>
+        <a class="att-dl" href="{{ url_for('main.download_attachment', filename=a.filename) }}"><i class="fa-solid fa-download me-1"></i>Download</a>
+    </div>
+    {% else %}
+    <p class="text-muted mb-0">No attachments. Upload specs, screenshots or supporting files for this task.</p>
+    {% endfor %}
+</div>
+</div>
+
+<!-- Comments -->
+<div class="td-card">
+<div class="sec-head">
+    <h5><i class="fa-regular fa-comment me-1"></i> Comments {{ comments | length }}</h5>
+    <span class="chip ch-gray"><i class="fa-solid fa-chart-line me-1"></i>Activity {{ activity_count }}</span>
+</div>
+<div class="sec-body">
+
+    {% for c in comments %}
+    <div class="msg-item">
+        <div class="msg-avatar" style="background:{{ ['#2d6fff','#7c4dff','#00a884','#ff6b35','#e03e8a','#0ea5a4'][(c.initials | first) | upper | int(0, 36) % 6] }}">{{ c.initials }}</div>
+        <div>
+            <div><span class="msg-name">{{ c.username }}</span> <span class="msg-time">{{ fmt_dt(c.created_at) }}</span></div>
+            <div class="msg-body">{{ c.body }}</div>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-muted mb-0"><i class="fa-regular fa-message me-1"></i>No comments yet — ask a question or post an update to keep everyone in the loop.</p>
+    {% endfor %}
+
+    <form method="POST" action="{{ url_for('main.add_task_comment', task_id=task_id) }}" class="comment-form">
+        <div class="d-flex gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <span class="mini-avatar" style="background:{{ ['#2d6fff','#7c4dff','#00a884','#ff6b35','#e03e8a','#0ea5a4'][(current_user.username[:1]) | upper | int(0, 36) % 6] }}">{{ (current_user.username or 'U')[:1] | upper }}</span>
+            </div>
+            <textarea name="body" class="form-control fw-form-control" rows="2" placeholder="Write a comment…" required></textarea>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+            <div class="comment-hint"><i class="fa-regular fa-bell me-1"></i>Everyone on this task is notified.</div>
+            <button class="fw-btn fw-btn-outline btn-sm"><i class="fa-solid fa-paper-plane me-1"></i>Post comment</button>
+        </div>
+    </form>
+
+</div>
+</div>
+
+</div>
+
+<div class="col-lg-4">
+
+<div class="td-card details-side">
+<div class="sec-head"><h5>Details</h5></div>
+<div class="sec-body" style="padding-top:6px">
+
+<div class="dl-row">
+    <span class="lab">Status</span>
+    <span class="val"><span class="chip sty-{{ display_status | replace(' ','') | lower }}" style="padding:2px 10px">{{ display_status }}</span></span>
+</div>
+
+<div class="dl-row">
+    <span class="lab">Priority</span>
+    <span class="val">{{ priority }}</span>
+</div>
+
+<div class="dl-row">
+    <span class="lab">Assigned To</span>
+    <span class="val">
+        <span class="avatar-mini" style="background:{{ ['#2d6fff','#7c4dff','#00a884','#ff6b35','#e03e8a','#0ea5a4'][(assignee.initials | first) | upper | int(0, 36) % 6] }}">{{ assignee.initials }}</span>
+        {{ assignee.name }}
+        {% if assignee.role %}<small class="d-block text-muted" style="font-size:.72rem">{{ assignee.role }}</small>{% endif %}
+    </span>
+</div>
+
+<div class="dl-row">
+    <span class="lab">Assigned By</span>
+    <span class="val">
+        <span class="avatar-mini" style="background:{{ ['#2d6fff','#7c4dff','#00a884','#ff6b35','#e03e8a','#0ea5a4'][(creator.initials | first) | upper | int(0, 36) % 6] }}">{{ creator.initials }}</span>
+        {{ creator.name }}
+        {% if creator.role %}<small class="d-block text-muted" style="font-size:.72rem">{{ creator.role }}</small>{% endif %}
+    </span>
+</div>
+
+<div class="dl-row">
+    <span class="lab">Department</span>
+    <span class="val">{{ department }}</span>
+</div>
+
+<div class="dl-row">
+    <span class="lab">Category</span>
+    <span class="val">{{ category }}</span>
+</div>
+
+<div class="dl-row">
+    <span class="lab">Start Date</span>
+    <span class="val">{{ start_date }}</span>
+</div>
+
+<div class="dl-row">
+    <span class="lab">Due Date</span>
+    <span class="val">{{ due_date }}</span>
+</div>
+
+<div class="dl-row">
+    <span class="lab">Estimated</span>
+    <span class="val">{{ estimated_time }}</span>
+</div>
+
+{% if completed_at %}
+<div class="dl-row">
+    <span class="lab">Completed</span>
+    <span class="val">{{ completed_at }}</span>
+</div>
+{% endif %}
+
+<div class="dl-row">
+    <span class="lab">Reminders</span>
+    <span class="val">{{ reminders | length }} {{ 'set' if reminders | length != 1 else 'set' }}</span>
+</div>
+
+{% for r in reminders %}
+<div class="rem-row">
+    <div>
+        <div>{{ r.reason }}</div>
+        <div class="when">{{ fmt_dt(r.remind_at) }}</div>
+    </div>
+    {% if r.active %}
+    <span class="chip ch-green" style="padding:2px 8px">On</span>
+    {% else %}
+    <span class="chip ch-gray" style="padding:2px 8px">Off</span>
+    {% endif %}
+</div>
+{% endfor %}
+
+<form method="POST" action="{{ url_for('main.add_task_reminder', task_id=task_id) }}" class="mt-2">
+    <div class="d-flex gap-1 align-items-center">
+        <input type="datetime-local" name="remind_at" class="form-control form-control-sm fw-form-control" required>
+        <button class="fw-btn fw-btn-outline btn-sm" style="white-space:nowrap"><i class="fa-solid fa-plus me-1"></i>Add</button>
+    </div>
+</form>
+
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+
+{% endblock %}

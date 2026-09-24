@@ -2,75 +2,77 @@
 {% block title %}My Reminders{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow-lg border-0 rounded-4">
-        <div class="card-header bg-dark text-white">
-            <h4 class="mb-0">🔔 My Reminders</h4>
-        </div>
+<div class="fw-container">
 
-        <div class="card-body p-4">
-
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            {% if reminders %}
-                <div class="table-responsive">
-                    <table class="table table-bordered align-middle">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Reason</th>
-                                <th>Remind At</th>
-                                <th>End At</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for r in reminders %}
-                            <tr>
-                                <td>{{ r.reason }}</td>
-                                <td>{{ r.remind_at.strftime('%d %b %Y %I:%M %p') if r.remind_at else '-' }}</td>
-                                <td>{{ r.end_at.strftime('%d %b %Y %I:%M %p') if r.end_at else '-' }}</td>
-                                <td>
-                                    {% if r.active %}
-                                        <span class="badge bg-success">Active</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Stopped</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if r.active %}
-                                    <form action="{{ url_for('main.stop_reminder_page', id=r.id) }}" method="POST">
-                                        <button type="submit" class="btn btn-danger btn-sm">
-                                            Stop
-                                        </button>
-                                    </form>
-                                    {% else %}
-                                        <button class="btn btn-secondary btn-sm" disabled>
-                                            Stopped
-                                        </button>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="text-center text-muted py-4">
-                    No reminders found.
-                </div>
-            {% endif %}
-
-        </div>
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-regular fa-bell me-2"></i>My Reminders</h2>
+        <p>View and manage your reminders.</p>
     </div>
+</div>
+
+<div class="fw-card">
+
+<div class="fw-card-head">
+    <span><i class="fa-regular fa-bell me-2 text-primary"></i>Reminder List</span>
+    <span class="fw-badge fw-badge-primary">{{ reminders|length }}</span>
+</div>
+
+<div class="fw-card-body">
+
+{% if reminders %}
+<div class="table-responsive">
+<table class="table table-bordered fw-table align-middle text-center">
+<thead>
+<tr>
+<th>Reason</th>
+<th>Remind At</th>
+<th>End At</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+{% for r in reminders %}
+<tr>
+<td class="fw-semibold">{{ r.reason }}</td>
+<td>{{ r.remind_at.strftime('%d %b %Y %I:%M %p') if r.remind_at else '-' }}</td>
+<td>{{ r.end_at.strftime('%d %b %Y %I:%M %p') if r.end_at else '-' }}</td>
+<td>
+{% if r.active %}
+<span class="fw-badge fw-badge-success">Active</span>
+{% else %}
+<span class="fw-badge fw-badge-secondary">Stopped</span>
+{% endif %}
+</td>
+<td>
+{% if r.active %}
+<form action="{{ url_for('main.stop_reminder_page', id=r.id) }}" method="POST" style="margin:0;">
+<button type="submit" class="fw-btn fw-btn-danger fw-btn-sm mb-0">
+<i class="fa-solid fa-stop me-1"></i> Stop
+</button>
+</form>
+{% else %}
+<button class="fw-btn fw-btn-secondary fw-btn-sm mb-0" disabled>
+<i class="fa-solid fa-ban me-1"></i> Stopped
+</button>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="fw-empty">
+<i class="fa-regular fa-bell-slash fa-2x mb-2 d-block opacity-50"></i>
+No reminders found.
+</div>
+{% endif %}
+
+</div>
+
+</div>
+
 </div>
 {% endblock %}

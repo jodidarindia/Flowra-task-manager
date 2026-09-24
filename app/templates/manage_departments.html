@@ -1,0 +1,572 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Departments{% endblock %}
+
+{% block content %}
+
+<style>
+
+.md-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
+}
+
+.md-filterbar{
+    background:#fff;
+    border:1px solid var(--fw-border);
+    border-radius:14px;
+    box-shadow:var(--fw-shadow);
+    padding:14px 16px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+.md-query{
+    flex:1 1 240px;
+    position:relative;
+}
+
+.md-query i{
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#94a3b8;
+    font-size:13px;
+}
+
+.md-query input{
+    padding-left:34px;
+}
+
+.md-table-wrap{
+    background:#fff;
+    border:1px solid var(--fw-border);
+    border-radius:14px;
+    box-shadow:var(--fw-shadow);
+    overflow:hidden;
+}
+
+.md-table thead th{
+    background:#f8fafc;
+}
+
+.md-dept-name{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.md-dept-icon{
+    width:40px;
+    height:40px;
+    min-width:40px;
+    border-radius:10px;
+    background:var(--fw-grad);
+    color:#fff;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+}
+
+.md-dept-title{
+    font-weight:600;
+    color:var(--fw-dark);
+    font-size:14px;
+}
+
+.md-dept-desc{
+    font-size:12.5px;
+    color:#64748b;
+    max-width:340px;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+
+.md-chips{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:8px;
+}
+
+.md-chip{
+    font-size:11px;
+    font-weight:600;
+    padding:3px 10px;
+    border-radius:999px;
+    background:#f1f5f9;
+    color:#334155;
+    white-space:nowrap;
+}
+
+.md-chip.people{ background:#eff6ff; color:#2563eb; }
+.md-chip.tasks{ background:#eef2ff; color:#4f46e5; }
+.md-chip.done{ background:#f0fdf4; color:#16a34a; }
+
+.md-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.md-head-avatar{
+    width:34px;
+    height:34px;
+    min-width:34px;
+    border-radius:50%;
+    background:var(--fw-grad);
+    color:#fff;
+    font-size:11px;
+    font-weight:700;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.md-head-name{
+    font-weight:500;
+    color:#334155;
+    font-size:13px;
+}
+
+.md-head-role{
+    font-size:11px;
+    color:#94a3b8;
+}
+
+.md-status{
+    font-size:11px;
+    font-weight:600;
+    padding:3px 10px;
+    border-radius:999px;
+    display:inline-block;
+    white-space:nowrap;
+}
+
+.md-status.active{ background:#f0fdf4; color:#16a34a; }
+.md-status.inactive{ background:#f1f5f9; color:#64748b; }
+
+.md-date{
+    font-size:11.5px;
+    color:#94a3b8;
+    margin-top:4px;
+    white-space:nowrap;
+}
+
+.md-actions{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    flex-wrap:wrap;
+}
+
+.md-act-btn{
+    width:32px;
+    height:32px;
+    border-radius:8px;
+    border:1px solid var(--fw-border);
+    background:#fff;
+    color:#475569;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    cursor:pointer;
+    text-decoration:none;
+    transition:all .15s;
+}
+
+.md-act-btn:hover{
+    border-color:#2563eb;
+    color:#2563eb;
+}
+
+.md-act-btn.danger:hover{
+    border-color:#dc2626;
+    color:#dc2626;
+    background:#fef2f2;
+}
+
+.md-act-btn.on-red:hover{
+    border-color:#dc2626;
+    color:#dc2626;
+    background:#fef2f2;
+}
+
+.md-act-btn.on-green{
+    color:#16a34a;
+}
+
+.md-act-btn.on-green:hover{
+    border-color:#16a34a;
+    background:#f0fdf4;
+}
+
+.md-unassigned{
+    font-size:12.5px;
+    color:#94a3b8;
+}
+
+.md-modal-body{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+}
+
+.md-detail-panel{
+    flex:1 1 280px;
+    min-width:240px;
+}
+
+.md-detail-title{
+    font-size:12px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:#94a3b8;
+    margin-bottom:10px;
+}
+
+.md-kpis{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(90px,1fr));
+    gap:10px;
+    margin-bottom:16px;
+}
+
+.md-kpi{
+    background:#f8fafc;
+    border:1px solid var(--fw-border);
+    border-radius:10px;
+    padding:10px;
+    text-align:center;
+}
+
+.md-kpi .md-kpi-num{
+    font-size:18px;
+    font-weight:700;
+    color:var(--fw-dark);
+}
+
+.md-kpi .md-kpi-label{
+    font-size:10.5px;
+    color:#94a3b8;
+    margin-top:2px;
+}
+
+.md-member-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 0;
+    border-bottom:1px solid #f1f5f9;
+}
+
+.md-member-row:last-child{
+    border-bottom:none;
+}
+
+.md-member-row .md-head-avatar{
+    width:30px;
+    height:30px;
+    min-width:30px;
+    font-size:10px;
+}
+
+.md-member-info{
+    flex:1 1 auto;
+    min-width:0;
+}
+
+.md-member-name{
+    font-size:13px;
+    font-weight:500;
+    color:#1e293b;
+}
+
+.md-member-role{
+    font-size:11px;
+    color:#94a3b8;
+}
+
+.md-member-contact{
+    font-size:11px;
+    color:#64748b;
+    text-align:right;
+    white-space:nowrap;
+}
+
+</style>
+
+<div class="md-content pt-4">
+
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-solid fa-building-shield me-2"></i>Manage Departments</h2>
+        <p class="fw-subtitle" style="margin-top:4px;font-size:12.5px;color:#94a3b8;">
+            {{ total_departments }} department{{ '' if total_departments == 1 else 's' }} &middot; {{ total_people }} people
+        </p>
+    </div>
+
+    <a href="{{ url_for('main.create_department') }}" class="fw-btn fw-btn-primary fw-btn-sm">
+        <i class="fa-solid fa-plus me-1"></i> Create Department
+    </a>
+</div>
+
+<form method="GET" action="{{ url_for('main.manage_departments') }}" class="md-filterbar">
+
+    <div class="md-query">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" name="q" value="{{ q }}" class="form-control fw-form-control" placeholder="Search departments">
+    </div>
+
+    <select name="status" class="form-select fw-form-control" style="width:160px;">
+        <option value="">Any status</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+
+    <button type="submit" class="fw-btn fw-btn-primary fw-btn-sm">
+        <i class="fa-solid fa-filter me-1"></i> Apply
+    </button>
+
+    <a href="{{ url_for('main.manage_departments') }}" class="fw-btn fw-btn-outline fw-btn-sm">Reset</a>
+
+</form>
+
+<div class="md-table-wrap">
+
+<div class="table-responsive">
+<table class="table fw-table md-table align-middle">
+<thead>
+<tr>
+    <th>Description</th>
+    <th>Department Head</th>
+    <th class="text-center">Status</th>
+    <th class="text-center">Created</th>
+    <th class="text-center">Actions</th>
+</tr>
+</thead>
+<tbody>
+
+{% for d in departments %}
+
+<tr>
+
+<td>
+    <div class="md-dept-name">
+        <span class="md-dept-icon"><i class="fa-solid fa-building"></i></span>
+        <div>
+            <div class="md-dept-title">{{ d.name }}</div>
+            {% if d.description %}
+            <div class="md-dept-desc">{{ d.description }}</div>
+            {% endif %}
+            <div class="md-chips">
+                <span class="md-chip people"><i class="fa-regular fa-user me-1"></i>{{ d.member_count }}</span>
+                <span class="md-chip tasks"><i class="fa-solid fa-list-check me-1"></i>{{ d.task_count }} task{{ '' if d.task_count == 1 else 's' }}</span>
+                <span class="md-chip done">{{ d.done_count }} &middot; {{ d.done_pct }}% done</span>
+            </div>
+        </div>
+    </div>
+</td>
+
+<td>
+    {% set h = head_name_map[d.id] if d.id in head_name_map else None %}
+    {% if h %}
+    <div class="md-head">
+        <span class="md-head-avatar">{{ h.initials }}</span>
+        <div>
+            <div class="md-head-name">{{ h.username }}</div>
+            <div class="md-head-role">{{ h.role }}</div>
+        </div>
+    </div>
+    {% else %}
+    <span class="md-unassigned"><i class="fa-regular fa-user me-1"></i> Unassigned</span>
+    {% endif %}
+</td>
+
+<td class="text-center">
+    <span class="md-status {{ d.status }}">{{ 'Active' if d.status == 'active' else 'Inactive' }}</span>
+</td>
+
+<td class="text-center">
+    <div class="md-date">{{ d.created_label }}</div>
+</td>
+
+<td>
+    <div class="md-actions">
+        <button type="button" class="md-act-btn" title="View details"
+                onclick="showDeptDetails('{{ d.id }}')">
+            <i class="fa-solid fa-eye"></i>
+        </button>
+        <a href="{{ url_for('main.edit_department', id=d.id) }}" class="md-act-btn" title="Edit department">
+            <i class="fa-solid fa-pen"></i>
+        </a>
+        {% if d.status == 'active' %}
+        <form action="{{ url_for('main.toggle_department_status', id=d.id) }}" method="POST" style="display:inline;margin:0;">
+            <button type="submit" class="md-act-btn on-red"
+                    onclick="return confirm('Deactivate this department? It will be hidden when assigning tasks.')" title="Deactivate">
+                <i class="fa-solid fa-power-off"></i>
+            </button>
+        </form>
+        {% else %}
+        <form action="{{ url_for('main.toggle_department_status', id=d.id) }}" method="POST" style="display:inline;margin:0;">
+            <button type="submit" class="md-act-btn on-green" title="Activate">
+                <i class="fa-solid fa-play"></i>
+            </button>
+        </form>
+        {% endif %}
+        <form action="{{ url_for('main.delete_department', id=d.id) }}" method="POST" style="display:inline;margin:0;">
+            <button type="submit" class="md-act-btn danger"
+                    onclick="return confirm('Are you sure you want to delete this department?')" title="Delete department">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </form>
+    </div>
+</td>
+
+</tr>
+
+{% else %}
+
+<tr>
+<td colspan="5">
+    <div class="fw-empty" style="padding:40px;">
+        <i class="fa-regular fa-building fa-2x mb-2 d-block opacity-50"></i>
+        {% if q or status_filter %}
+        No departments match your filters.
+        {% else %}
+        No departments created yet.
+        {% endif %}
+    </div>
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+</table>
+</div>
+
+</div>
+
+</div>
+
+<div class="modal fade fw-modal" id="deptDetailsModal" tabindex="-1" aria-hidden="true">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+
+    <div class="modal-header">
+        <h6 class="modal-title"><i class="fa-solid fa-building me-2"></i><span id="ddTitle">Department Details</span></h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <div class="modal-body">
+
+        <div class="md-modal-body">
+
+            <div class="md-detail-panel">
+                <div class="md-detail-title">Overview</div>
+                <p style="font-size:14px;font-weight:600;color:#1e293b;margin-bottom:6px;" id="ddName"></p>
+                <p style="font-size:12.5px;color:#64748b;" id="ddDesc"></p>
+                <div style="font-size:12.5px;color:#475569;margin-top:8px;">
+                    <div style="margin-bottom:6px;"><span style="color:#94a3b8;">Status:</span> <span style="font-weight:600;" id="ddStatus"></span></div>
+                    <div style="margin-bottom:6px;"><span style="color:#94a3b8;">Department Head:</span> <span style="font-weight:500;" id="ddHead"></span></div>
+                    <div><span style="color:#94a3b8;">Created:</span> <span style="font-weight:500;" id="ddCreated"></span></div>
+                </div>
+            </div>
+
+            <div class="md-detail-panel">
+                <div class="md-detail-title">Task Health</div>
+                <div class="md-kpis">
+                    <div class="md-kpi"><div class="md-kpi-num" id="ddTaskCount">0</div><div class="md-kpi-label">Tasks</div></div>
+                    <div class="md-kpi"><div class="md-kpi-num" id="ddDone">0</div><div class="md-kpi-label">Done</div></div>
+                    <div class="md-kpi"><div class="md-kpi-num" id="ddPending">0</div><div class="md-kpi-label">Pending</div></div>
+                    <div class="md-kpi"><div class="md-kpi-num" id="ddOverdue">0</div><div class="md-kpi-label">Overdue</div></div>
+                    <div class="md-kpi"><div class="md-kpi-num" id="ddPct">0%</div><div class="md-kpi-label">Done rate</div></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="md-detail-panel" style="margin-top:6px;">
+            <div class="md-detail-title">Members (<span id="ddMemberCount">0</span>)</div>
+            <div id="ddMembers"></div>
+        </div>
+
+    </div>
+
+    <div class="modal-footer">
+        <a id="ddEditLink" href="#" class="fw-btn fw-btn-primary fw-btn-sm"><i class="fa-solid fa-pen me-1"></i> Edit Department</a>
+    </div>
+
+</div>
+</div>
+</div>
+
+<script>
+
+async function showDeptDetails(deptId){
+    try{
+        const res = await fetch(`/department-details/${deptId}`);
+        const d = await res.json();
+
+        document.getElementById("ddName").textContent = d.name;
+        document.getElementById("ddDesc").textContent = d.description || "No description provided.";
+
+        const statusEl = document.getElementById("ddStatus");
+        statusEl.textContent = d.status_label;
+        statusEl.style.color = d.status === "active" ? "#16a34a" : "#64748b";
+
+        document.getElementById("ddHead").textContent = d.head
+            ? d.head.username + " (" + d.head.role + ")"
+            : "Unassigned";
+
+        document.getElementById("ddCreated").textContent = d.created_label;
+
+        document.getElementById("ddTaskCount").textContent = d.task_count;
+        document.getElementById("ddDone").textContent = d.done_count;
+        document.getElementById("ddPending").textContent = d.pending_count;
+        document.getElementById("ddOverdue").textContent = d.overdue_count;
+        document.getElementById("ddPct").textContent = d.done_pct + "%";
+
+        document.getElementById("ddMemberCount").textContent = d.member_count;
+
+        const membersEl = document.getElementById("ddMembers");
+        membersEl.innerHTML = "";
+        if (d.member_list && d.member_list.length){
+            d.member_list.forEach(function(m){
+                const row = document.createElement("div");
+                row.className = "md-member-row";
+                row.innerHTML = '<span class="md-head-avatar">' + m.initials + '</span>' +
+                    '<div class="md-member-info">' +
+                        '<div class="md-member-name">' + m.username + '</div>' +
+                        '<div class="md-member-role">' + m.role + '</div>' +
+                    '</div>' +
+                    '<span class="md-member-contact">' + (m.email || "") + '</span>';
+                membersEl.appendChild(row);
+            });
+        } else {
+            membersEl.innerHTML = '<span class="md-unassigned"><i class="fa-regular fa-user me-1"></i> No employees in this department.</span>';
+        }
+
+        document.getElementById("ddEditLink").href = `/edit-department/${deptId}`;
+
+        new bootstrap.Modal(document.getElementById("deptDetailsModal")).show();
+
+    } catch(err){
+        alert("Could not load department details.");
+    }
+}
+
+</script>
+
+{% endblock %}

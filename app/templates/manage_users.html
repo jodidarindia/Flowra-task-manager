@@ -6,242 +6,744 @@
 
 <style>
 
-.user-page{
-    min-height:80vh;
+.mu-wrap{
+    max-width:1920px;
+    margin:0 auto;
+    padding:22px;
 }
 
-.page-card{
-    background:#16202e;
-    border:1px solid #2c4766;
-    border-radius:20px;
-    padding:25px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.25);
+.mu-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
 }
 
-.page-title{
-    color:#0ef;
-    font-weight:700;
+.mu-head h2{
+    font-size:22px;
+    font-weight:600;
+    color:var(--fw-text);
+    margin:0;
 }
 
-.table-wrapper{
+.mu-head p{
+    margin:5px 0 0;
+    font-size:13px;
+    color:#64748b;
+}
+
+.mu-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.mu-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:11px 18px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:500;
+    text-decoration:none;
+    border:1px solid transparent;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    white-space:nowrap;
+}
+
+.mu-btn:hover{
+    transform:translateY(-1px);
+}
+
+.mu-btn.primary{
+    background:linear-gradient(135deg,#2563eb,#4f46e5);
+    color:#fff;
+    box-shadow:0 8px 18px rgba(37,99,235,.25);
+}
+
+.mu-btn.primary:hover{
+    background:linear-gradient(135deg,#1d4ed8,#4338ca);
+    color:#fff;
+}
+
+.mu-btn.ghost{
+    background:#fff;
+    border-color:var(--fw-border);
+    color:#475569;
+    box-shadow:var(--fw-shadow);
+}
+
+.mu-btn.ghost:hover{
+    border-color:#bfdbfe;
+    color:var(--fw-primary);
+}
+
+.mu-btn.danger{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.mu-btn.danger:hover{
+    background:#fecaca;
+    color:#b91c1c;
+}
+
+.mu-toolbar{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    background:#fff;
+    border:1px solid var(--fw-border);
+    border-radius:14px;
+    padding:12px 14px;
+    box-shadow:var(--fw-shadow);
+    margin-bottom:16px;
+}
+
+.mu-toolbar .mu-search{
+    position:relative;
+    flex:1;
+    min-width:230px;
+}
+
+.mu-toolbar .mu-search i{
+    position:absolute;
+    left:13px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#94a3b8;
+    font-size:13px;
+}
+
+.mu-toolbar input[type="text"]{
+    width:100%;
+    border:1px solid var(--fw-border);
+    border-radius:10px;
+    padding:10px 14px 10px 36px;
+    font-size:13.5px;
+    outline:none;
+    transition:.15s;
+}
+
+.mu-toolbar input[type="text"]:focus{
+    border-color:var(--fw-primary);
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+}
+
+.mu-toolbar select{
+    border:1px solid var(--fw-border);
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:13px;
+    background:#fff;
+    color:#334155;
+    outline:none;
+    cursor:pointer;
+    min-width:150px;
+}
+
+.mu-toolbar select:focus{
+    border-color:var(--fw-primary);
+}
+
+.mu-card{
+    background:#fff;
+    border:1px solid var(--fw-border);
     border-radius:16px;
+    box-shadow:var(--fw-shadow);
     overflow:hidden;
 }
 
-.user-table{
-    margin-bottom:0;
+.mu-table{
+    width:100%;
+    border-collapse:collapse;
 }
 
-.user-table thead th{
-    background:#0ef !important;
-    color:#1f293a !important;
-    border:none !important;
-    font-size:14px;
+.mu-table thead th{
+    text-align:left;
+    font-size:11px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:#64748b;
+    padding:13px 16px;
+    border-bottom:1px solid var(--fw-border);
+    background:#f8fafc;
+    white-space:nowrap;
 }
 
-.user-table tbody tr{
-    background:#1f293a;
-}
-
-.user-table tbody tr:hover{
-    background:#203046;
-}
-
-.user-table td{
-    border-color:#2c4766;
+.mu-table tbody td{
+    padding:14px 16px;
+    border-bottom:1px solid #f1f5f9;
+    font-size:13px;
+    color:#334155;
     vertical-align:middle;
 }
 
-.search-bar input{
-    background:#1f293a;
-    border:1px solid #2c4766;
-    color:white;
+.mu-table tbody tr:hover{
+    background:#f8fafc;
 }
 
-.search-bar input:focus{
-    border-color:#0ef;
-    box-shadow:none;
+.mu-user{
+    display:flex;
+    align-items:center;
+    gap:12px;
 }
 
-.filter-select{
-    background:#1f293a;
-    border:1px solid #2c4766;
-    color:white;
+.mu-avatar{
+    width:38px;
+    height:38px;
+    border-radius:11px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12.5px;
+    font-weight:600;
+    color:#fff;
+    flex-shrink:0;
 }
 
-.filter-select:focus{
-    border-color:#0ef;
-    box-shadow:none;
+.mu-user .mu-name{
+    font-weight:600;
+    color:var(--fw-text);
 }
 
-.back-btn{
-    margin-top:30px;
+.mu-user .mu-mail{
+    font-size:11.5px;
+    color:#94a3b8;
+    margin-top:2px;
 }
 
-.action-btn{
+.mu-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:11.5px;
+    font-weight:500;
+    border-radius:20px;
+    padding:4px 11px;
+    white-space:nowrap;
+}
+
+.mu-pill.role-manager{
+    background:#fef3c7;
+    color:#b45309;
+}
+
+.mu-pill.role-employee{
+    background:#e0f2fe;
+    color:#0369a1;
+}
+
+.mu-pill.role-admin{
+    background:#ede9fe;
+    color:#6d28d9;
+}
+
+.mu-pill.status-active{
+    background:#dcfce7;
+    color:#16a34a;
+}
+
+.mu-pill.status-inactive{
+    background:#f1f5f9;
+    color:#64748b;
+}
+
+.mu-pill .dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:currentColor;
+}
+
+.mu-actions-cell{
+    display:flex;
+    gap:8px;
+}
+
+.mu-actions-cell button{
+    background:none;
+    border:none;
+    cursor:pointer;
+    width:32px;
+    height:32px;
+    border-radius:9px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
     font-size:13px;
-    padding:6px 10px;
+    color:#64748b;
+    transition:.15s;
 }
-select, 
-.form-select{
-    background:#1f293a;
-    border:1px solid #2c4766;
+
+.mu-actions-cell a{
+    background:none;
+    width:32px;
+    height:32px;
+    border-radius:9px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    color:#64748b;
+    text-decoration:none;
+    transition:.15s;
+}
+
+.mu-actions-cell a:hover{
+    background:#eff6ff;
+    color:var(--fw-primary);
+}
+
+.mu-actions-cell button:hover{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.mu-actions-cell button.mu-btn-view:hover{
+    background:#eff6ff;
+    color:#2563eb;
+}
+
+.mu-actions-cell button.mu-btn-toggle:hover{
+    background:#fef3c7;
+    color:#b45309;
+}
+
+.mu-actions-cell form{
+    margin:0;
+}
+
+.mu-detail-head{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding-bottom:14px;
+    border-bottom:1px solid var(--fw-border);
+    margin-bottom:6px;
+}
+
+.mu-detail-avatar{
+    width:58px;
+    height:58px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-weight:700;
+    font-size:1.3rem;
+    flex:none;
+}
+
+.mu-detail-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:9px 0;
+    border-bottom:1px solid var(--fw-border);
+    font-size:.9rem;
+}
+
+.mu-detail-row:last-child{ border-bottom:none; }
+
+.mu-detail-row .lab{
+    color:#64748b;
+    font-size:.78rem;
+}
+
+.mu-detail-row .val{
+    font-weight:500;
+    text-align:right;
+}
+
+.mu-empty{
+    text-align:center;
+    padding:40px 16px;
+    color:#94a3b8;
+    font-size:13px;
+}
+
+.mu-pager{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+    padding:14px 16px;
+    border-top:1px solid var(--fw-border);
+    font-size:12.5px;
+    color:#64748b;
+}
+
+.mu-pages{
+    display:flex;
+    gap:6px;
+}
+
+.mu-pages button{
+    min-width:32px;
+    height:32px;
+    border-radius:8px;
+    border:1px solid var(--fw-border);
+    background:#fff;
+    color:#475569;
+    font-size:12.5px;
+    cursor:pointer;
+    transition:.15s;
+    padding:0 8px;
+}
+
+.mu-pages button:hover:not(:disabled){
+    border-color:#bfdbfe;
+    color:var(--fw-primary);
+}
+
+.mu-pages button.on{
+    background:var(--fw-primary);
+    border-color:var(--fw-primary);
     color:#fff;
 }
-select option{
-    background:#16202e;
-    color:#fff;
+
+.mu-pages button:disabled{
+    opacity:.45;
+    cursor:default;
 }
-select option{
-    background:#16202e;
-    color:#fff;
+
+@media(max-width:768px){
+    .mu-table thead{display:none;}
+    .mu-table tbody td{display:block;border:none;padding:8px 16px;}
+    .mu-table tbody tr{border-bottom:1px solid var(--fw-border);padding:10px 0;}
 }
 
 </style>
 
-<div class="container mt-5 user-page">
+<div class="mu-wrap">
 
-<div class="page-card">
+<div class="mu-head">
+    <div>
+        <h2><i class="fa-solid fa-users me-1" style="color:var(--fw-primary);"></i> {% if current_user.role == 'super_admin' %}Manage Admins{% elif current_user.role == 'manager' %}My Team{% else %}Manage Users{% endif %}</h2>
+        <p>{% if current_user.role == 'super_admin' %}{{ n_people }} admin account{{ '' if n_people == 1 else 's' }} across {{ n_people }} compan{{ 'y' if n_people == 1 else 'ies' }}{% else %}{{ n_people }} people across {{ n_departments }} department{{ '' if n_departments == 1 else 's' }}{% endif %}</p>
+    </div>
+    <div class="mu-actions">
+        <button type="button" class="mu-btn ghost" id="muExport"><i class="fa-solid fa-file-export"></i> Export</button>
+        <a href="{{ url_for('main.create_user') }}" class="mu-btn primary"><i class="fa-solid fa-user-plus"></i> {% if current_user.role == 'super_admin' %}Create admin{% elif current_user.role == 'manager' %}Create employee{% else %}Create user{% endif %}</a>
+    </div>
+</div>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+<div class="mu-toolbar">
+    <div class="mu-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="muSearch" placeholder="Search name, email or mobile">
+    </div>
+    <select id="muRole">
+        <option value="">All roles</option>
+        {% if current_user.role == 'super_admin' %}
+        <option value="admin">Admin</option>
+        {% endif %}
+        <option value="manager">Manager</option>
+        <option value="employee">Employee</option>
+    </select>
+    <select id="muDept">
+        <option value="">All departments</option>
+        {% for d in departments %}
+        <option value="{{ d }}">{{ d }}</option>
+        {% endfor %}
+    </select>
+    <select id="muStatus">
+        <option value="">Any status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+    </select>
+</div>
 
-<h3 class="page-title">Manage Users</h3>
-
-<div class="d-flex gap-2">
-
-<input type="text" id="searchUser"
-class="form-control form-control-sm search-bar"
-placeholder="Search user...">
-
-<select id="roleFilter"
-class="form-select form-select-sm filter-select">
-
-<option value="">All Roles</option>
-<option value="admin">Admin</option>
-<option value="manager">Manager</option>
-<option value="employee">Employee</option>
-
-</select>
-
+<div class="mu-card">
+    <table class="mu-table">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Mobile</th>
+                {% if current_user.role == 'super_admin' %}<th>Company</th>{% endif %}
+                <th>Role</th>
+                <th>Status</th>
+                <th>Added</th>
+                <th style="width:90px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="muRows"></tbody>
+    </table>
+    <div class="mu-empty d-none" id="muEmpty">No users found.</div>
+    <div class="mu-pager">
+        <span id="muCount"></span>
+        <div class="mu-pages" id="muPages"></div>
+    </div>
 </div>
 
 </div>
 
-<div class="table-wrapper">
+<div class="modal fade" id="userDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border:none;border-radius:18px;overflow:hidden;">
+            <div class="modal-body" style="padding:22px;">
 
-<table class="table table-bordered table-hover align-middle text-center user-table">
+                <div class="mu-detail-head">
+                    <div class="mu-detail-avatar" id="udAvatar" style="background:#2563eb;">?</div>
+                    <div>
+                        <h5 class="mb-0" id="udName" style="font-weight:700;"></h5>
+                        <div class="d-flex gap-2 mt-1" style="align-items:center;">
+                            <span class="mu-pill role-employee" id="udRole"></span>
+                            <span class="mu-pill status-active" id="udStatus"><span class="dot"></span></span>
+                        </div>
+                    </div>
+                </div>
 
-<thead>
-<tr>
-<th>Name</th>
-<th>Email</th>
-<th>Department</th>
-<th>Role</th>
-<th>Action</th>
-</tr>
-</thead>
+                <div class="mu-detail-row"><span class="lab">Email</span><span class="val" id="udEmail">—</span></div>
+                <div class="mu-detail-row"><span class="lab">Mobile</span><span class="val" id="udPhone">—</span></div>
+                <div class="mu-detail-row" id="udCompanyRow"><span class="lab">Company</span><span class="val" id="udCompany">—</span></div>
+                <div class="mu-detail-row"><span class="lab">Supervisor</span><span class="val" id="udSupervisor">—</span></div>
+                <div class="mu-detail-row"><span class="lab">Reward Points</span><span class="val" id="udPoints">0</span></div>
+                <div class="mu-detail-row"><span class="lab">Failed Attempts</span><span class="val" id="udAttempts">0</span></div>
+                <div class="mu-detail-row"><span class="lab">Added</span><span class="val" id="udAdded">—</span></div>
+                <div class="mu-detail-row"><span class="lab">Last Active</span><span class="val" id="udLastSeen">—</span></div>
 
-<tbody id="userTable">
+                <div class="d-flex gap-2 mt-3 pt-3" style="border-top:1px solid var(--fw-border);">
+                    <a href="#" class="mu-btn primary" id="udEdit" style="flex:1;text-align:center;text-decoration:none;"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+                    <form method="POST" id="udToggleForm" style="margin:0;flex:1;">
+                        <button type="submit" class="mu-btn primary" style="width:100%;border:none;background:#fef3c7;color:#b45309;"><i class="fa-solid fa-user-slash me-1"></i><span id="udToggleLabel">Deactivate</span></button>
+                    </form>
+                    <button type="button" class="mu-btn" data-bs-dismiss="modal">Close</button>
+                </div>
 
-{% for u in users %}
-
-<tr data-role="{{ u.role }}">
-
-<td>{{ u.username }}</td>
-
-<td>{{ u.email }}</td>
-
-<td>{{ u.department.name if u.department else "-" }}</td>
-
-<td>
-<span class="badge
-{% if u.role == 'admin' %}bg-danger
-{% elif u.role == 'manager' %}bg-warning text-dark
-{% else %}bg-info text-dark
-{% endif %}">
-{{ u.role }}
-</span>
-</td>
-
-<td>
-
-<a href="{{ url_for('main.edit_user', id=u.id) }}"
-class="btn btn-warning btn-sm action-btn">
-Edit
-</a>
-<form action="{{ url_for('main.delete_user', user_id=u.id) }}" method="POST"
-
-method="POST"
-style="display:inline;">
-
-<button class="btn btn-danger btn-sm action-btn"
-onclick="return confirm('Delete this user?')">
-Delete
-</button>
-
-</form>
-
-</td>
-
-</tr>
-
-{% endfor %}
-
-</tbody>
-
-</table>
-
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="text-center back-btn">
-
-<button onclick="history.back()" class="btn btn-secondary px-4">
-⬅ Back
-</button>
-
-</div>
-
-</div>
-
-</div>
+<script type="application/json" id="muData">
+{{ users_data | tojson }}
+</script>
 
 <script>
+const USERS = JSON.parse(document.getElementById("muData").textContent);
+const PAGE_SIZE = 8;
+const IS_SUPER = {{ 'true' if current_user.role == 'super_admin' else 'false' }};
 
-const searchInput = document.getElementById("searchUser")
-const roleFilter = document.getElementById("roleFilter")
-const rows = document.querySelectorAll("#userTable tr")
+const searchInput = document.getElementById("muSearch");
+const roleFilter = document.getElementById("muRole");
+const deptFilter = document.getElementById("muDept");
+const statusFilter = document.getElementById("muStatus");
+const tbody = document.getElementById("muRows");
+const emptyBox = document.getElementById("muEmpty");
+const countEl = document.getElementById("muCount");
+const pagesEl = document.getElementById("muPages");
 
-function filterUsers(){
+const AVATAR_COLORS = [
+    ["#2563eb", "#dbeafe"],
+    ["#7c3aed", "#ede9fe"],
+    ["#0891b2", "#cffafe"],
+    ["#16a34a", "#dcfce7"],
+    ["#d97706", "#fef3c7"],
+    ["#db2777", "#fce7f3"],
+    ["#475569", "#f1f5f9"],
+    ["#dc2626", "#fee2e2"]
+];
 
-const search = searchInput.value.toLowerCase()
-const role = roleFilter.value
-
-rows.forEach(row=>{
-
-const name = row.children[0].innerText.toLowerCase()
-const email = row.children[1].innerText.toLowerCase()
-const userRole = row.dataset.role
-
-const matchSearch = name.includes(search) || email.includes(search)
-const matchRole = role === "" || userRole === role
-
-if(matchSearch && matchRole){
-
-row.style.display=""
-
-}else{
-
-row.style.display="none"
-
+function initials(name) {
+    return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("") || "?";
 }
 
-})
-
+function avatarColor(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+    return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
-searchInput.addEventListener("keyup",filterUsers)
-roleFilter.addEventListener("change",filterUsers)
+function filteredUsers() {
+    const q = searchInput.value.trim().toLowerCase();
+    const role = roleFilter.value;
+    const dept = deptFilter.value;
+    const status = statusFilter.value;
 
+    return USERS.filter(u => {
+        const text = (u.name + " " + u.email + " " + u.phone).toLowerCase();
+        const okSearch = !q || text.includes(q);
+        const okRole = !role || u.role === role;
+        const okDept = !dept || u.department === dept;
+        const okStatus = !status || (u.status || "active") === status;
+        return okSearch && okRole && okDept && okStatus;
+    });
+}
+
+let page = 0;
+
+function rowHtml(u, color) {
+    const role = u.role === "manager" ? "Manager" : (u.role === "admin" ? "Admin" : "Employee");
+    const status = (u.status || "active") === "active" ? "Active" : "Inactive";
+    return "<tr>" +
+        '<td><div class="mu-user">' +
+        '<span class="mu-avatar" style="background:' + color[0] + ';">' + initials(u.name) + "</span>" +
+        '<span><div class="mu-name">' + escapeHtml(u.name) + "</div>" +
+        '<div class="mu-mail">' + escapeHtml(u.email) + "</div></span></div></td>" +
+        '<td>' + escapeHtml(u.phone || "-") + "</td>" +
+        (IS_SUPER ? '<td>' + escapeHtml(u.company || "-") + "</td>" : "") +
+        '<td><span class="mu-pill role-' + u.role + '">' + role + "</span></td>" +
+        '<td><span class="mu-pill status-' + (u.status || "active") + '"><span class="dot"></span>' + status + "</span></td>" +
+        '<td>' + escapeHtml(u.created) + "</td>" +
+        '<td><div class="mu-actions-cell">' +
+        '<button type="button" class="mu-btn-view" title="View details" onclick="showUser(\'' + u.id + '\')"><i class="fa-regular fa-eye"></i></button>' +
+        '<a href="/edit-user/' + u.id + '" title="Edit"><i class="fa-solid fa-pen"></i></a>' +
+        '<form method="POST" action="/toggle-user-status/' + u.id + '">' +
+        '<button type="submit" class="mu-btn-toggle" title="' + ((u.status || "active") === "active" ? "Deactivate" : "Activate") + '"><i class="fa-solid fa-' + ((u.status || "active") === "active" ? "user-slash" : "user-check") + '"></i></button></form>' +
+        '<form method="POST" action="/delete_user/' + u.id + '" onsubmit="return confirm(\'Delete this user?\')">' +
+        '<button type="submit" class="mu-btn-delete" title="Delete"><i class="fa-solid fa-trash"></i></button></form>' +
+        "</div></td></tr>";
+}
+
+function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+}
+
+function render(filtered) {
+    const total = filtered.length;
+    const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (page >= maxPage) page = maxPage - 1;
+
+    const slice = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
+    if (!slice.length) {
+        tbody.innerHTML = "";
+        emptyBox.classList.remove("d-none");
+        countEl.textContent = "No results";
+        pagesEl.innerHTML = "";
+        return;
+    }
+
+    emptyBox.classList.add("d-none");
+
+    tbody.innerHTML = slice.map(u => rowHtml(u, avatarColor(u.name))).join("");
+
+    const from = total === 0 ? 0 : page * PAGE_SIZE + 1;
+    const to = Math.min(total, (page + 1) * PAGE_SIZE);
+    countEl.textContent = "Showing " + from + "\u2013" + to + " of " + total;
+
+    let html = "";
+    if (page > 0) html += '<button data-p="' + (page - 1) + '">&lsaquo;</button>';
+    for (let i = 0; i < maxPage; i++) {
+        html += '<button data-p="' + i + '"' + (i === page ? ' class="on"' : "") + ">" + (i + 1) + "</button>";
+    }
+    if (page < maxPage - 1) html += '<button data-p="' + (page + 1) + '">&rsaquo;</button>';
+    pagesEl.innerHTML = html;
+
+    pagesEl.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", function () {
+            page = parseInt(this.dataset.p, 10);
+            render(filteredUsers());
+        });
+    });
+}
+
+function refresh() {
+    page = 0;
+    render(filteredUsers());
+}
+
+// ============ VIEW USER DETAILS ============
+let userModal = null;
+const udName = document.getElementById("udName");
+const udRole = document.getElementById("udRole");
+const udStatus = document.getElementById("udStatus");
+const udEmail = document.getElementById("udEmail");
+const udPhone = document.getElementById("udPhone");
+const udCompanyRow = document.getElementById("udCompanyRow");
+const udCompany = document.getElementById("udCompany");
+const udSupervisor = document.getElementById("udSupervisor");
+const udPoints = document.getElementById("udPoints");
+const udAttempts = document.getElementById("udAttempts");
+const udAdded = document.getElementById("udAdded");
+const udLastSeen = document.getElementById("udLastSeen");
+const udEdit = document.getElementById("udEdit");
+const udToggleForm = document.getElementById("udToggleForm");
+const udToggleLabel = document.getElementById("udToggleLabel");
+
+window.showUser = function (userId) {
+    const u = USERS.find(x => x.id === userId);
+    if (!u) return;
+    udName.textContent = u.name;
+    udRole.className = "mu-pill role-" + u.role;
+    udRole.textContent = u.role === "manager" ? "Manager" : (u.role === "admin" ? "Admin" : "Employee");
+    udStatus.className = "mu-pill status-" + (u.status || "active");
+    udStatus.innerHTML = '<span class="dot"></span>' + ((u.status || "active") === "active" ? "Active" : "Inactive");
+    udEmail.textContent = u.email || "—";
+    udPhone.textContent = u.phone || "—";
+    udSupervisor.textContent = u.supervisor || "—";
+    udPoints.textContent = u.points ?? 0;
+    udAttempts.textContent = u.attempts ?? 0;
+    udAdded.textContent = u.created || "—";
+    udLastSeen.textContent = u.last_seen || "—";
+    if (IS_SUPER) {
+        udCompanyRow.style.display = "";
+        udCompany.textContent = u.company || "—";
+    } else {
+        udCompanyRow.style.display = "none";
+    }
+    udEdit.href = "/edit-user/" + u.id;
+    const active = (u.status || "active") === "active";
+    udToggleForm.action = "/toggle-user-status/" + u.id;
+    udToggleLabel.textContent = active ? "Deactivate" : "Activate";
+    udToggleForm.querySelector("i").className = active ? "fa-solid fa-user-slash" : "fa-solid fa-user-check";
+    udAvatarEl().style.background = avatarColor(u.name)[0];
+    udAvatarEl().textContent = initials(u.name);
+    if (!userModal) {
+        userModal = new bootstrap.Modal(document.getElementById("userDetailModal"));
+    }
+    userModal.show();
+};
+
+function udAvatarEl() {
+    return document.getElementById("udAvatar");
+}
+
+searchInput.addEventListener("input", refresh);
+roleFilter.addEventListener("change", refresh);
+deptFilter.addEventListener("change", refresh);
+statusFilter.addEventListener("change", refresh);
+
+document.getElementById("muExport").addEventListener("click", function () {
+    const rows = filteredUsers();
+    const header = ["Name", "Email", "Mobile"].concat(IS_SUPER ? ["Company"] : [])
+        .concat(["Role", "Status", "Added"]);
+    const lines = rows.map(u => {
+        const base = [u.name, u.email, u.phone];
+        const rest = [
+            u.role === "manager" ? "Manager" : (u.role === "admin" ? "Admin" : "Employee"),
+            (u.status || "active") === "active" ? "Active" : "Inactive",
+            u.created
+        ];
+        return IS_SUPER ? base.concat([u.company || "-"]).concat(rest) : base.concat(rest);
+    });
+
+    const csv = [header, ...lines]
+        .map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(","))
+        .join("\n");
+
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "users.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+});
+
+refresh();
 </script>
 
 {% endblock %}

@@ -1,250 +1,276 @@
 {% extends "base.html" %}
+{% block title %}Assign Task{% endblock %}
+
 {% block content %}
 
 <style>
 
-/* PAGE BACKGROUND */
-
-.task-page{
-position:relative;
-min-height:100vh;
-background:linear-gradient(270deg,#eef2ff,#f5f3ff,#e0f2fe,#ede9fe);
-background-size:600% 600%;
-animation:gradientMove 18s ease infinite;
-display:flex;
-align-items:center;
-justify-content:center;
-padding:40px;
-overflow:hidden;
+.assign-task-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
 }
 
-/* FLOATING BLOBS */
-
-.task-page::before{
-content:"";
-position:absolute;
-width:500px;
-height:500px;
-background:#7c3aed;
-opacity:0.15;
-filter:blur(140px);
-top:-150px;
-left:-150px;
-animation:floatBlob1 20s infinite alternate;
+.fw-banner p{
+    margin:0;
+    color: rgba(255,255,255,0.85);
+    font-size:.92rem;
 }
 
-.task-page::after{
-content:"";
-position:absolute;
-width:450px;
-height:450px;
-background:#2563eb;
-opacity:0.15;
-filter:blur(140px);
-bottom:-120px;
-right:-120px;
-animation:floatBlob2 22s infinite alternate;
+.task-form-card{
+    background:#fff;
+    border-radius:20px;
+    box-shadow:0 18px 45px rgba(2,12,27,0.1);
+    border:1px solid var(--fw-border);
+    overflow:hidden;
 }
 
-/* ANIMATIONS */
-
-@keyframes gradientMove{
-0%{background-position:0% 50%;}
-50%{background-position:100% 50%;}
-100%{background-position:0% 50%;}
+.task-form-card .card-head{
+    background:var(--fw-grad);
+    color:#fff;
+    padding:18px 26px;
+    font-weight:500;
 }
 
-@keyframes floatBlob1{
-0%{transform:translate(0,0)}
-100%{transform:translate(120px,80px)}
+.task-form-card .card-body{
+    padding:28px;
 }
 
-@keyframes floatBlob2{
-0%{transform:translate(0,0)}
-100%{transform:translate(-120px,-60px)}
+.assignee-card{
+    background:#fff;
+    border-radius:20px;
+    box-shadow:0 18px 45px rgba(2,12,27,0.08);
+    border:1px solid var(--fw-border);
+    overflow:hidden;
+    position:sticky;
+    top:88px;
 }
 
-/* CARD */
-
-.task-card{
-width:600px;
-background:rgba(255,255,255,0.9);
-backdrop-filter:blur(12px);
-border-radius:20px;
-padding:35px;
-box-shadow:0 20px 40px rgba(0,0,0,0.12);
-z-index:10;
+.assignee-card .ac-head{
+    padding:20px;
+    background:linear-gradient(180deg, rgba(45,111,255,0.07), rgba(255,255,255,0));
+    border-bottom:1px solid var(--fw-border);
 }
 
-/* TITLE */
-
-.task-title{
-text-align:center;
-color:#2563eb;
-font-weight:700;
-margin-bottom:25px;
+.assignee-avatar{
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-weight:700;
+    font-size:1.25rem;
+    flex:none;
 }
 
-/* INPUTS */
-
-.form-control,
-.form-select{
-border-radius:12px;
-border:1px solid #e5e7eb;
+.ac-row{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:14px 20px;
+    border-bottom:1px solid var(--fw-border);
 }
 
-.form-control:focus,
-.form-select:focus{
-border-color:#2563eb;
-box-shadow:none;
+.ac-row:last-child{
+    border-bottom:none;
 }
 
-/* FILE INPUT */
-
-input[type="file"]{
-border-radius:12px;
+.ac-row i{
+    width:18px;
+    color:#6b7280;
+    margin-top:3px;
 }
 
-/* BUTTONS */
-
-.btn-primary{
-background:linear-gradient(135deg,#2563eb,#7c3aed);
-border:none;
-border-radius:12px;
+.ac-kpi{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
 }
 
-.btn-warning{
-border-radius:12px;
+.ac-kpi .kpi{
+    flex:1;
+    text-align:center;
+    background:#f8fafc;
+    border:1px solid var(--fw-border);
+    border-radius:14px;
+    padding:10px 6px;
 }
 
-.btn-secondary{
-border-radius:12px;
+.ac-kpi .kpi b{
+    display:block;
+    font-size:1.15rem;
 }
 
-/* BUTTON GROUP */
+.ac-kpi .kpi span{
+    font-size:.72rem;
+    color:#6b7280;
+}
 
-.btn-group-custom{
-margin-top:25px;
-display:flex;
-justify-content:center;
-gap:15px;
-flex-wrap:wrap;
+.ac-foot{
+    padding:12px 20px 16px;
+    background:#f8fafc;
+    font-size:.8rem;
+    color:#6b7280;
+}
+
+.ac-foot i{
+    margin-right:6px;
+    color:var(--fw-primary, #2d6fff);
 }
 
 </style>
 
+<div class="assign-task-content pt-4">
 
-<div class="task-page">
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-solid fa-list-check me-2"></i>Assign Task</h2>
+        <p>The assignee is notified as soon as the task is created.</p>
+    </div>
+</div>
 
-<div class="task-card">
+<div class="row g-4 mt-2">
+<div class="col-lg-8">
 
-<h3 class="task-title">Create Task</h3>
+<div class="task-form-card">
+
+<div class="card-head">
+    <i class="fa-solid fa-clipboard-list me-2"></i>Task details
+</div>
+
+<div class="card-body">
 
 <form method="POST"
 action="{{ url_for('main.create_task') }}"
-enctype="multipart/form-data">
+enctype="multipart/form-data" id="assignTaskForm">
 
+<input type="hidden" name="reward_points" value="5">
+
+<div class="mb-3">
+<label class="fw-label">Task Title *</label>
 <input type="text"
 name="title"
-placeholder="Task Title"
-class="form-control mb-3"
+placeholder="Short, specific summary of the work"
+class="form-control fw-form-control"
 required>
+</div>
 
+<div class="mb-3">
+<label class="fw-label">Description *</label>
 <textarea name="description"
-placeholder="Task Description"
-class="form-control mb-3"></textarea>
-
-<select name="priority" class="form-select mb-3">
-
-<option value="Low">Low Priority</option>
-<option value="Medium">Medium Priority</option>
-<option value="High">High Priority</option>
-
-</select>
-
-<div class="mb-3">
-
-<label class="form-label fw-semibold">
-Reward Points
-</label>
-
-<select name="reward_points"
-class="form-select"
-required>
-
-<option value="5">5 Points</option>
-<option value="10">10 Points</option>
-<option value="15">15 Points</option>
-
-</select>
-
+placeholder="What needs to happen, and what done looks like"
+class="form-control fw-form-control"
+rows="3" required></textarea>
 </div>
 
-<div class="mb-3">
-
-<label class="form-label fw-semibold">
-Attachment (Optional)
-</label>
-
-<input type="file"
-name="proof_file"
-class="form-control"
-accept=".jpg,.png,.pdf">
-
-</div>
-
-<div class="mb-3">
-
-<label class="form-label fw-semibold">
-Due Date & Time
-</label>
-
-<input type="datetime-local"
-name="due_date"
-class="form-control"
-required>
-
-</div>
-
-<div class="mb-3">
-
-<label class="form-label fw-semibold">
-Assign To
-</label>
-
-<select name="assigned_to"
-class="form-select"
-required>
-
-{% for user in users %}
-
-<option value="{{ user.id }}">
-{{ user.username }}
-</option>
-
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="fw-label">Department *</label>
+<select name="department" id="deptSelect" class="form-select fw-form-select" required>
+<option value="">Select department</option>
+{% for dept in departments %}
+<option value="{{ dept.id }}">{{ dept.name }}</option>
 {% endfor %}
-
 </select>
-
 </div>
 
-<div class="btn-group-custom">
+<div class="col-md-6 mb-3">
+<label class="fw-label">Assign To *</label>
+<select name="assigned_to" id="assigneeSelect" class="form-select fw-form-select" required>
+<option value="">Select employee</option>
+{% for u in users %}
+<option value="{{ u.id }}"
+data-name="{{ u.name }}"
+data-role="{{ u.role | capitalize }}"
+data-department="{{ u.department }}"
+data-email="{{ u.email }}"
+data-phone="{{ u.phone }}"
+data-open="{{ u.open_tasks }}"
+data-overdue="{{ u.overdue_tasks }}"
+data-dept-id="{{ u.department_id }}">
+{{ u.name }} — {{ u.role | capitalize }}
+{% if u.department %} · {{ u.department }}{% endif %}
+</option>
+{% endfor %}
+</select>
+<small class="text-muted">Pulled from User Management. Contact details come from their profile.</small>
+</div>
+</div>
 
-<button class="btn btn-primary">
-Add Task
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="fw-label">Priority *</label>
+<select name="priority" class="form-select fw-form-select" required>
+<option value="Low">Low</option>
+<option value="Medium">Medium</option>
+<option value="High">High</option>
+</select>
+</div>
+
+<div class="col-md-6 mb-3">
+<label class="fw-label">Task Category</label>
+<input type="text"
+name="category"
+placeholder="e.g. Development, Compliance, Internal"
+class="form-control fw-form-control">
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="fw-label">Start Date *</label>
+<input type="date"
+name="start_date"
+class="form-control fw-form-control"
+required>
+</div>
+
+<div class="col-md-6 mb-3">
+<label class="fw-label">Due Date *</label>
+<input type="date"
+name="due_date"
+class="form-control fw-form-control"
+required>
+</div>
+</div>
+
+<div class="mb-3">
+<label class="fw-label">Estimated Time</label>
+<input type="text"
+name="estimated_time"
+placeholder="e.g. 6h"
+class="form-control fw-form-control">
+<small class="text-muted">Used in analytics to compare estimate against actual.</small>
+</div>
+
+<div class="mb-3">
+<label class="fw-label">Attachment</label>
+<input type="file"
+name="attachments"
+class="form-control fw-form-control"
+multiple>
+<small class="text-muted">Attach a file — up to 10 MB.</small>
+</div>
+
+<div class="mb-4">
+<label class="fw-label">Notes</label>
+<textarea name="notes"
+placeholder="Anything the assignee should know before starting"
+class="form-control fw-form-control"
+rows="2"></textarea>
+</div>
+
+<div class="d-flex gap-2 flex-wrap">
+
+<button class="fw-btn fw-btn-primary flex-fill">
+<i class="fa-solid fa-paper-plane me-1"></i> Assign task
 </button>
 
 <button type="reset"
-class="btn btn-warning">
-Reset
-</button>
-
-<button type="button"
-onclick="history.back()"
-class="btn btn-secondary">
-
-⬅ Back
-
+class="fw-btn fw-btn-outline">
+<i class="fa-solid fa-rotate-left me-1"></i> Reset
 </button>
 
 </div>
@@ -254,5 +280,146 @@ class="btn btn-secondary">
 </div>
 
 </div>
+
+</div>
+
+<div class="col-lg-4">
+
+<div class="assignee-card">
+
+<div class="ac-head">
+<div class="d-flex align-items-center gap-3">
+<div class="assignee-avatar" id="previewAvatar">?</div>
+<div>
+<h5 class="mb-0" id="previewName">No assignee selected</h5>
+<small class="text-muted" id="previewRole">Pick a team member from Assign To</small>
+</div>
+</div>
+</div>
+
+<div class="ac-row">
+<i class="fa-solid fa-envelope"></i>
+<div>
+<div class="text-muted small">Email</div>
+<div id="previewEmail">—</div>
+</div>
+</div>
+
+<div class="ac-row">
+<i class="fa-solid fa-phone"></i>
+<div>
+<div class="text-muted small">Mobile</div>
+<div id="previewPhone">—</div>
+</div>
+</div>
+
+<div class="ac-row">
+<i class="fa-solid fa-building"></i>
+<div>
+<div class="text-muted small">Department</div>
+<div id="previewDept">—</div>
+</div>
+</div>
+
+<div class="ac-row">
+<div class="w-100">
+<div class="ac-kpi">
+<div class="kpi"><b id="previewOpen">0</b><span>Open tasks</span></div>
+<div class="kpi"><b id="previewOverdue">0</b><span>Overdue</span></div>
+</div>
+</div>
+</div>
+
+<div class="ac-foot">
+<i class="fa-solid fa-circle-check"></i>
+Contact details are already on file. Mobile numbers are stored on each employee profile, and notification delivery is handled by the backend.
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+const AVATAR_COLORS = ['#2d6fff', '#7c4dff', '#00a884', '#ff6b35', '#e03e8a', '#0ea5a4', '#8a5a2b', '#5b21b6'];
+
+function hashColor(str){
+    let h = 0;
+    for (let i = 0; i < (str || '').length; i++) {
+        h = ((h << 5) - h) + str.charCodeAt(i);
+        h |= 0;
+    }
+    return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function initials(name){
+    return (name || '?').trim().split(/\s+/).slice(0, 2).map(p => p[0].toUpperCase()).join('');
+}
+
+const deptSelect = document.getElementById('deptSelect');
+const assigneeSelect = document.getElementById('assigneeSelect');
+
+function applyDeptFilter(){
+    const deptId = deptSelect.value;
+    let firstMatch = null;
+    Array.from(assigneeSelect.options).forEach(opt => {
+        if (!opt.value) return;
+        const match = !deptId || opt.dataset.deptId === deptId;
+        opt.hidden = !match;
+        opt.disabled = !match;
+        if (match && !opt.selected && !firstMatch) firstMatch = opt;
+    });
+    if (deptId) {
+        if (firstMatch) {
+            assigneeSelect.value = firstMatch.value;
+            updatePreview(firstMatch);
+        } else {
+            assigneeSelect.value = '';
+            updatePreview(null);
+        }
+    } else {
+        assigneeSelect.value = '';
+        updatePreview(null);
+    }
+}
+
+function updatePreview(opt){
+    if (!opt || opt.value === '') {
+        document.getElementById('previewAvatar').textContent = '?';
+        document.getElementById('previewAvatar').style.background = '#cbd5e1';
+        document.getElementById('previewName').textContent = 'No assignee selected';
+        document.getElementById('previewRole').textContent = 'Pick a team member from Assign To';
+        document.getElementById('previewEmail').textContent = '—';
+        document.getElementById('previewPhone').textContent = '—';
+        document.getElementById('previewDept').textContent = '—';
+        document.getElementById('previewOpen').textContent = '0';
+        document.getElementById('previewOverdue').textContent = '0';
+        return;
+    }
+    const d = opt.dataset;
+    document.getElementById('previewAvatar').textContent = initials(d.name);
+    document.getElementById('previewAvatar').style.background = hashColor(d.name);
+    document.getElementById('previewName').textContent = d.name;
+    document.getElementById('previewRole').textContent = d.role && d.department ? d.role + ' · ' + d.department : (d.role || '');
+    document.getElementById('previewEmail').textContent = d.email || '—';
+    document.getElementById('previewPhone').textContent = d.phone || '—';
+    document.getElementById('previewDept').textContent = d.department || '—';
+    document.getElementById('previewOpen').textContent = d.open || '0';
+    document.getElementById('previewOverdue').textContent = d.overdue || '0';
+}
+
+deptSelect.addEventListener('change', applyDeptFilter);
+assigneeSelect.addEventListener('change', function(){
+    updatePreview(this.options[this.selectedIndex]);
+});
+
+(function init(){
+    applyDeptFilter();
+})();
+
+</script>
 
 {% endblock %}

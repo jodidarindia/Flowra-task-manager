@@ -2,120 +2,134 @@
 {% block title %}My Reminders{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="fw-container">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-0">🔔 My Reminders</h2>
-            <p class="text-muted mb-0">Create and manage your reminders here.</p>
-        </div>
-
-        <a href="{{ url_for('main.employee_panel') }}" class="btn btn-secondary rounded-3">
-            ← Back to Dashboard
-        </a>
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-regular fa-bell me-2"></i>My Reminders</h2>
+        <p>Create and manage your reminders here.</p>
     </div>
 
-    <div class="card shadow-sm border-0 rounded-4 mb-4">
-        <div class="card-body">
-            <h5 class="mb-3">Set New Reminder</h5>
+    <a href="{{ url_for('main.employee_panel') }}" class="fw-btn fw-btn-light fw-btn-sm">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+    </a>
+</div>
 
-            <form method="POST" action="{{ url_for('main.create_reminder') }}" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">Reason</label>
-                    <input type="text"
-                           name="reason"
-                           class="form-control rounded-3"
-                           placeholder="Reason of reminder"
-                           required>
-                </div>
+<div class="fw-card mb-4">
 
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Remind Time</label>
-                    <input type="datetime-local"
-                           name="remind_at"
-                           class="form-control rounded-3"
-                           required>
-                </div>
+<div class="fw-card-head">
+    <span><i class="fa-solid fa-bell-plus me-2 text-primary"></i>Set New Reminder</span>
+</div>
 
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">End Time</label>
-                    <input type="datetime-local"
-                           name="end_at"
-                           class="form-control rounded-3">
-                </div>
+<div class="fw-card-body">
 
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100 rounded-3">
-                        Set Reminder
-                    </button>
-                </div>
+<form method="POST" action="{{ url_for('main.create_reminder') }}" class="row g-3">
+<div class="col-md-4">
+<label class="fw-label">Reason</label>
+<input type="text"
+name="reason"
+class="form-control fw-form-control"
+placeholder="Reason of reminder"
+required>
+</div>
 
-                <div class="col-12">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="is_daily" id="dailyCheck">
-                        <label class="form-check-label" for="dailyCheck">
-                            Daily Reminder
-                        </label>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
+<div class="col-md-3">
+<label class="fw-label">Remind Time</label>
+<input type="datetime-local"
+name="remind_at"
+class="form-control fw-form-control"
+required>
+</div>
 
-    <div class="card shadow-sm border-0 rounded-4">
-        <div class="card-body">
-            <h5 class="mb-3">Reminder List</h5>
+<div class="col-md-3">
+<label class="fw-label">End Time</label>
+<input type="datetime-local"
+name="end_at"
+class="form-control fw-form-control">
+</div>
 
-            {% if reminders %}
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped align-middle text-center">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Reason</th>
-                            <th>Remind Time</th>
-                            <th>End Time</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for r in reminders %}
-                        <tr>
-                            <td>{{ r.reason }}</td>
-                            <td>{{ r.remind_at.strftime('%Y-%m-%d %H:%M') if r.remind_at else '-' }}</td>
-                            <td>{{ r.end_at.strftime('%Y-%m-%d %H:%M') if r.end_at else '-' }}</td>
-                            <td>
-                                {% if r.active %}
-                                    <span class="badge bg-success">Active</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Stopped</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if r.active %}
-                                <form method="POST" action="{{ url_for('main.stop_reminder_page', id=r.id) }}">
-                                    <button type="submit" class="btn btn-danger btn-sm rounded-3">
-                                        Stop
-                                    </button>
-                                </form>
-                                {% else %}
-                                    <button class="btn btn-secondary btn-sm rounded-3" disabled>
-                                        Stopped
-                                    </button>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-                <div class="alert alert-light border rounded-4 mb-0">
-                    No reminders found.
-                </div>
-            {% endif %}
-        </div>
-    </div>
+<div class="col-md-2 d-flex align-items-end">
+<button type="submit" class="fw-btn fw-btn-primary w-100 mb-0">
+<i class="fa-solid fa-plus me-1"></i> Set Reminder
+</button>
+</div>
+
+<div class="col-12">
+<div class="form-check d-flex align-items-center gap-2">
+<input class="form-check-input" type="checkbox" name="is_daily" id="dailyCheck">
+<label class="form-check-label" for="dailyCheck">
+Daily Reminder
+</label>
+</div>
+</div>
+</form>
+
+</div>
+
+</div>
+
+<div class="fw-card">
+
+<div class="fw-card-head">
+    <span><i class="fa-regular fa-bell me-2 text-primary"></i>Reminder List</span>
+    <span class="fw-badge fw-badge-primary">{{ reminders|length }}</span>
+</div>
+
+<div class="fw-card-body">
+
+{% if reminders %}
+<div class="table-responsive">
+<table class="table table-bordered table-striped fw-table align-middle text-center">
+<thead>
+<tr>
+<th>Reason</th>
+<th>Remind Time</th>
+<th>End Time</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+{% for r in reminders %}
+<tr>
+<td class="fw-semibold">{{ r.reason }}</td>
+<td>{{ r.remind_at.strftime('%d %b %Y %I:%M %p') if r.remind_at else '-' }}</td>
+<td>{{ r.end_at.strftime('%d %b %Y %I:%M %p') if r.end_at else '-' }}</td>
+<td>
+{% if r.active %}
+<span class="fw-badge fw-badge-success">Active</span>
+{% else %}
+<span class="fw-badge fw-badge-secondary">Stopped</span>
+{% endif %}
+</td>
+<td>
+{% if r.active %}
+<form method="POST" action="{{ url_for('main.stop_reminder_page', id=r.id) }}" style="margin:0;">
+<button type="submit" class="fw-btn fw-btn-danger fw-btn-sm mb-0">
+<i class="fa-solid fa-stop me-1"></i> Stop
+</button>
+</form>
+{% else %}
+<button class="fw-btn fw-btn-secondary fw-btn-sm mb-0" disabled>
+<i class="fa-solid fa-ban me-1"></i> Stopped
+</button>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="fw-empty">
+<i class="fa-regular fa-bell fa-2x mb-2 d-block opacity-50"></i>
+No reminders found.
+</div>
+{% endif %}
+
+</div>
+
+</div>
 
 </div>
 {% endblock %}

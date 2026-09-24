@@ -1,27 +1,78 @@
-<h2 style="text-align:center">Flowra Employee Report</h2>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body{
+    font-family: Helvetica, Arial, sans-serif;
+    margin:20px;
+    color:#1e293b;
+}
 
-<table border="1" width="100%" cellpadding="5">
+h2{
+    text-align:center;
+    color:#2563eb;
+    margin-bottom:4px;
+    font-size:20px;
+}
 
+.subtitle{
+    text-align:center;
+    color:#64748b;
+    font-size:11px;
+    margin-bottom:20px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:11px;
+}
+
+th{
+    background:#2563eb;
+    color:#ffffff;
+    padding:8px;
+    text-align:center;
+}
+
+td{
+    padding:8px;
+    text-align:center;
+    border:1px solid #cbd5e1;
+}
+
+tr:nth-child(even) td{
+    background:#f1f5f9;
+}
+
+</style>
+</head>
+<body>
+
+<h2>Flowra Employee Report</h2>
+<p class="subtitle">Employee-wise task completion and points summary</p>
+
+<table>
 <tr>
-
 <th>Employee</th>
 <th>Completed</th>
 <th>Pending</th>
 <th>Points</th>
-
 </tr>
 
 {% for emp in employee_report %}
 
 <tr>
-
 <td>{{ emp.name }}</td>
 <td>{{ emp.completed }}</td>
 <td>{{ emp.pending }}</td>
 <td>{{ emp.points }}</td>
-
 </tr>
 
 {% endfor %}
 
 </table>
+
+</body>
+</html>

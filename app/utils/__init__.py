@@ -40,7 +40,7 @@ def create_app():
 
     login_manager.login_view = "main.login"
 
-    login_manager.login_message = "Please login to continue."
+    login_manager.login_message = None
 
     login_manager.login_message_category = "warning"
 
@@ -67,14 +67,7 @@ def create_app():
     @login_manager.unauthorized_handler
     def unauthorized():
 
-        flash(
-            "Session expired. Please login again.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("main.home")
-        )
+        return redirect(url_for("main.home"))
 
     @app.before_request
     def handle_session_timeout():
@@ -109,11 +102,6 @@ def create_app():
                         logout_user()
 
                         session.clear()
-
-                        flash(
-                            "Session timed out due to inactivity. Please login again.",
-                            "warning"
-                        )
 
                         return redirect(
                             url_for("main.home")

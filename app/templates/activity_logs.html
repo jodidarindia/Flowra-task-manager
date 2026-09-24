@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+{% block title %}Activity Logs{% endblock %}
+
+{% block content %}
+
+<style>
+
+.al-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
+}
+
+.al-subtitle{
+    font-size:12.5px;
+    color:#94a3b8;
+    margin-top:4px;
+}
+
+.al-filterbar{
+    background:#fff;
+    border:1px solid var(--fw-border);
+    border-radius:14px;
+    box-shadow:var(--fw-shadow);
+    padding:14px 16px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+.al-filterbar .al-query{
+    flex:1 1 220px;
+    position:relative;
+}
+
+.al-filterbar .al-query i{
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#94a3b8;
+    font-size:13px;
+}
+
+.al-filterbar .al-query input{
+    padding-left:34px;
+}
+
+.al-filterbar .al-date{
+    width:150px;
+}
+
+.al-filterbar .al-apply{
+    white-space:nowrap;
+}
+
+.al-card{
+    background:#fff;
+    border:1px solid var(--fw-border);
+    border-radius:14px;
+    box-shadow:var(--fw-shadow);
+    overflow:hidden;
+}
+
+.al-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    padding:14px 18px;
+    border-bottom:1px solid var(--fw-border);
+}
+
+.al-head .al-head-total{
+    font-size:12.5px;
+    color:#64748b;
+}
+
+.al-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--fw-border);
+}
+
+.al-row:last-child{
+    border-bottom:none;
+}
+
+.al-row:hover{
+    background:#f8fafc;
+}
+
+.al-avatar{
+    width:42px;
+    height:42px;
+    min-width:42px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.5px;
+}
+
+.al-main{
+    flex:1 1 auto;
+    min-width:0;
+}
+
+.al-main .al-line1{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.al-main .al-name{
+    font-weight:600;
+    color:var(--fw-text);
+    font-size:14px;
+}
+
+.al-action{
+    font-size:11px;
+    font-weight:600;
+    padding:2px 10px;
+    border-radius:999px;
+    letter-spacing:.3px;
+}
+
+.al-action-login{ background:#eff6ff; color:#2563eb; }
+.al-action-task_created{ background:#f0fdf4; color:#16a34a; }
+.al-action-task_assigned{ background:#eef2ff; color:#4f46e5; }
+.al-action-announcement{ background:#fffbeb; color:#d97706; }
+.al-action-account_locked{ background:#fee2e2; color:#dc2626; }
+.al-action-account_unlocked{ background:#f0fdf4; color:#16a34a; }
+.al-action-password_reset{ background:#eff6ff; color:#2563eb; }
+
+.al-main .al-desc{
+    font-size:13px;
+    color:#475569;
+    margin-top:4px;
+    overflow-wrap:anywhere;
+}
+
+.al-side{
+    text-align:right;
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:4px;
+}
+
+.al-meta{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+}
+
+.al-module{
+    font-size:11px;
+    font-weight:600;
+    padding:2px 10px;
+    border-radius:6px;
+}
+
+.al-module-Auth{ background:#f1f5f9; color:#334155; }
+.al-module-Tasks{ background:#eef2ff; color:#4f46e5; }
+.al-module-Announcements{ background:#fffbeb; color:#d97706; }
+
+.al-time{
+    font-size:12.5px;
+    color:#64748b;
+    white-space:nowrap;
+}
+
+.al-device{
+    font-size:11.5px;
+    color:#94a3b8;
+    white-space:nowrap;
+}
+
+.al-sep{
+    color:#cbd5e1;
+    font-size:12.5px;
+}
+
+.al-pager{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    padding:12px 18px;
+    border-top:1px solid var(--fw-border);
+    background:#f8fafc;
+}
+
+.al-pager .al-showing{
+    font-size:12.5px;
+    color:#64748b;
+}
+
+.al-pages{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+}
+
+.al-page{
+    min-width:30px;
+    height:30px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 6px;
+    border-radius:8px;
+    border:1px solid var(--fw-border);
+    background:#fff;
+    color:#475569;
+    font-size:12.5px;
+    font-weight:500;
+    text-decoration:none;
+}
+
+.al-page:hover{
+    border-color:var(--fw-primary,#2563eb);
+    color:var(--fw-primary,#2563eb);
+}
+
+.al-page.active{
+    background:var(--fw-primary,#2563eb);
+    border-color:var(--fw-primary,#2563eb);
+    color:#fff;
+}
+
+.al-page.dots{
+    border:none;
+    background:none;
+    color:#94a3b8;
+    cursor:default;
+}
+
+.al-page.disabled{
+    opacity:.45;
+    pointer-events:none;
+}
+
+.al-empty{
+    padding:40px 20px;
+    text-align:center;
+    color:#94a3b8;
+}
+
+@media(max-width:640px){
+    .al-row{
+        flex-wrap:wrap;
+    }
+    .al-side{
+        width:100%;
+        text-align:left;
+        align-items:flex-start;
+    }
+    .al-meta{
+        justify-content:flex-start;
+    }
+}
+
+</style>
+
+<div class="al-content pt-4">
+
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-solid fa-clock-rotate-left me-2"></i>Activity Logs</h2>
+        <p class="al-subtitle">
+            {{ total }} of {{ grand_total }} recorded events. Credentials and secrets are never written to this log.
+        </p>
+    </div>
+
+    <a href="{{ url_for('main.export_activity_logs', q=q, user=filter_user, action=filter_action, module=filter_module, from=from_date, to=to_date) }}" class="fw-btn fw-btn-success fw-btn-sm">
+        <i class="fa-solid fa-file-csv me-1"></i> Export CSV
+    </a>
+</div>
+
+<form method="GET" action="{{ url_for('main.activity_logs') }}" class="al-filterbar">
+
+    <div class="al-query">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" name="q" value="{{ q }}" class="form-control fw-form-control" placeholder="Search descriptions">
+    </div>
+
+    <select name="user" class="form-select fw-form-control" style="width:170px;">
+        <option value="">All users</option>
+        {% for u in users %}
+        <option value="{{ u._id }}" {% if filter_user == u._id|string %}selected{% endif %}>{{ u.username }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="action" class="form-select fw-form-control" style="width:170px;">
+        <option value="">All actions</option>
+        {% for a in actions %}
+        <option value="{{ a }}" {% if filter_action == a %}selected{% endif %}>{{ a|replace('_', ' ')|title }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="module" class="form-select fw-form-control" style="width:170px;">
+        <option value="">All modules</option>
+        {% for m in modules %}
+        <option value="{{ m }}" {% if filter_module == m %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+    </select>
+
+    <input type="text" name="from" value="{{ from_date }}" class="form-control fw-form-control al-date" placeholder="dd-mm-yyyy">
+    <input type="text" name="to" value="{{ to_date }}" class="form-control fw-form-control al-date" placeholder="dd-mm-yyyy">
+
+    <button type="submit" class="fw-btn fw-btn-primary fw-btn-sm al-apply">
+        <i class="fa-solid fa-filter me-1"></i> Apply
+    </button>
+
+    <a href="{{ url_for('main.activity_logs') }}" class="fw-btn fw-btn-outline fw-btn-sm">
+        Reset
+    </a>
+
+</form>
+
+<div class="al-card">
+
+<div class="al-head">
+    <span class="al-head-total">
+        <i class="fa-regular fa-clock me-1"></i>
+        {% if total %}Showing {{ start }}&ndash;{{ end }} of {{ total }}{% else %}No events found{% endif %}
+    </span>
+</div>
+
+{% for e in entries %}
+<div class="al-row">
+
+    <div class="al-avatar" style="background:{{ e._avatar_color }};">{{ e.initials or 'S' }}</div>
+
+    <div class="al-main">
+        <div class="al-line1">
+            <span class="al-name">{{ e.username }}</span>
+            <span class="al-action al-action-{{ e.event_type }}">
+                {{ {'login': 'Login Activity', 'task_created': 'Task Created', 'task_assigned': 'Task Assigned', 'announcement': 'Announcement Published'}.get(e.event_type, e.event_type|replace('_', ' ')|title) }}
+            </span>
+        </div>
+        <div class="al-desc">{{ e.description }}</div>
+    </div>
+
+    <div class="al-side">
+        <div class="al-meta">
+            <span class="al-module al-module-{{ e.module }}">{{ e.module }}</span>
+            <span class="al-time">{% if e.time_ist %}{{ e.time_ist.strftime('%d %b %Y, %I:%M %p') }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="al-device">{{ e.device }}</div>
+    </div>
+
+</div>
+{% else %}
+<div class="al-empty">
+    <i class="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
+    No activity found for the selected filters.
+</div>
+{% endfor %}
+
+<div class="al-pager">
+    <span class="al-showing">
+        Showing {{ start }}&ndash;{{ end }} of {{ total }} &nbsp;·&nbsp; {{ ((total + 11) // 12) }} page{{ '' if ((total + 11) // 12) == 1 else 's' }} · 12 per page
+    </span>
+
+    <div class="al-pages">
+        {% set base = url_for('main.activity_logs', q=q, user=filter_user, action=filter_action, module=filter_module, from=from_date, to=to_date) %}
+        {% if page > 1 %}
+        <a class="al-page" href="{{ base }}&page={{ page - 1 }}"><i class="fa-solid fa-chevron-left"></i></a>
+        {% else %}
+        <span class="al-page disabled"><i class="fa-solid fa-chevron-left"></i></span>
+        {% endif %}
+
+        {% if total_pages <= 8 %}
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                <span class="al-page active">{{ p }}</span>
+                {% else %}
+                <a class="al-page" href="{{ base }}&page={{ p }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            {% set start = [page - 2, 1] | max %}
+            {% set end = [page + 2, total_pages] | min %}
+            {% if start > 1 %}
+            <a class="al-page" href="{{ base }}&page=1">1</a>
+            <span class="al-page dots">&hellip;</span>
+            {% endif %}
+            {% for p in range(start, end + 1) %}
+                {% if p == page %}
+                <span class="al-page active">{{ p }}</span>
+                {% else %}
+                <a class="al-page" href="{{ base }}&page={{ p }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if end < total_pages %}
+            <span class="al-page dots">&hellip;</span>
+            <a class="al-page" href="{{ base }}&page={{ total_pages }}">{{ total_pages }}</a>
+            {% endif %}
+        {% endif %}
+
+        {% if page < total_pages %}
+        <a class="al-page" href="{{ base }}&page={{ page + 1 }}"><i class="fa-solid fa-chevron-right"></i></a>
+        {% else %}
+        <span class="al-page disabled"><i class="fa-solid fa-chevron-right"></i></span>
+        {% endif %}
+    </div>
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

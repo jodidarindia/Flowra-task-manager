@@ -20,7 +20,10 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    app.config["MONGO_URI"] = os.environ.get("MONGO_URI")
+    app.config["MONGO_URI"] = os.getenv(
+        "MONGO_URI",
+        "mongodb+srv://jodidarindia_db_user:oTTtFSOrJLz3DdTE@flowra-cluster.cxt8yw1.mongodb.net/flowra_task_manager?retryWrites=true&w=majority&appName=flowra-cluster"
+    )
     mongo.init_app(app)
 
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=15)
@@ -33,7 +36,7 @@ def create_app():
 
     login_manager.init_app(app)
     login_manager.login_view = "main.login"
-    login_manager.login_message = "Please login to continue."
+    login_manager.login_message = None
     login_manager.login_message_category = "warning"
 
     from app.routes import bp
@@ -52,7 +55,6 @@ def create_app():
 
     @login_manager.unauthorized_handler
     def unauthorized():
-        flash("Session expired. Please login again.", "warning")
         return redirect(url_for("main.home"))
 
     @app.before_request
@@ -70,16 +72,19 @@ def create_app():
 
         if current_user.is_authenticated:
             now = datetime.utcnow()
+
+            settings_doc = mongo.db.system_settings.find_one({"_id": "global"})
+            timeout_hours = (settings_doc or {}).get("session_timeout_hours", 8)
+
             last_activity = session.get("last_activity")
 
             if last_activity:
                 try:
                     last_activity = datetime.fromisoformat(last_activity)
 
-                    if now - last_activity > timedelta(minutes=15):
+                    if now - last_activity > timedelta(hours=timeout_hours):
                         logout_user()
                         session.clear()
-                        flash("Session timed out due to inactivity. Please login again.", "warning")
                         return redirect(url_for("main.home"))
                 except Exception:
                     session.clear()

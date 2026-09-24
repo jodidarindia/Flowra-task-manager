@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+{% block title %}Companies{% endblock %}
+
+{% block page_css %}
+<style>
+:root{
+    --fw-head:#0f172a;
+    --fw-txt:#1e293b;
+    --fw-muted:#64748b;
+    --fw-line:#e2e8f0;
+    --fw-soft:#f1f5f9;
+    --fw-brand:#2563eb;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="co-wrap">
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+    <div>
+        <h2 style="font-size:21px;font-weight:700;color:var(--fw-head);margin:0;">
+            <i class="fa-solid fa-building me-2" style="color:var(--fw-brand);"></i> Companies
+        </h2>
+        <p style="color:var(--fw-muted);font-size:13.5px;margin:6px 0 0;">
+            All registered companies with their admin and employee details.
+        </p>
+    </div>
+    <a href="{{ url_for('main.create_company') }}" class="fw-btn fw-btn-primary"
+       style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0;">
+        <i class="fa-solid fa-plus"></i> Create Company
+    </a>
+</div>
+
+{% if not companies %}
+<div style="text-align:center;padding:70px 20px;color:var(--fw-muted);">
+    <i class="fa-solid fa-building-circle-exclamation" style="font-size:44px;opacity:.35;"></i>
+    <p style="margin-top:14px;font-size:14px;">No companies yet. Create the first one — it auto-creates its admin.</p>
+</div>
+{% else %}
+
+<div class="co-list">
+
+    {% for c in companies %}
+    <div class="co-row">
+        <div class="co-logo" style="background:{{ c.get('logo_color','#2563eb') }};">{{ (c.get('company_name','C')[:1]).upper() }}</div>
+
+        <div class="co-main">
+            <div class="co-name">{{ c.get('company_name') }}
+                {% if c.get('status') == 'inactive' %}
+                <span class="co-st co-st-in">Deactivated</span>
+                {% else %}
+                <span class="co-st co-st-ac">Active</span>
+                {% endif %}
+            </div>
+            <div class="co-gst"><i class="fa-regular fa-file me-1"></i>GSTIN {{ c.get('gstin') or '—' }}</div>
+        </div>
+
+        <div class="co-admin">
+            <div class="co-label">Admin</div>
+            <div class="co-admin-name"><i class="fa-solid fa-user-tie me-1"></i>{{ c.get('admin_username','—') }}</div>
+            <div class="co-admin-mail">{{ c.get('admin_email','—') }}</div>
+        </div>
+
+        <div class="co-stat">
+            <div class="co-num">{{ c.get('count_created',0) }}</div>
+            <div class="co-label">Employees Created</div>
+        </div>
+
+        <div class="co-stat">
+            <div class="co-num" style="font-size:16px;">{{ c.get('created_ist','—') }}</div>
+            <div class="co-label">Registered</div>
+        </div>
+
+        <div class="co-loc">
+            <div class="co-label">Location</div>
+            <div class="co-loc-txt">{{ c.get('address') or '—' }}</div>
+        </div>
+
+        <div class="co-act">
+            <a href="#" class="cb cb-view" title="View" data-bs-toggle="modal" data-bs-target="#viewCompanyModal"
+                   data-cid="{{ c.get('cid') }}" data-name="{{ c.get('company_name') }}">
+                <i class="fa-solid fa-eye"></i><span>View</span>
+            </a>
+            <a href="#" class="cb cb-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editCompanyModal"
+                   data-cid="{{ c.get('cid') }}"
+                   data-name="{{ c.get('company_name') }}"
+                   data-gstin="{{ c.get('gstin') or '' }}"
+                   data-address="{{ c.get('address') or '' }}"
+                   data-city="{{ c.get('city') or '' }}"
+                   data-admin="{{ c.get('admin_username','') }}"
+                   data-email="{{ c.get('admin_email','') }}"
+                   data-phone="{{ c.get('admin_phone','') }}">
+                <i class="fa-solid fa-pen"></i><span>Edit</span>
+            </a>
+            <form method="POST" action="{{ url_for('main.toggle_company_status', c_id=c.get('cid')) }}" style="display:inline;">
+                {% if c.get('status') == 'inactive' %}
+                <button type="submit" class="cb cb-on" title="Activate">
+                    <i class="fa-solid fa-power-off"></i><span>Activate</span>
+                </button>
+                {% else %}
+                <button type="submit" class="cb cb-off" title="Deactivate">
+                    <i class="fa-solid fa-ban"></i><span>Deactivate</span>
+                </button>
+                {% endif %}
+            </form>
+            <form method="POST" action="{{ url_for('main.delete_company', c_id=c.get('cid')) }}" style="display:inline;"
+                  onsubmit="return confirm('Delete {{ c.get('company_name') }}? This will also delete its admin account.');">
+                <button type="submit" class="cb cb-del" title="Delete">
+                    <i class="fa-solid fa-trash"></i><span>Delete</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+{% endif %}
+
+</div>
+
+<style>
+.co-wrap{
+    width:100%;
+    max-width:100%;
+    padding:26px 36px;
+    box-sizing:border-box;
+    overflow-x:hidden;
+}
+
+.co-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    padding:4px 0 10px;
+}
+
+.co-row{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    background:#fff;
+    border:1px solid var(--fw-line);
+    border-radius:14px;
+    padding:16px 20px;
+    transition:.18s;
+    box-shadow:0 1px 2px rgba(15,23,42,.04);
+    width:100%;
+    box-sizing:border-box;
+}
+
+.co-row:hover{ box-shadow:0 8px 22px rgba(15,23,42,.07); transform:translateY(-1px); }
+
+.co-logo{
+    width:50px;height:50px;flex-shrink:0;
+    border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:700;font-size:19px;
+}
+
+.co-main{ min-width:200px; flex:1 1 190px; }
+.co-name{ font-weight:700; font-size:16.5px; color:var(--fw-txt); }
+.co-gst{ font-size:12px; color:var(--fw-muted); margin-top:4px; }
+
+.co-st{
+    display:inline-block;
+    font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;
+    padding:3px 9px;border-radius:20px;margin-left:8px;vertical-align:2px;
+}
+.co-st-ac{ background:#dcfce7; color:#15803d; }
+.co-st-in{ background:#fee2e2; color:#b91c1c; }
+
+.co-admin{ min-width:160px; flex:1 1 150px; }
+.co-label{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#94a3b8; margin-bottom:5px; }
+.co-admin-name{ font-size:14px; font-weight:600; color:var(--fw-txt); }
+.co-admin-mail{ font-size:12px; color:var(--fw-muted); margin-top:3px; word-break:break-all; }
+
+.co-stat{ min-width:96px; text-align:center; padding:0 8px; flex-shrink:0; }
+.co-num{ font-size:24px; font-weight:700; color:var(--fw-brand); line-height:1.1; }
+
+.co-loc{ min-width:140px; flex:1 1 130px; }
+.co-loc-txt{ font-size:13px; color:var(--fw-txt); }
+
+.co-act{ display:flex; gap:7px; margin-left:auto; flex-shrink:0; flex-wrap:wrap; }
+.cb{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:8px 11px;border-radius:9px;
+    font-size:12px;font-weight:600;cursor:pointer;
+    text-decoration:none;border:1px solid var(--fw-line);
+    background:#fff;color:#475569;transition:.15s;
+    font-family:inherit;
+}
+.cb:hover{ background:var(--fw-soft); }
+.cb-view{ color:#1d4ed8; border-color:#bfdbfe; }
+.cb-view:hover{ background:#dbeafe; }
+.cb-edit{ color:#7c3aed; border-color:#ddd6fe; }
+.cb-edit:hover{ background:#ede9fe; }
+.cb-off{ color:#b45309; border-color:#fde68a; }
+.cb-off:hover{ background:#fef3c7; }
+.cb-on{ color:#15803d; border-color:#bbf7d0; }
+.cb-on:hover{ background:#dcfce7; }
+.cb-del{ color:#b91c1c; border-color:#fecaca; }
+.cb-del:hover{ background:#fee2e2; }
+
+@media(max-width:992px){
+    .co-main{ flex:1 1 100%; }
+    .co-row{ flex-wrap:wrap; }
+}
+
+@media(max-width:768px){
+    .co-wrap{ padding:22px 14px; }
+    .co-row{ gap:14px 14px; }
+    .co-logo{ width:44px; height:44px; font-size:17px; }
+    .co-admin{ width:100%; }
+    .co-stat{ text-align:left; padding:0; min-width:0; }
+    .co-loc{ width:100%; }
+    .co-act{ margin-left:0; width:100%; }
+    .cb{ flex:1; justify-content:center; }
+}
+
+</style>
+
+<!-- Edit Company Modal -->
+<div class="modal fade" id="editCompanyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content ec-modal">
+      <form method="POST" id="ecForm" action="">
+        <div class="modal-header ec-hd">
+          <h5 class="modal-title"><i class="fa-solid fa-pen me-2"></i>Edit Company</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body ec-bd">
+          <input type="hidden" name="cid" id="ecCid">
+          <div class="ec-sec">Company Details</div>
+          <div class="ec-2">
+            <div>
+              <label class="ec-lb">Company Name <span class="req">*</span></label>
+              <input type="text" name="company_name" id="ecName" class="form-control" required>
+            </div>
+            <div>
+              <label class="ec-lb">GSTIN</label>
+              <input type="text" name="gstin" id="ecGstin" class="form-control">
+            </div>
+          </div>
+          <div class="ec-2">
+            <div>
+              <label class="ec-lb">Address</label>
+              <input type="text" name="address" id="ecAddress" class="form-control">
+            </div>
+            <div>
+              <label class="ec-lb">City</label>
+              <input type="text" name="city" id="ecCity" class="form-control">
+            </div>
+          </div>
+          <div class="ec-sec" style="margin-top:18px;">Company Admin</div>
+          <div class="ec-2">
+            <div>
+              <label class="ec-lb">Admin Username</label>
+              <input type="text" name="admin_username" id="ecAdmin" class="form-control">
+            </div>
+            <div>
+              <label class="ec-lb">Admin Email</label>
+              <input type="email" name="admin_email" id="ecEmail" class="form-control">
+            </div>
+          </div>
+          <div class="ec-2">
+            <div>
+              <label class="ec-lb">Admin Phone</label>
+              <input type="text" name="admin_phone" id="ecPhone" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer ec-ft">
+          <button type="button" class="cb cb-off" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i><span>Cancel</span></button>
+          <button type="submit" class="ec-save"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- View Company Modal -->
+<div class="modal fade" id="viewCompanyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content vc-modal">
+      <div class="modal-header vc-hd">
+        <h5 class="modal-title"><i class="fa-solid fa-building me-2"></i>Company Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body vc-bd" id="viewCompanyBody">
+        <div style="text-align:center;padding:40px;color:#94a3b8;">
+          <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+          <p style="margin-top:12px;">Loading...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Edit modal */
+.modal-backdrop.show{ backdrop-filter:blur(6px); background:rgba(15,23,42,.55); }
+.ec-modal{ border:none; border-radius:16px; overflow:hidden; box-shadow:0 25px 60px rgba(15,23,42,.35); }
+.vc-modal{ border:none; border-radius:16px; overflow:hidden; box-shadow:0 25px 60px rgba(15,23,42,.35); }
+.vc-hd{
+    background:linear-gradient(120deg,#0f172a,#312e81);
+    color:#fff; border-bottom:none; padding:16px 22px;
+}
+.vc-hd .modal-title{ font-weight:700; font-size:17px; }
+.vc-hd .btn-close{ filter:invert(1); }
+.vc-bd{ padding:20px 22px; }
+.ec-hd{
+    background:linear-gradient(120deg,#0f172a,#312e81);
+    color:#fff; border-bottom:none; padding:16px 22px;
+}
+.ec-hd .modal-title{ font-weight:700; font-size:17px; }
+.ec-hd .btn-close{ filter:invert(1); }
+.ec-bd{ padding:8px 22px 6px; }
+.ec-sec{
+    font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+    color:#94a3b8; margin:14px 0 10px;
+}
+.ec-2{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;
+}
+.ec-lb{ display:block; font-size:13px; font-weight:600; color:#334155; margin-bottom:6px; }
+.req{ color:#dc2626; }
+.ec-ft{ border-top:1px solid var(--fw-line); padding:14px 22px; background:#f8fafc; }
+.ec-save{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:9px 18px; border-radius:9px; border:none; cursor:pointer;
+    background:#2563eb; color:#fff; font-size:13.5px; font-weight:600;
+}
+.ec-save:hover{ background:#1d4ed8; }
+@media(max-width:640px){
+    .ec-2{ grid-template-columns:1fr; }
+}
+</style>
+
+<script>
+var editModal = document.getElementById('editCompanyModal');
+editModal.addEventListener('show.bs.modal', function (event) {
+    var btn = event.relatedTarget;
+    if (!btn) return;
+    document.getElementById('ecForm').action = "/company/" + btn.getAttribute('data-cid') + "/edit";
+    document.getElementById('ecCid').value = btn.getAttribute('data-cid');
+    document.getElementById('ecName').value = btn.getAttribute('data-name') || '';
+    document.getElementById('ecGstin').value = btn.getAttribute('data-gstin') || '';
+    document.getElementById('ecAddress').value = btn.getAttribute('data-address') || '';
+    document.getElementById('ecCity').value = btn.getAttribute('data-city') || '';
+    document.getElementById('ecAdmin').value = btn.getAttribute('data-admin') || '';
+    document.getElementById('ecEmail').value = btn.getAttribute('data-email') || '';
+    document.getElementById('ecPhone').value = btn.getAttribute('data-phone') || '';
+});
+
+var viewModal = document.getElementById('viewCompanyModal');
+var viewBody = document.getElementById('viewCompanyBody');
+viewModal.addEventListener('show.bs.modal', function (event) {
+    var btn = event.relatedTarget;
+    if (!btn) return;
+    viewBody.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;">Loading...</p></div>';
+    fetch('/company/' + btn.getAttribute('data-cid') + '/view?partial=1')
+        .then(function (r) { return r.text(); })
+        .then(function (html) { viewBody.innerHTML = html; })
+        .catch(function () {
+            viewBody.innerHTML = '<div style="text-align:center;padding:30px;color:#b91c1c;">Failed to load company details.</div>';
+        });
+});
+</script>
+
+{% endblock %}

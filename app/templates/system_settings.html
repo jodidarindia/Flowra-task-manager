@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+{% block title %}System Settings{% endblock %}
+
+{% block content %}
+
+<style>
+
+.ss-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
+}
+
+.form-card{
+    background:#fff;
+    border-radius:20px;
+    box-shadow:0 18px 45px rgba(2,12,27,0.1);
+    border:1px solid var(--fw-border);
+    overflow:hidden;
+    margin-bottom:22px;
+}
+
+.form-card .card-head{
+    background:var(--fw-grad);
+    color:#fff;
+    padding:18px 28px;
+    font-weight:500;
+    font-size:15px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.form-card .card-head .hint{
+    margin-left:auto;
+    font-size:11.5px;
+    font-weight:400;
+    opacity:.85;
+}
+
+.form-card .card-body{
+    padding:26px 28px;
+}
+
+.fw-row-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px 24px;
+}
+
+@media(max-width:640px){
+    .fw-row-2{grid-template-columns:1fr;}
+}
+
+.switch-line{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    padding:10px 0;
+    border-bottom:1px dashed var(--fw-border);
+}
+
+.switch-line:last-child{
+    border-bottom:none;
+}
+
+.switch-line .sl-label{
+    font-size:14px;
+    font-weight:500;
+    color:var(--fw-text);
+}
+
+.switch-line .sl-sub{
+    font-size:12px;
+    color:#94a3b8;
+    margin-top:2px;
+}
+
+.switch {
+    position:relative;
+    width:46px;
+    height:26px;
+    flex-shrink:0;
+}
+
+.switch input{
+    opacity:0;
+    width:0;
+    height:0;
+}
+
+.switch .slider{
+    position:absolute;
+    cursor:pointer;
+    inset:0;
+    background:#cbd5e1;
+    border-radius:26px;
+    transition:.25s;
+}
+
+.switch .slider::before{
+    content:"";
+    position:absolute;
+    height:20px;
+    width:20px;
+    left:3px;
+    top:3px;
+    background:#fff;
+    border-radius:50%;
+    transition:.25s;
+    box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+
+.switch input:checked + .slider{
+    background:var(--fw-primary, #2563eb);
+}
+
+.switch input:checked + .slider::before{
+    transform:translateX(20px);
+}
+
+.perm-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13.5px;
+}
+
+.perm-table th,
+.perm-table td{
+    border:1px solid var(--fw-border);
+    padding:10px 12px;
+    text-align:center;
+    color:var(--fw-text);
+}
+
+.perm-table th{
+    background:#f1f5f9;
+    font-weight:600;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+}
+
+.perm-table td.perm-role{
+    text-align:left;
+    font-weight:500;
+}
+
+.perm-table td.yes{
+    color:#16a34a;
+    font-weight:600;
+}
+
+.perm-table td.no{
+    color:#94a3b8;
+}
+
+.ss-note{
+    font-size:12px;
+    background:#fff7ed;
+    border:1px solid #fed7aa;
+    color:#9a3412;
+    border-radius:10px;
+    padding:10px 14px;
+    margin-top:12px;
+}
+
+.ss-footer-bar{
+    background:#f8fafc;
+    border-top:1px solid var(--fw-border);
+    padding:16px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+}
+
+.ss-footer-bar .ss-note-text{
+    font-size:12px;
+    color:#64748b;
+}
+
+</style>
+
+<div class="ss-content pt-4">
+
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-solid fa-gear me-2"></i>System Settings</h2>
+        <p>Super Admin only. These settings apply to every user in Flowra Task.</p>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data" id="systemSettingsForm">
+
+<!-- ==================== GENERAL ==================== -->
+<div class="form-card">
+<div class="card-head"><i class="fa-solid fa-palette me-1"></i> General</div>
+<div class="card-body">
+    <div class="fw-row-2">
+        <div>
+            <label class="fw-label">Application Name</label>
+            <input type="text" name="app_name" class="form-control fw-form-control"
+                   value="{{ settings.get('app_name', 'Flowra Task') }}"
+                   placeholder="Flowra Task">
+        </div>
+        <div>
+            <label class="fw-label">Support Contact</label>
+            <input type="text" name="support_contact" class="form-control fw-form-control"
+                   value="{{ settings.get('support_contact', '') }}"
+                   placeholder="it-helpdesk@flowra.io">
+        </div>
+        <div>
+            <label class="fw-label">Timezone</label>
+            <select name="timezone" class="form-select fw-form-control">
+                <option value="Asia/Kolkata" {% if settings.get('timezone', 'Asia/Kolkata') == 'Asia/Kolkata' %}selected{% endif %}>Asia/Kolkata (IST)</option>
+                <option value="Asia/Dubai" {% if settings.get('timezone') == 'Asia/Dubai' %}selected{% endif %}>Asia/Dubai (GST)</option>
+                <option value="Asia/Karachi" {% if settings.get('timezone') == 'Asia/Karachi' %}selected{% endif %}>Asia/Karachi (PKT)</option>
+                <option value="Europe/London" {% if settings.get('timezone') == 'Europe/London' %}selected{% endif %}>Europe/London (GMT)</option>
+                <option value="America/New_York" {% if settings.get('timezone') == 'America/New_York' %}selected{% endif %}>America/New_York (EST)</option>
+                <option value="UTC" {% if settings.get('timezone') == 'UTC' %}selected{% endif %}>UTC</option>
+            </select>
+        </div>
+        <div>
+            <label class="fw-label">Date Format</label>
+            <select name="date_format" class="form-select fw-form-control">
+                <option value="DD MMM YYYY" {% if settings.get('date_format', 'DD MMM YYYY') == 'DD MMM YYYY' %}selected{% endif %}>DD MMM YYYY</option>
+                <option value="DD/MM/YYYY" {% if settings.get('date_format') == 'DD/MM/YYYY' %}selected{% endif %}>DD/MM/YYYY</option>
+                <option value="YYYY-MM-DD" {% if settings.get('date_format') == 'YYYY-MM-DD' %}selected{% endif %}>YYYY-MM-DD</option>
+                <option value="MMM D, YYYY" {% if settings.get('date_format') == 'MMM D, YYYY' %}selected{% endif %}>MMM D, YYYY</option>
+            </select>
+        </div>
+        <div>
+            <label class="fw-label">Per Employee Charge (₹) <span class="ss-badge">Billing</span></label>
+            <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="number" name="per_employee_charge" class="form-control fw-form-control"
+                       min="0" step="1"
+                       value="{{ settings.get('per_employee_charge', 100) }}">
+            </div>
+            <div class="ss-note" style="margin-top:8px;">Default charge per employee slot. Auto-filled on the company creation page.</div>
+        </div>
+        <div>
+            <label class="fw-label">Application Logo</label>
+            <input type="file" name="logo" class="form-control fw-form-control"
+                   accept=".svg,.png,.jpg,.jpeg,.webp">
+            <div class="ss-note" style="margin-top:8px;">SVG / PNG, max 1 MB. Leave empty to keep the current logo.</div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ==================== USER & ROLE SETTINGS ==================== -->
+<div class="form-card">
+<div class="card-head"><i class="fa-solid fa-users-gear me-1"></i> User &amp; Role Settings</div>
+<div class="card-body">
+    <div class="fw-row-2">
+        <div>
+            <label class="fw-label">Default Role for New Users</label>
+            <select name="default_role" class="form-select fw-form-control">
+                <option value="employee" {% if settings.get('default_role', 'employee') == 'employee' %}selected{% endif %}>Employee</option>
+                <option value="manager" {% if settings.get('default_role') == 'manager' %}selected{% endif %}>Manager</option>
+                <option value="admin" {% if settings.get('default_role') == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+        </div>
+        <div>
+            <label class="fw-label">Auto-deactivate After (days idle)</label>
+            <input type="number" name="auto_deactivate_days" class="form-control fw-form-control"
+                   min="0" value="{{ settings.get('auto_deactivate_days', 90) }}">
+            <div class="ss-note" style="margin-top:8px;">0 = Indefinite (auto-deactivation off)</div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ==================== NOTIFICATION SETTINGS ==================== -->
+<div class="form-card">
+<div class="card-head"><i class="fa-solid fa-bell me-1"></i> Notification Settings <span class="hint">Channels for every user</span></div>
+<div class="card-body">
+    <label class="fw-label">Send notifications for</label>
+
+    <div class="switch-line">
+        <div>
+            <div class="sl-label">New task assigned</div>
+            <div class="sl-sub">When a task is handed to an employee</div>
+        </div>
+        <label class="switch"><input type="checkbox" name="notify_new_task" {% if settings.get('notify_new_task', True) %}checked{% endif %}><span class="slider"></span></label>
+    </div>
+
+    <div class="switch-line">
+        <div>
+            <div class="sl-label">Task status changed</div>
+            <div class="sl-sub">Completion / partial status updates</div>
+        </div>
+        <label class="switch"><input type="checkbox" name="notify_status_change" {% if settings.get('notify_status_change', True) %}checked{% endif %}><span class="slider"></span></label>
+    </div>
+
+    <div class="switch-line">
+        <div>
+            <div class="sl-label">Reminder due</div>
+            <div class="sl-sub">Scheduled reminders reaching their time</div>
+        </div>
+        <label class="switch"><input type="checkbox" name="notify_reminder_due" {% if settings.get('notify_reminder_due', True) %}checked{% endif %}><span class="slider"></span></label>
+    </div>
+
+    <div class="switch-line">
+        <div>
+            <div class="sl-label">Task overdue</div>
+            <div class="sl-sub">When a task crosses its due time</div>
+        </div>
+        <label class="switch"><input type="checkbox" name="notify_task_overdue" {% if settings.get('notify_task_overdue', True) %}checked{% endif %}><span class="slider"></span></label>
+    </div>
+
+    <div class="switch-line">
+        <div>
+            <div class="sl-label">New announcement</div>
+            <div class="sl-sub">Company-wide announcement posted</div>
+        </div>
+        <label class="switch"><input type="checkbox" name="notify_announcement" {% if settings.get('notify_announcement', True) %}checked{% endif %}><span class="slider"></span></label>
+    </div>
+
+    <div class="fw-row-2" style="margin-top:18px;">
+        <div>
+            <label class="fw-label">Default Announcement Priority</label>
+            <select name="announcement_priority" class="form-select fw-form-control">
+                <option value="normal" {% if settings.get('announcement_priority', 'normal') == 'normal' %}selected{% endif %}>Normal</option>
+                <option value="medium" {% if settings.get('announcement_priority') == 'medium' %}selected{% endif %}>Medium</option>
+                <option value="high" {% if settings.get('announcement_priority') == 'high' %}selected{% endif %}>High</option>
+            </select>
+        </div>
+        <div>
+            <label class="fw-label">Default Announcement Expiry (days)</label>
+            <input type="number" name="announcement_expiry_days" class="form-control fw-form-control"
+                   min="1" value="{{ settings.get('announcement_expiry_days', 14) }}">
+        </div>
+    </div>
+
+    <div class="ss-note"><i class="fa-brands fa-whatsapp me-1"></i> WhatsApp notifications use the employee mobile number stored in their user record. Credentials are kept in environment variables.</div>
+</div>
+</div>
+
+<!-- ==================== SECURITY ==================== -->
+<div class="form-card">
+<div class="card-head"><i class="fa-solid fa-lock me-1"></i> Security</div>
+<div class="card-body">
+    <div class="fw-row-2">
+        <div>
+            <label class="fw-label">Session Timeout (hours)</label>
+            <input type="number" name="session_timeout_hours" class="form-control fw-form-control"
+                   min="1" value="{{ settings.get('session_timeout_hours', 8) }}">
+        </div>
+        <div>
+            <label class="fw-label">Minimum Password Length</label>
+            <input type="number" name="min_password_length" class="form-control fw-form-control"
+                   min="6" value="{{ settings.get('min_password_length', 8) }}">
+        </div>
+        <div>
+            <label class="fw-label">Lock Account After Failed Attempts</label>
+            <input type="number" name="lock_after_attempts" class="form-control fw-form-control"
+                   min="1" value="{{ settings.get('lock_after_attempts', 5) }}">
+        </div>
+    </div>
+    <div class="ss-note"><i class="fa-solid fa-circle-info me-1"></i> No secrets are stored here. Credentials and API keys stay in environment variables.</div>
+</div>
+</div>
+
+<div class="form-card">
+<div class="ss-footer-bar">
+    <div class="ss-note-text">
+        <i class="fa-regular fa-clock me-1"></i> Changes apply system-wide and are written to the activity log.
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <button type="submit" name="action" value="reset" class="fw-btn fw-btn-outline" onclick="return confirm('Reset all system settings to defaults?');">
+            <i class="fa-solid fa-rotate-left me-1"></i> Reset to defaults
+        </button>
+        <button type="submit" name="action" value="save" class="fw-btn fw-btn-success px-4">
+            <i class="fa-solid fa-floppy-disk me-1"></i> Save Settings
+        </button>
+    </div>
+</div>
+</div>
+
+</form>
+
+</div>
+
+{% endblock %}

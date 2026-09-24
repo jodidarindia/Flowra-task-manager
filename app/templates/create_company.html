@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% block title %}Create Company & Admin{% endblock %}
+
+{% block page_css %}
+<style>
+:root{
+    --fw-primary:#2563eb;
+    --fw-text:#0f172a;
+    --fw-muted:#64748b;
+    --fw-border:#e2e8f0;
+    --fw-bg:#f8fafc;
+}
+
+.fw-wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:26px 26px 30px;
+    width:100%;
+    box-sizing:border-box;
+}
+
+.fw-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+}
+
+.fw-head h2{
+    font-size:22px;
+    font-weight:700;
+    margin:0;
+    color:var(--fw-text);
+}
+
+.fw-head p{
+    color:var(--fw-muted);
+    font-size:13.5px;
+    margin:4px 0 0;
+}
+
+.fw-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 16px;
+    border-radius:8px;
+    font-size:13.5px;
+    font-weight:600;
+    text-decoration:none;
+    border:none;
+    cursor:pointer;
+    transition:.15s;
+}
+
+.fw-btn.ghost{
+    background:#f1f5f9;
+    color:#334155;
+    border:1px solid var(--fw-border);
+}
+
+.fw-btn.solid{
+    background:var(--fw-primary);
+    color:#fff;
+}
+
+.fw-btn.solid:hover{ background:#1d4ed8; color:#fff; }
+.fw-btn.ghost:hover{ background:#e2e8f0; color:#1e293b; }
+
+.fw-card{
+    background:#fff;
+    border:1px solid var(--fw-border);
+    border-radius:14px;
+    box-shadow:0 1px 2px rgba(15,23,42,.04);
+    margin-bottom:20px;
+    overflow:hidden;
+}
+
+.fw-card-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:15px 20px;
+    border-bottom:1px solid var(--fw-border);
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--fw-text);
+}
+
+.fw-card-body{
+    padding:20px;
+}
+
+.fw-row-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0 22px;
+}
+
+.fw-row-3{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:0 22px;
+}
+
+@media(max-width:820px){
+    .fw-row-2,.fw-row-3{grid-template-columns:1fr;}
+}
+
+.fw-label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:#334155;
+    margin-bottom:6px;
+}
+
+.fw-form-control{
+    border-radius:8px !important;
+    font-size:13.5px !important;
+    padding:9px 12px !important;
+}
+
+.fw-note{
+    font-size:12px;
+    color:var(--fw-muted);
+    margin-top:6px;
+}
+
+.fw-err{ color:#dc2626; font-size:12px; margin-top:4px; }
+.req{ color:#dc2626; }
+.hint{ font-weight:400; color:#94a3b8; font-size:12.5px; }
+
+.fw-total-box{
+    background:linear-gradient(135deg,#eff6ff,#f8fafc);
+    border:1px solid #dbeafe;
+    border-radius:12px;
+    padding:16px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-top:6px;
+}
+
+.fw-total-label{ font-size:13px; color:#334155; font-weight:600; }
+.fw-total-amt{ font-size:26px; font-weight:800; color:#1d4ed8; }
+.fw-total-sub{ font-size:12px; color:var(--fw-muted); }
+
+.form-check-input:checked{ background-color:var(--fw-primary); border-color:var(--fw-primary); }
+
+.fw-banner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+    background:linear-gradient(120deg,#0f172a,#1e3a8a);
+    border-radius:14px;
+    padding:18px 22px;
+    margin-bottom:18px;
+    color:#fff;
+}
+
+.fw-banner-title{ font-size:15px; font-weight:700; }
+.fw-banner-sub{ font-size:12.5px; color:#cbd5e1; margin-top:4px; }
+.fw-banner-note{
+    font-size:12px; color:#fbbf24; font-weight:600;
+    background:rgba(255,255,255,.08); padding:7px 12px; border-radius:8px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fw-wrap">
+
+<div class="fw-head">
+    <div>
+        <h2><i class="fa-solid fa-building me-1"></i> Create Company &amp; Admin</h2>
+        <p>One company = one admin. Fill company details, admin login and the employee plan.</p>
+    </div>
+    <a href="{{ url_for('main.companies') }}" class="fw-btn ghost"><i class="fa-solid fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="fw-banner">
+    <div>
+        <div class="fw-banner-title"><i class="fa-solid fa-rocket me-2"></i>Setup Flow</div>
+        <div class="fw-banner-sub">1. Company details &nbsp;·&nbsp; 2. Admin account &nbsp;·&nbsp; 3. Employee plan</div>
+    </div>
+    <div class="fw-banner-note">Billing is managed from the Payments page.</div>
+</div>
+
+{% if existing_companies %}
+<div class="fw-card" style="border-left:4px solid #f59e0b;">
+    <div class="fw-card-body" style="padding:14px 18px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <i class="fa-solid fa-circle-info" style="color:#f59e0b;"></i>
+        <span style="font-size:13px; color:#334155; flex:1;">
+            <strong>{{ existing_companies|length }}</strong> company already on platform.
+            <span style="color:#94a3b8;">({{ existing_companies|map(attribute='company_name')|join(', ') }})</span>
+        </span>
+    </div>
+</div>
+{% endif %}
+
+<form method="POST" id="ccForm">
+
+<!-- ============ COMPANY DETAILS ============ -->
+<div class="fw-card">
+    <div class="fw-card-head"><i class="fa-solid fa-building-columns"></i> Company Details</div>
+    <div class="fw-card-body">
+        <div class="fw-row-2">
+            <div>
+                <label class="fw-label">Company Name <span class="req">*</span></label>
+                <input type="text" name="company_name" class="form-control fw-form-control"
+                       placeholder="e.g. KSC Raipur Pvt. Ltd."
+                       value="{{ form.get('company_name','') }}"
+                       {% if errors.get('company_name') %}style="border-color:#dc2626;"{% endif %}>
+                {% if errors.get('company_name') %}<div class="fw-err">{{ errors['company_name'] }}</div>{% endif %}
+            </div>
+            <div>
+                <label class="fw-label">GSTIN</label>
+                <input type="text" name="gstin" class="form-control fw-form-control"
+                       placeholder="22ABCDE1234F1Z5" value="{{ form.get('gstin','') }}">
+                <div class="fw-note">Company GST Identification Number (15 digit).</div>
+            </div>
+        </div>
+
+        <div class="fw-row-2" style="margin-top:16px;">
+            <div>
+                <label class="fw-label">Address</label>
+                <input type="text" name="address" class="form-control fw-form-control"
+                       placeholder="Office address" value="{{ form.get('address','') }}">
+            </div>
+            <div>
+                <label class="fw-label">City</label>
+                <input type="text" name="city" class="form-control fw-form-control"
+                       placeholder="e.g. Raipur" value="{{ form.get('city','') }}">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ ADMIN ACCOUNT ============ -->
+<div class="fw-card">
+    <div class="fw-card-head"><i class="fa-solid fa-user-tie"></i> Company Admin Account</div>
+    <div class="fw-card-body">
+        <div class="fw-row-2">
+            <div>
+                <label class="fw-label">Admin Username <span class="req">*</span></label>
+                <input type="text" name="admin_username" class="form-control fw-form-control"
+                       placeholder="e.g. ksc_admin"
+                       value="{{ form.get('admin_username','') }}"
+                       {% if errors.get('admin_username') %}style="border-color:#dc2626;"{% endif %}>
+                {% if errors.get('admin_username') %}<div class="fw-err">{{ errors['admin_username'] }}</div>{% endif %}
+            </div>
+            <div>
+                <label class="fw-label">Admin Email <span class="req">*</span></label>
+                <input type="email" name="admin_email" class="form-control fw-form-control"
+                       placeholder="admin@ksc.example"
+                       value="{{ form.get('admin_email','') }}"
+                       {% if errors.get('admin_email') %}style="border-color:#dc2626;"{% endif %}>
+                {% if errors.get('admin_email') %}<div class="fw-err">{{ errors['admin_email'] }}</div>{% endif %}
+            </div>
+        </div>
+
+        <div class="fw-row-2" style="margin-top:16px;">
+            <div>
+                <label class="fw-label">Admin Phone</label>
+                <input type="text" name="admin_phone" class="form-control fw-form-control"
+                       placeholder="+91 98765 43210" value="{{ form.get('admin_phone','') }}">
+            </div>
+            <div>
+                <label class="fw-label">Admin Password <span class="hint">(default Flowra@123)</span></label>
+                <input type="password" name="admin_password" class="form-control fw-form-control"
+                       placeholder="Leave empty for default">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ EMPLOYEE PLAN ============ -->
+<div class="fw-card">
+    <div class="fw-card-head"><i class="fa-solid fa-people-group"></i> Employee Plan</div>
+    <div class="fw-card-body">
+        <div class="fw-row-2">
+            <div>
+                <label class="fw-label">Employee Slots <span class="req">*</span></label>
+                <input type="number" name="employee_slots" id="employeeSlots" min="1"
+                       class="form-control fw-form-control" value="{{ form.get('employee_slots','') or 10 }}"
+                       {% if errors.get('employee_slots') %}style="border-color:#dc2626;"{% endif %}>
+                {% if errors.get('employee_slots') %}<div class="fw-err">{{ errors['employee_slots'] }}</div>{% endif %}
+                <div class="fw-note">How many employee seats this company gets.</div>
+            </div>
+            <div>
+                <label class="fw-label">Charge per Employee (₹) <span class="req">*</span></label>
+                <input type="number" name="per_employee_charge" id="perEmployeeCharge" min="0" step="1"
+                       class="form-control fw-form-control"
+                       value="{{ form.get('per_employee_charge','') or per_employee_charge }}">
+                <div class="fw-note">Editable. Pre-filled from System Settings.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display:flex; justify-content:flex-end; gap:12px; padding-bottom:30px;">
+    <a href="{{ url_for('main.companies') }}" class="fw-btn ghost">Cancel</a>
+    <button type="submit" class="fw-btn solid"><i class="fa-solid fa-building-circle-check"></i> Create Company + Admin</button>
+</div>
+
+</form>
+</div>
+
+{% endblock %}

@@ -2,23 +2,14 @@
 {% block title %}Employee Panel{% endblock %}
 
 {% block content %}
+{% set active_filter = active_filter|default('mytasks') %}
 
 <style>
-input[type="text"]{
-    background:#1f293a;
-    color:#ffffff;
-    border:1px solid #2c4766;
-}
 
-input[type="text"]::placeholder{
-    color:#9ca3af;
-}
-
-input[type="text"]:focus{
-    background:#1f293a;
-    color:#ffffff;
-    border-color:#0ef;
-    box-shadow:none;
+.employee-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
 }
 
 .employee-topbar{
@@ -39,24 +30,35 @@ input[type="text"]:focus{
 
 .employee-filters a{
     text-decoration:none;
-    padding:10px 16px;
+    padding:10px 18px;
     border-radius:12px;
-    font-weight:600;
-    background:#f3f4f6;
+    font-weight:500;
+    font-size:14px;
+    background:#fff;
     color:#374151;
     transition:0.25s;
-    border:1px solid #e5e7eb;
+    border:1.5px solid var(--fw-border);
+    box-shadow:0 4px 12px rgba(2,12,27,0.04);
 }
 
 .employee-filters a:hover{
-    background:#e0f2fe;
-    color:#2563eb;
+    border-color:var(--fw-primary);
+    color:var(--fw-primary);
 }
 
 .employee-filters a.active{
-    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    background:var(--fw-grad);
     color:white;
     border:none;
+}
+
+.points-card{
+    background:#fff;
+    border-radius:16px;
+    box-shadow:0 8px 22px rgba(2,12,27,0.06);
+    padding:12px 22px;
+    text-align:center;
+    border:1px solid var(--fw-border);
 }
 
 .table-wrap{
@@ -68,27 +70,26 @@ input[type="text"]:focus{
         align-items:flex-start;
     }
 }
+
 </style>
 
-<div class="employee-topbar">
+<div class="employee-content pt-4">
+
+<div class="fw-banner">
     <div>
-        <h2 class="mb-0">Welcome, {{ current_user.username }}</h2>
-        <p class="text-muted mb-0">Manage your tasks, submissions, and reminders.</p>
+        <h2><i class="fa-solid fa-user-tie me-2"></i>Welcome, {{ current_user.username }}</h2>
+        <p>Manage your tasks, submissions, and reminders.</p>
     </div>
-
     <div class="d-flex gap-2 align-items-center flex-wrap">
-        <a href="{{ url_for('main.my_reminders') }}" class="btn btn-outline-warning rounded-3">
-            🔔 My Reminders
+        <a href="{{ url_for('main.my_reminders') }}" class="fw-btn fw-btn-warning fw-btn-sm">
+            <i class="fa-regular fa-bell me-1"></i> My Reminders
         </a>
-        <a href="{{ url_for('main.task_history') }}" class="btn btn-outline-secondary rounded-3">
-            Task History
+        <a href="{{ url_for('main.task_history') }}" class="fw-btn fw-btn-dark fw-btn-sm">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i> Task History
         </a>
-
-        <div class="card shadow-sm border-0 rounded-4">
-            <div class="card-body text-center py-2 px-4">
-                <div class="small text-muted">🏆 Reward Points</div>
-                <h4 class="text-success mb-0 fw-bold">{{ employee.points or 0 }}</h4>
-            </div>
+        <div class="points-card">
+            <div class="small text-muted">🏆 Reward Points</div>
+            <h4 class="text-success mb-0 fw-semibold">{{ employee.points or 0 }}</h4>
         </div>
     </div>
 </div>
@@ -97,41 +98,42 @@ input[type="text"]:focus{
 <div class="employee-filters">
     <a href="{{ url_for('main.employee_panel', filter='mytasks') }}"
        class="{% if active_filter == 'mytasks' %}active{% endif %}">
-       My Tasks
+       <i class="fa-solid fa-list-check me-1"></i> My Tasks
     </a>
 
     <a href="{{ url_for('main.employee_panel', filter='today') }}"
        class="{% if active_filter == 'today' %}active{% endif %}">
-       Today
+       <i class="fa-regular fa-calendar-day me-1"></i> Today
     </a>
 
     <a href="{{ url_for('main.employee_panel', filter='upcoming') }}"
        class="{% if active_filter == 'upcoming' %}active{% endif %}">
-       Upcoming
+       <i class="fa-regular fa-calendar-plus me-1"></i> Upcoming
     </a>
 
     <a href="{{ url_for('main.employee_panel', filter='completed') }}"
        class="{% if active_filter == 'completed' %}active{% endif %}">
-       Completed
+       <i class="fa-solid fa-circle-check me-1"></i> Completed
     </a>
 </div>
 
-<h4 class="mb-3">
+<h4 class="mb-3 fw-semibold" style="font-size:15px;">
     {% if active_filter == 'today' %}
-        Today's Tasks
+        <i class="fa-regular fa-calendar-day me-2 text-primary"></i>Today's Tasks
     {% elif active_filter == 'upcoming' %}
-        Upcoming Tasks
+        <i class="fa-regular fa-calendar-plus me-2 text-primary"></i>Upcoming Tasks
     {% elif active_filter == 'completed' %}
-        Completed Tasks
+        <i class="fa-solid fa-circle-check me-2 text-primary"></i>Completed Tasks
     {% else %}
-        Your Tasks
+        <i class="fa-solid fa-list-check me-2 text-primary"></i>Your Tasks
     {% endif %}
 </h4>
 
 {% if tasks %}
+<div class="fw-card">
 <div class="table-wrap">
-<table class="table table-bordered table-striped align-middle text-center shadow-sm">
-    <thead class="table-dark">
+<table class="table fw-table align-middle text-center">
+    <thead>
         <tr>
             <th>Title</th>
             <th>Description</th>
@@ -153,19 +155,19 @@ input[type="text"]:focus{
             <td>
                 <div class="fw-semibold">{{ task.title }}</div>
                 {% if task.reward_points %}
-                    <span class="badge bg-success mt-1">{{ task.reward_points }} pts</span>
+                    <span class="fw-badge fw-badge-success mt-1">{{ task.reward_points }} pts</span>
                 {% endif %}
             </td>
 
-            <td>{{ task.description or '-' }}</td>
+            <td class="text-start">{{ task.description or '-' }}</td>
 
             <td>
                 {% if task.priority == "High" %}
-                    <span class="badge bg-danger">High</span>
+                    <span class="fw-badge fw-badge-danger">High</span>
                 {% elif task.priority == "Medium" %}
-                    <span class="badge bg-warning text-dark">Medium</span>
+                    <span class="fw-badge fw-badge-warning">Medium</span>
                 {% else %}
-                    <span class="badge bg-secondary">Low</span>
+                    <span class="fw-badge fw-badge-secondary">Low</span>
                 {% endif %}
             </td>
 
@@ -173,7 +175,7 @@ input[type="text"]:focus{
 
             <td>
                 {% if task.due_date %}
-                    {{ task.due_date.strftime('%Y-%m-%d') }}
+                    {{ task.due_date.strftime('%d %b %Y') }}
                 {% else %}
                     -
                 {% endif %}
@@ -181,29 +183,29 @@ input[type="text"]:focus{
 
             <td>
                 {% if task.status == 'Approved' %}
-                    <span class="badge bg-success">Approved</span>
+                    <span class="fw-badge fw-badge-success mb-1 d-inline-block">Approved</span>
                 {% elif task.status == 'Rejected' %}
-                    <span class="badge bg-danger">Rejected</span>
+                    <span class="fw-badge fw-badge-danger mb-1 d-inline-block">Rejected</span>
                 {% elif task.status == 'Submitted' %}
-                    <span class="badge bg-info text-dark">Submitted</span>
+                    <span class="fw-badge fw-badge-info mb-1 d-inline-block">Submitted</span>
                 {% else %}
-                    <span class="badge bg-secondary">Pending</span>
+                    <span class="fw-badge fw-badge-secondary mb-1 d-inline-block">Pending</span>
                 {% endif %}
 
-                <div class="mt-2">
-                    {% if task.status == 'Approved' %}
-                        <span class="badge bg-success">Completed</span>
-                    {% elif task.work_status == "Started" %}
-                        <span class="badge bg-success">Started</span>
-                    {% else %}
-                        <span class="badge bg-dark">Stopped</span>
-                    {% endif %}
-                </div>
+                {% if task.status == 'Approved' %}
+                    <div><span class="fw-badge fw-badge-success">Completed</span></div>
+                {% elif task.work_status == "Started" %}
+                    <div><span class="fw-badge fw-badge-primary">Started</span></div>
+                {% elif task.work_status == "Stopped" %}
+                    <div><span class="fw-badge fw-badge-warning">Stopped</span></div>
+                {% else %}
+                    <div><span class="fw-badge fw-badge-secondary">Not Started</span></div>
+                {% endif %}
             </td>
 
             <td>
                 {% if task.due_date and task.status not in ['Submitted', 'Approved'] %}
-                    <span class="countdown text-success fw-bold"
+                    <span class="countdown text-success fw-semibold"
                           data-due="{{ task.due_date.isoformat() }}">
                     </span>
                 {% else %}
@@ -215,8 +217,8 @@ input[type="text"]:focus{
                 {% if task.attachment %}
                     <a href="{{ url_for('main.download_attachment', filename=task.attachment) }}"
                        target="_blank"
-                       class="btn btn-sm btn-outline-primary rounded-3">
-                        <i class="fas fa-paperclip"></i> View
+                       class="fw-btn fw-btn-outline fw-btn-sm">
+                        <i class="fas fa-paperclip me-1"></i> View
                     </a>
                 {% else %}
                     <span class="text-muted small">No File</span>
@@ -227,8 +229,9 @@ input[type="text"]:focus{
                 {% if task.proof_file %}
                     <a href="{{ url_for('main.download_proof', filename=task.proof_file) }}"
                        target="_blank"
-                       class="btn btn-sm btn-outline-success rounded-3">
-                        <i class="fas fa-file-alt"></i> View
+                       class="fw-btn fw-btn-outline fw-btn-sm"
+                       style="border-color:#dcfce7;color:#166534;">
+                        <i class="fas fa-file-alt me-1"></i> View
                     </a>
                 {% else %}
                     <span class="text-muted small">Not Uploaded</span>
@@ -237,11 +240,11 @@ input[type="text"]:focus{
 
             <td>
                 {% if task.subtasks %}
-                    <ul class="small text-start mb-2">
+                    <ul class="small text-start mb-2" style="list-style:none;padding-left:0;">
                         {% for sub in task.subtasks %}
-                        <li>
+                        <li class="mb-1">
                             {{ sub.title }}
-                            <span class="badge bg-secondary">{{ sub.status }}</span>
+                            <span class="fw-badge fw-badge-secondary ms-1">{{ sub.status }}</span>
                         </li>
                         {% endfor %}
                     </ul>
@@ -251,16 +254,17 @@ input[type="text"]:focus{
 
                 <form method="POST"
                       action="{{ url_for('main.create_subtask', task_id=task.id) }}"
-                      class="mt-2">
-                    <input type="text"
-                           name="title"
-                           placeholder="Add Sub Task"
-                           class="form-control form-control-sm mb-2"
-                           required>
-
-                    <button class="btn btn-primary btn-sm w-100">
-                        Add
-                    </button>
+                      class="mt-2 text-start">
+                    <div class="d-flex gap-2">
+                        <input type="text"
+                               name="title"
+                               placeholder="Add Sub Task"
+                               class="form-control form-control-sm fw-form-control"
+                               required>
+                        <button class="fw-btn fw-btn-primary fw-btn-sm">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
                 </form>
             </td>
 
@@ -271,62 +275,62 @@ input[type="text"]:focus{
                       enctype="multipart/form-data">
                     <input type="file"
                            name="proof_file"
-                           class="form-control form-control-sm mb-2 rounded-3"
+                           class="form-control form-control-sm fw-form-control mb-2"
                            accept=".jpg,.png,.pdf,.jpeg,.doc,.docx"
                            required>
                     <button type="submit"
-                            class="btn btn-success btn-sm w-100 rounded-3 mb-2">
-                        Submit
+                            class="fw-btn fw-btn-success fw-btn-sm w-100 mb-2">
+                        <i class="fa-solid fa-upload me-1"></i> Submit
                     </button>
                 </form>
                 {% endif %}
 
                 {% if task.status == 'Rejected' %}
-                <div class="border p-2 rounded bg-light mb-2">
-                    <span class="text-danger fw-bold d-block mb-2">
-                        Reason: {{ task.remarks }}
+                <div class="border rounded-3 p-2 bg-light mb-2 text-start">
+                    <span class="text-danger fw-semibold d-block mb-2" style="font-size:13px;">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>Reason: {{ task.remarks }}
                     </span>
                     <form method="POST"
                           action="{{ url_for('main.resubmit_task', id=task.id) }}"
                           enctype="multipart/form-data">
                         <input type="file"
                                name="proof_file"
-                               class="form-control form-control-sm mb-2 rounded-3"
+                               class="form-control form-control-sm fw-form-control mb-2"
                                required>
                         <button type="submit"
-                                class="btn btn-primary btn-sm w-100 rounded-3">
-                            Resubmit
+                                class="fw-btn fw-btn-primary fw-btn-sm w-100">
+                            <i class="fa-solid fa-rotate-right me-1"></i> Resubmit
                         </button>
                     </form>
                 </div>
                 {% endif %}
 
                 {% if task.status not in ['Approved', 'Submitted'] %}
-                    {% if task.work_status == "Stopped" %}
+                    {% if task.work_status == "Stopped" or task.work_status == "Not Started" %}
                         <a href="{{ url_for('main.start_task', id=task.id) }}"
-                           class="btn btn-success btn-sm w-100 rounded-3 mb-2">
-                           ▶ Start
+                           class="fw-btn fw-btn-success fw-btn-sm w-100 mb-2">
+                           <i class="fa-solid fa-play me-1"></i> Start
                         </a>
                     {% else %}
                         <a href="{{ url_for('main.stop_task', id=task.id) }}"
-                           class="btn btn-danger btn-sm w-100 rounded-3 mb-2">
-                           ⏹ Stop
+                           class="fw-btn fw-btn-danger fw-btn-sm w-100 mb-2">
+                           <i class="fa-solid fa-stop me-1"></i> Stop
                         </a>
                     {% endif %}
                 {% endif %}
 
-                <button 
-class="btn btn-info btn-sm w-100 rounded-3 mb-2 ai-btn"
+                <button
+class="fw-btn fw-btn-info fw-btn-sm w-100 mb-2 ai-btn"
 data-task="{{ task.id }}">
-🤖 AI Help
+<i class="fa-solid fa-wand-magic-sparkles me-1"></i> AI Help
 </button>
 
                 {% if task.status == 'Submitted' %}
-                    <span class="badge bg-info text-dark p-2 w-100">Proof Submitted</span>
+                    <span class="fw-badge fw-badge-info p-2 w-100 d-inline-block">Proof Submitted</span>
                 {% endif %}
 
                 {% if task.status == 'Approved' %}
-                    <span class="badge bg-success p-2 w-100">Approved</span>
+                    <span class="fw-badge fw-badge-success p-2 w-100 d-inline-block">Approved</span>
                 {% endif %}
             </td>
         </tr>
@@ -334,13 +338,17 @@ data-task="{{ task.id }}">
     </tbody>
 </table>
 </div>
+</div>
 {% else %}
-<div class="alert alert-light border rounded-4">
-    No tasks found in this section.
+<div class="fw-card">
+    <div class="fw-empty">
+        <i class="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
+        No tasks found in this section.
+    </div>
 </div>
 {% endif %}
 
-<a href="{{ url_for('main.logout') }}" class="btn btn-secondary mt-3 rounded-3">Logout</a>
+</div>
 
 <script>
 function startCountdown() {
@@ -401,19 +409,7 @@ return;
 }
 
 document.getElementById("aiTaskTitle").innerText = data.title;
-
-const list = document.getElementById("aiSuggestionList");
-list.innerHTML = "";
-
-data.suggestions.forEach(s => {
-
-const li = document.createElement("li");
-li.innerText = s;
-li.className = "mb-2";
-
-list.appendChild(li);
-
-});
+document.getElementById("aiSuggestionText").textContent = data.reply || data.suggestions?.join("\n") || "No suggestions available.";
 
 let modal = new bootstrap.Modal(document.getElementById("aiModal"));
 modal.show();
@@ -427,20 +423,20 @@ modal.show();
 
 <!-- AI SUGGESTION MODAL -->
 
-<div class="modal fade" id="aiModal">
-<div class="modal-dialog modal-lg">
+<div class="modal fade fw-modal" id="aiModal">
+<div class="modal-dialog modal-lg modal-dialog-centered">
 <div class="modal-content">
 
-<div class="modal-header bg-dark text-white">
-<h5 class="modal-title">🤖 AI Task Suggestions</h5>
-<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<div class="modal-header">
+<h5 class="modal-title"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>AI Task Suggestions</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
 
 <div class="modal-body">
 
-<h5 id="aiTaskTitle"></h5>
+<h5 class="fw-semibold mb-3" id="aiTaskTitle"></h5>
 
-<ul id="aiSuggestionList" class="mt-3"></ul>
+<div id="aiSuggestionText" class="ai-suggestion-body" style="white-space:pre-line;line-height:1.8;font-size:14px;"></div>
 
 </div>
 

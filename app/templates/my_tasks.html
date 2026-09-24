@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% block title %}My Tasks{% endblock %}
+
+{% block content %}
+
+<style>
+
+.my-tasks-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
+}
+
+.fw-banner p{
+    margin:0;
+    color: rgba(255,255,255,0.85);
+    font-size:.92rem;
+}
+
+.mt-card{
+    background:#fff;
+    border-radius:20px;
+    box-shadow:0 18px 45px rgba(2,12,27,0.1);
+    border:1px solid var(--fw-border);
+    overflow:hidden;
+}
+
+.tasks-pills{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    padding:18px 22px 0;
+}
+
+.tasks-pills a{
+    padding:7px 14px;
+    border-radius:20px;
+    font-size:.88rem;
+    border:1px solid var(--fw-border);
+    background:#fff;
+    color:#475569;
+    text-decoration:none;
+}
+
+.tasks-pills a.active{
+    background:var(--fw-grad);
+    color:#fff;
+    border-color:transparent;
+}
+
+.tasks-pills a .cnt{
+    opacity:.75;
+    margin-left:4px;
+    font-size:.78rem;
+}
+
+.mt-toolbar{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    padding:16px 22px;
+}
+
+.mt-search{
+    flex:1;
+    min-width:200px;
+    position:relative;
+}
+
+.mt-search i{
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#94a3b8;
+    font-size:.85rem;
+}
+
+.mt-search input{
+    padding-left:34px;
+}
+
+.mt-priority{
+    width:170px;
+}
+
+.task-table-wrap{
+    overflow-x:auto;
+    padding:0 22px 22px;
+}
+
+.task-table{
+    width:100%;
+    font-size:.9rem;
+    border-collapse:collapse;
+}
+
+.task-table th{
+    text-align:left;
+    font-size:.75rem;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:#64748b;
+    padding:10px 14px;
+    border-bottom:2px solid var(--fw-border);
+    white-space:nowrap;
+}
+
+.task-table td{
+    padding:14px;
+    border-bottom:1px solid var(--fw-border);
+    vertical-align:middle;
+}
+
+.task-table tr:last-child td{
+    border-bottom:none;
+}
+
+.task-table tbody tr{
+    cursor:pointer;
+}
+
+.task-table tbody tr:hover{
+    background:#f8fafc;
+}
+
+.task-title a{
+    color:#0f172a;
+    font-weight:500;
+    text-decoration:none;
+}
+
+.cat-badge{
+    display:inline-block;
+    margin-top:4px;
+    font-size:.72rem;
+    color:#2d6fff;
+    background:rgba(45,111,255,.1);
+    padding:2px 8px;
+    border-radius:10px;
+}
+
+.mini-avatar{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-weight:700;
+    font-size:.85rem;
+    margin-right:9px;
+}
+
+.pr-chip{
+    display:inline-block;
+    font-size:.78rem;
+    font-weight:500;
+    padding:3px 10px;
+    border-radius:12px;
+}
+
+.pr-Low{ background:#ecfdf5; color:#059669; }
+.pr-Medium{ background:#fffbeb; color:#b45309; }
+.pr-High{ background:#fef2f2; color:#dc2626; }
+
+.st-chip{
+    display:inline-block;
+    font-size:.76rem;
+    font-weight:600;
+    padding:4px 11px;
+    border-radius:12px;
+    white-space:nowrap;
+}
+
+.st-Completed{ background:#ecfdf5; color:#059669; }
+.st-InProgress{ background:#eff6ff; color:#2563eb; }
+.st-Pending{ background:#f1f5f9; color:#64748b; }
+
+.ov-chip{
+    display:inline-block;
+    margin-left:6px;
+    font-size:.7rem;
+    font-weight:600;
+    color:#dc2626;
+    background:#fef2f2;
+    padding:2px 7px;
+    border-radius:9px;
+}
+
+.mt-empty{
+    text-align:center;
+    padding:48px 20px;
+    color:#94a3b8;
+}
+
+.mt-empty i{
+    font-size:2rem;
+    display:block;
+    margin-bottom:10px;
+    color:#cbd5e1;
+}
+
+</style>
+
+<div class="my-tasks-content pt-4">
+
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-solid fa-list-check me-2"></i>My Tasks</h2>
+        <p>{{ counts.in_progress }} in progress · {{ counts.pending }} pending</p>
+    </div>
+    {% if is_admin or is_manager %}
+    <a href="{{ url_for('main.create_task') }}" class="fw-btn fw-btn-light"><i class="fa-solid fa-plus me-1"></i>Assign task</a>
+    {% endif %}
+</div>
+
+<div class="mt-card mt-3">
+
+<div class="tasks-pills">
+    <a href="{{ url_for('main.my_tasks', filter='all') }}" class="{% if selected=='all' %}active{% endif %}">All <span class="cnt">{{ counts.all }}</span></a>
+    <a href="{{ url_for('main.my_tasks', filter='pending') }}" class="{% if selected=='pending' %}active{% endif %}">Pending <span class="cnt">{{ counts.pending }}</span></a>
+    <a href="{{ url_for('main.my_tasks', filter='in_progress') }}" class="{% if selected=='in_progress' %}active{% endif %}">In Progress <span class="cnt">{{ counts.in_progress }}</span></a>
+    <a href="{{ url_for('main.my_tasks', filter='completed') }}" class="{% if selected=='completed' %}active{% endif %}">Completed <span class="cnt">{{ counts.completed }}</span></a>
+    <a href="{{ url_for('main.my_tasks', filter='overdue') }}" class="{% if selected=='overdue' %}active{% endif %}">Overdue <span class="cnt">{{ counts.overdue }}</span></a>
+</div>
+
+<div class="mt-toolbar">
+    <div class="mt-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="taskSearch" placeholder="Search my tasks" class="form-control fw-form-control">
+    </div>
+    <div class="mt-priority">
+        <select id="priorityFilter" class="form-select fw-form-select">
+            <option value="">Any priority</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+        </select>
+    </div>
+</div>
+
+<div class="task-table-wrap">
+<table class="task-table">
+<thead>
+<tr>
+    <th>Task</th>
+    <th>Assigned By</th>
+    <th>Department</th>
+    <th>Priority</th>
+    <th>Start Date</th>
+    <th>Due Date</th>
+    <th>Status</th>
+</tr>
+</thead>
+<tbody>
+{% for r in rows %}
+<tr class="task-row" data-title="{{ r.title | lower }}" data-priority="{{ r.priority }}">
+    <td>
+        <div class="task-title">
+            {% if is_admin or is_manager %}
+            <a href="{{ url_for('main.task_details', task_id=r.id) }}">{{ r.title }}</a>
+            {% else %}
+            {{ r.title }}
+            {% endif %}
+        </div>
+        <span class="cat-badge">{{ r.category }}</span>
+    </td>
+    <td>
+        <span class="mini-avatar" style="background:{{ ['#2d6fff','#7c4dff','#00a884','#ff6b35','#e03e8a','#0ea5a4'][(r.creator_initials | first) | upper | int(0, 36) % 6] }}">{{ r.creator_initials }}</span>
+        <div class="d-inline-block align-middle">
+            <div class="fw-600">{{ r.creator_name }}</div>
+            <small class="text-muted">{{ r.creator_role }}</small>
+        </div>
+    </td>
+    <td>{{ r.department }}</td>
+    <td><span class="pr-chip pr-{{ r.priority }}">{{ r.priority }}</span></td>
+    <td class="text-muted">{{ r.start_date }}</td>
+    <td class="text-muted">{{ r.due_date }}</td>
+    <td>
+        <span class="st-chip st-{{ r.status | replace(' ','') }}">{{ r.status }}</span>
+        {% if r.is_overdue %}<span class="ov-chip">Overdue</span>{% endif %}
+    </td>
+</tr>
+{% else %}
+<tr><td colspan="7"><div class="mt-empty">
+    <i class="fa-regular fa-folder-open"></i>
+    No {{ 'overdue' if selected == 'overdue' else selected if selected != 'all' else '' }}
+    {{ 'tasks ' if selected != 'all' else 'tasks ' }}found
+</div></td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const searchBox = document.getElementById('taskSearch');
+const priorityBox = document.getElementById('priorityFilter');
+
+function applyFilters(){
+    const q = (searchBox.value || '').trim().toLowerCase();
+    const p = priorityBox.value;
+    document.querySelectorAll('.task-row').forEach(tr => {
+        let ok = true;
+        if (q && tr.dataset.title.indexOf(q) === -1) ok = false;
+        if (ok && p && tr.dataset.priority !== p) ok = false;
+        tr.style.display = ok ? '' : 'none';
+    });
+}
+
+searchBox.addEventListener('input', applyFilters);
+priorityBox.addEventListener('change', applyFilters);
+
+</script>
+
+{% endblock %}

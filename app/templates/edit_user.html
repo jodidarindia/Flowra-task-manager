@@ -3,127 +3,205 @@
 
 {% block content %}
 
-<div class="container mt-5">
-    <div class="card shadow-lg border-0 rounded-4">
-        
-        <div class="card-header bg-dark text-white">
-            <h4 class="mb-0">Edit User</h4>
-        </div>
+<style>
 
-        <div class="card-body p-4">
+.edit-user-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
+}
 
-            <form method="POST">
+.form-card{
+    background:#fff;
+    border-radius:20px;
+    box-shadow:0 18px 45px rgba(2,12,27,0.1);
+    border:1px solid var(--fw-border);
+    overflow:hidden;
+}
 
-                <!-- Username -->
-                <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text"
-                           name="username"
-                           class="form-control"
-                           value="{{ user.username }}"
-                           required>
-                </div>
+.form-card .card-head{
+    background:var(--fw-grad);
+    color:#fff;
+    padding:20px 28px;
+    font-weight:500;
+}
 
-                <!-- Email -->
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email"
-                           name="email"
-                           class="form-control"
-                           value="{{ user.email }}"
-                           required>
-                </div>
+.form-card .card-body{
+    padding:30px;
+}
 
-                <!-- Phone -->
-                <div class="mb-3">
-                    <label class="form-label">Phone Number</label>
-                    <input type="text"
-                           name="phone"
-                           class="form-control"
-                           value="{{ user.phone }}"
-                           placeholder="+919876543210"
-                           required>
-                </div>
+</style>
 
-                <div class="mb-3">
-<label class="form-label">Department</label>
+{% set is_admin_like = current_user.role in ('super_admin', 'admin') %}
 
-<select name="department_id" class="form-select">
+<div class="edit-user-content pt-4">
 
-<option value="">Select Department</option>
-
-{% for dept in departments %}
-
-<option value="{{ dept.id }}"
-{% if user.department_id == dept.id %}selected{% endif %}>
-
-{{ dept.name }}
-
-</option>
-
-{% endfor %}
-
-</select>
-
-</div>
-
-                <!-- Password -->
-                <div class="mb-3">
-                    <label class="form-label">New Password (Leave blank if not changing)</label>
-                    <input type="password"
-                           name="password"
-                           class="form-control">
-                </div>
-
-                <!-- Role -->
-                <div class="mb-3">
-                    <label class="form-label">Role</label>
-                    <select name="role" id="roleSelect" class="form-select">
-                        <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
-                        <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
-                        <option value="employee" {% if user.role == "employee" %}selected{% endif %}>Employee</option>
-                        <option value="manager" {% if user.role == "manager" %}selected{% endif %}>Manager</option>
-                    </select>
-                </div>
-
-                <!-- Supervisor Dropdown -->
-                <div class="mb-3 {% if user.role != 'employee' %}d-none{% endif %}" id="managerDropdown">
-                    <label class="form-label">Assign Manager</label>
-                    <select name="supervisor_id" class="form-select">
-                        <option value="">Select Manager</option>
-                        {% for mgr in managers %}
-                            <option value="{{ mgr.id }}"
-                                {% if user.supervisor_id == mgr.id %}selected{% endif %}>
-                                {{ mgr.username }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="d-flex justify-content-between">
-                    <a href="{{ url_for('main.admin_panel') }}"
-                       class="btn btn-secondary">
-                        Cancel
-                    </a>
-                    
-
-                    <button type="submit"
-                            class="btn btn-success">
-                        Update User
-                    </button>
-                </div>
-
-            </form>
-
-        </div>
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-solid fa-user-pen me-2"></i>{% if is_self %}My Profile{% else %}Edit User{% endif %}</h2>
+        <p>{% if is_self %}Update your personal details.{% else %}Update user details, role and department.{% endif %}</p>
     </div>
 </div>
 
-<!-- Show/Hide Manager Dropdown -->
+<div class="form-card">
+
+<div class="card-head">
+    <i class="fa-solid fa-user-pen me-2"></i>User: {{ user.username }}
+</div>
+
+<div class="card-body">
+
+<form method="POST">
+
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="fw-label">Username</label>
+<input type="text"
+name="username"
+class="form-control fw-form-control"
+value="{{ user.username }}"
+required>
+</div>
+
+<div class="col-md-6 mb-3">
+<label class="fw-label">Email</label>
+<input type="email"
+name="email"
+class="form-control fw-form-control"
+value="{{ user.email }}"
+required>
+</div>
+</div>
+
+<div class="col-12 col-md-6 mb-3 px-0">
+<label class="fw-label">Phone Number</label>
+<input type="text"
+name="phone"
+class="form-control fw-form-control"
+value="{{ user.phone }}"
+placeholder="+919876543210"
+required>
+</div>
+
+<div class="col-12 col-md-6 mb-3 px-0">
+<label class="fw-label">Department</label>
+<select name="department_id" class="form-select fw-form-select">
+<option value="">Select Department</option>
+{% for dept in departments %}
+<option value="{{ dept.id }}"
+{% if user.department_id == dept.id %}selected{% endif %}>
+{{ dept.name }}
+</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="col-12 col-md-6 mb-3 px-0">
+<label class="fw-label">New Password (Leave blank if not changing)</label>
+<input type="password"
+name="password"
+class="form-control fw-form-control"
+placeholder="Enter new password">
+</div>
+
+<div class="col-12 col-md-6 mb-3 px-0">
+<label class="fw-label">{% if is_admin_like %}Role{% else %}Role (locked){% endif %}</label>
+{% if is_admin_like %}
+<select name="role" id="roleSelect" class="form-select fw-form-select">
+<option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
+<option value="super_admin" {% if user.role == "super_admin" %}selected{% endif %}>Super Admin</option>
+<option value="manager" {% if user.role == "manager" %}selected{% endif %}>Manager</option>
+<option value="employee" {% if user.role == "employee" %}selected{% endif %}>Employee</option>
+</select>
+{% else %}
+<input type="text" class="form-control fw-form-control"
+       value="{% if user.role == 'manager' %}Manager{% elif user.role == 'admin' %}Admin{% elif user.role == 'super_admin' %}Super Admin{% else %}Employee{% endif %}"
+       disabled readonly>
+{% endif %}
+</div>
+
+{% if current_user.role == 'super_admin' %}
+<div class="col-12 mb-1 px-0 mt-2">
+    <h6 class="fw-section-head" style="font-weight:700;color:var(--fw-primary);border-bottom:1px solid var(--fw-border);padding-bottom:6px;">
+        <i class="fa-solid fa-building me-1"></i> Company Details
+    </h6>
+</div>
+<div class="col-12 col-md-6 mb-3 px-0">
+<label class="fw-label">Company Name</label>
+<input type="text" name="company" class="form-control fw-form-control"
+       value="{{ user.company or '' }}"
+       placeholder="e.g. Acme Pvt. Ltd.">
+</div>
+<div class="col-12 col-md-6 mb-3 px-0">
+<label class="fw-label">GSTIN</label>
+<input type="text" name="company_gst" class="form-control fw-form-control"
+       value="{{ user_co_doc.get('gstin') or '' }}"
+       placeholder="e.g. 22AAAAA0000A1Z5">
+</div>
+<div class="col-12 col-md-6 mb-3 px-0">
+<label class="fw-label">Address</label>
+<input type="text" name="company_address" class="form-control fw-form-control"
+       value="{{ user_co_doc.get('address') or '' }}"
+       placeholder="e.g. 12, Main Road, Raipur">
+</div>
+<div class="col-12 col-md-6 mb-3 px-0">
+<label class="fw-label">City</label>
+<input type="text" name="company_city" class="form-control fw-form-control"
+       value="{{ user_co_doc.get('city') or '' }}"
+       placeholder="e.g. Raipur">
+</div>
+<div class="col-12 col-md-6 mb-3 px-0">
+<label class="fw-label">Employee Slots</label>
+<input type="number" name="employee_slots" min="0" class="form-control fw-form-control"
+       value="{{ user_co_doc.get('plan_slots') or 0 }}"
+       placeholder="e.g. 20">
+</div>
+<div class="col-12 col-md-6 mb-3 px-0">
+<label class="fw-label">Charge per Employee (₹)</label>
+<input type="number" name="per_employee_charge" min="0" step="1" class="form-control fw-form-control"
+       value="{{ user_co_doc.get('per_employee_charge') or 0 }}"
+       placeholder="e.g. 100">
+<div class="fw-hint" style="font-size:12px;color:var(--fw-muted);margin-top:4px;">
+    Used for company billing on the Payments page (Total: ₹{{ "{:,}".format((user_co_doc.get('plan_slots') or 0) * (user_co_doc.get('per_employee_charge') or 0)) }})
+</div>
+</div>
+{% endif %}
+
+<div class="col-12 col-md-6 mb-3 px-0 {% if user.role != 'employee' or not is_admin_like %}d-none{% endif %}" id="managerDropdown">
+<label class="fw-label">Assign Manager</label>
+<select name="supervisor_id" class="form-select fw-form-select">
+<option value="">Select Manager</option>
+{% for mgr in managers %}
+<option value="{{ mgr.id }}"
+{% if user.supervisor_id == mgr.id %}selected{% endif %}>
+{{ mgr.username }}
+</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="d-flex gap-2 flex-wrap mt-3">
+<a href="{{ url_for('main.dashboard') }}" class="fw-btn fw-btn-outline">
+<i class="fa-solid fa-arrow-left me-1"></i> Cancel
+</a>
+
+<button type="submit" class="fw-btn fw-btn-success flex-fill">
+<i class="fa-solid fa-floppy-disk me-1"></i> Update User
+</button>
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-
     const roleSelect = document.getElementById("roleSelect");
+    if (!roleSelect) return;
     const managerDropdown = document.getElementById("managerDropdown");
 
     roleSelect.addEventListener("change", function () {
@@ -133,7 +211,6 @@ document.addEventListener("DOMContentLoaded", function () {
             managerDropdown.classList.add("d-none");
         }
     });
-
 });
 </script>
 

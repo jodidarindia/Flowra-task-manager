@@ -5,324 +5,100 @@
 
 <style>
 
-/* PAGE BACKGROUND */
-
-.department-page{
-position:relative;
-display:flex;
-flex-direction:column;
-height:100vh;
-background:linear-gradient(270deg,#eef2ff,#f5f3ff,#e0f2fe,#ede9fe);
-background-size:600% 600%;
-animation:gradientMove 18s ease infinite;
-overflow:hidden;
-padding:40px 24px;
+.dept-dashboard-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
 }
 
-/* FLOATING BLOBS */
-
-.department-page::before{
-content:"";
-position:absolute;
-width:500px;
-height:500px;
-background:#7c3aed;
-opacity:0.15;
-filter:blur(140px);
-top:-150px;
-left:-150px;
-animation:floatBlob1 20s infinite alternate;
-pointer-events:none;
+.department-scroll{
+    overflow:visible;
 }
 
-.department-page::after{
-content:"";
-position:absolute;
-width:450px;
-height:450px;
-background:#2563eb;
-opacity:0.15;
-filter:blur(140px);
-bottom:-120px;
-right:-120px;
-animation:floatBlob2 22s infinite alternate;
-pointer-events:none;
+.department-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:24px;
+    align-items:start;
 }
-
-/* ANIMATIONS */
-
-@keyframes floatBlob1{
-0%{transform:translate(0,0)}
-100%{transform:translate(120px,80px)}
-}
-
-@keyframes floatBlob2{
-0%{transform:translate(0,0)}
-100%{transform:translate(-120px,-60px)}
-}
-
-@keyframes gradientMove{
-0%{background-position:0% 50%;}
-50%{background-position:100% 50%;}
-100%{background-position:0% 50%;}
-}
-
-/* BANNER */
-
-.dashboard-banner{
-position:sticky;
-top:0;
-z-index:1000;
-background:linear-gradient(135deg,#2563eb,#7c3aed);
-color:white;
-border-radius:18px;
-padding:30px 24px;
-margin-bottom:30px;
-box-shadow:0 15px 35px rgba(0,0,0,0.2);
-display:flex;
-justify-content:space-between;
-align-items:center;
-gap:16px;
-flex-wrap:wrap;
-}
-
-.dashboard-banner h2{
-font-weight:700;
-color:white;
-margin-bottom:6px;
-}
-
-.dashboard-banner p{
-margin:0;
-opacity:0.9;
-}
-
-/* BACK BUTTON */
-
-.back-btn{
-background:white;
-border:none;
-padding:10px 18px;
-border-radius:10px;
-font-weight:600;
-white-space:nowrap;
-}
-
-/* CARD */
 
 .department-card{
-position:relative;
-z-index:1;
-background:white;
-border-radius:18px;
-box-shadow:0 10px 25px rgba(0,0,0,0.08);
-overflow:hidden;
-min-width:0;
+    background:#fff;
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(2,12,27,0.08);
+    border:1px solid var(--fw-border);
+    overflow:hidden;
+    min-width:0;
 }
-
-/* HEADER */
 
 .department-header{
-background:#f1f5f9;
-padding:16px;
-font-weight:600;
-display:flex;
-justify-content:space-between;
-align-items:center;
-gap:12px;
-border-bottom:1px solid #e5e7eb;
-flex-wrap:wrap;
+    background:var(--fw-grad);
+    color:#fff;
+    padding:12px 16px;
+    font-weight:500;
+    font-size:13px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    border:none;
+    flex-wrap:wrap;
 }
 
-/* TABLE */
+.department-header .fw-badge{
+    background:rgba(255,255,255,0.2);
+    color:#fff;
+}
 
 .table-wrap{
-padding:20px;
-}
-
-.table-responsive{
-overflow-x:auto;
--webkit-overflow-scrolling:touch;
+    padding:16px;
 }
 
 .dept-table{
-margin-bottom:0;
-font-size:14px;
-min-width:760px;
+    margin-bottom:0;
+    font-size:14px;
+    min-width:680px;
 }
 
-.dept-table thead{
-background:#eef2ff;
-}
-
-.dept-table th{
-font-weight:600;
-white-space:nowrap;
+.dept-table thead th{
+    background:#eef2ff;
+    color:var(--fw-dark);
+    font-weight:500;
+    border-bottom:2px solid #e0e7ff;
+    white-space:nowrap;
 }
 
 .dept-table td{
-vertical-align:middle;
-word-break:break-word;
-}
-
-/* BADGES */
-
-.badge-status{
-font-size:12px;
-padding:6px 10px;
-border-radius:999px;
-white-space:nowrap;
-}
-
-/* BUTTONS */
-
-.action-btn{
-font-size:12px;
-padding:6px 10px;
-border-radius:10px;
-white-space:nowrap;
-}
-
-/* EMPTY */
-
-.empty-box{
-padding:25px;
-text-align:center;
-color:#64748b;
-}
-
-/* SCROLL AREA */
-
-.department-scroll{
-flex:1;
-overflow-y:auto;
-min-height:0;
-}
-
-/* GRID */
-
-.department-grid{
-position:relative;
-z-index:1;
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(420px,1fr));
-gap:24px;
-align-items:start;
-}
-
-/* RESPONSIVE */
-
-@media (max-width: 1199px){
-.department-grid{
-grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
-}
+    vertical-align:middle;
+    word-break:break-word;
 }
 
 @media (max-width: 991px){
-.department-page{
-padding:28px 16px;
-}
-
-.dashboard-banner{
-padding:24px 18px;
-}
-
-.dashboard-banner h2{
-font-size:28px;
-}
-
-.department-grid{
-grid-template-columns:1fr;
-gap:20px;
-}
-
-.table-wrap{
-padding:16px;
-}
+    .department-grid{
+        grid-template-columns:1fr;
+        gap:20px;
+    }
 }
 
 @media (max-width: 767px){
-.department-page{
-padding:20px 12px;
-}
-
-.dashboard-banner{
-padding:18px 16px;
-border-radius:16px;
-}
-
-.dashboard-banner h2{
-font-size:24px;
-}
-
-.dashboard-banner p{
-font-size:14px;
-}
-
-.back-btn{
-width:100%;
-text-align:center;
-}
-
-.department-header{
-padding:14px;
-font-size:15px;
-}
-
-.table-wrap{
-padding:12px;
-}
-
-.dept-table{
-font-size:13px;
-min-width:700px;
-}
-
-.badge-status{
-font-size:11px;
-padding:5px 8px;
-}
-
-.action-btn{
-font-size:11px;
-padding:5px 8px;
-}
-}
-
-@media (max-width: 480px){
-.dashboard-banner h2{
-font-size:21px;
-}
-
-.dashboard-banner p{
-font-size:13px;
-}
-
-.department-header{
-font-size:14px;
-}
-
-.dept-table{
-font-size:12px;
-min-width:640px;
-}
+    .dept-dashboard-content{
+        padding:0 12px;
+    }
 }
 
 </style>
 
-<div class="department-page">
+<div class="dept-dashboard-content pt-4">
 
-<div class="dashboard-banner">
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-solid fa-building-shield me-2"></i>Department Dashboard</h2>
+        <p>Department-wise employee task overview.</p>
+    </div>
 
-<div>
-<h2>Department Dashboard</h2>
-<p>Department-wise employee task overview.</p>
-</div>
-
-<button onclick="history.back()" class="back-btn">
-⬅ Back
-</button>
-
+    <button onclick="history.back()" class="fw-btn fw-btn-light fw-btn-sm">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back
+    </button>
 </div>
 
 <div class="department-scroll">
@@ -334,13 +110,8 @@ min-width:640px;
 <div class="department-card">
 
 <div class="department-header">
-
-<span>{{ item.department.name }}</span>
-
-<span class="badge bg-info text-dark">
-{{ item.count }} Employees
-</span>
-
+<span><i class="fa-solid fa-building me-2"></i>{{ item.department.name }}</span>
+<span class="fw-badge">{{ item.count }} Employees</span>
 </div>
 
 <div class="table-wrap">
@@ -349,7 +120,7 @@ min-width:640px;
 
 <div class="table-responsive">
 
-<table class="table dept-table align-middle text-center">
+<table class="table dept-table fw-table align-middle text-center">
 
 <thead>
 <tr>
@@ -372,7 +143,7 @@ min-width:640px;
 
 <tr>
 
-<td>{{ emp_item.employee.username }}</td>
+<td class="fw-semibold">{{ emp_item.employee.username }}</td>
 
 <td>{{ task.title }}</td>
 
@@ -380,31 +151,31 @@ min-width:640px;
 
 <td>
 {% if task.status == 'Approved' %}
-<span class="badge bg-success badge-status">Approved</span>
+<span class="fw-badge fw-badge-success">Approved</span>
 {% elif task.status == 'Rejected' %}
-<span class="badge bg-danger badge-status">Rejected</span>
+<span class="fw-badge fw-badge-danger">Rejected</span>
 {% elif task.status == 'Submitted' %}
-<span class="badge bg-info text-dark badge-status">Submitted</span>
+<span class="fw-badge fw-badge-info">Submitted</span>
 {% else %}
-<span class="badge bg-secondary badge-status">Pending</span>
+<span class="fw-badge fw-badge-secondary">Pending</span>
 {% endif %}
 </td>
 
 <td>
 {% if task.work_status == "Started" %}
-<span class="badge bg-success badge-status">Started</span>
+<span class="fw-badge fw-badge-success">Started</span>
 {% elif task.work_status == "Stopped" %}
-<span class="badge bg-warning text-dark badge-status">Stopped</span>
+<span class="fw-badge fw-badge-warning">Stopped</span>
 {% else %}
-<span class="badge bg-secondary badge-status">Not Started</span>
+<span class="fw-badge fw-badge-secondary">Not Started</span>
 {% endif %}
 </td>
 
 <td>
 {% if task.status == 'Submitted' %}
 <a href="{{ url_for('main.approve_task', id=task.id) }}"
-class="btn btn-success btn-sm action-btn">
-Approve
+class="fw-btn fw-btn-success fw-btn-sm mb-0">
+<i class="fa-solid fa-check me-1"></i> Approve
 </a>
 {% else %}
 <span class="text-muted">-</span>
@@ -418,8 +189,9 @@ Approve
 {% else %}
 
 <tr>
-<td>{{ emp_item.employee.username }}</td>
-<td colspan="5" class="text-muted">
+<td class="fw-semibold">{{ emp_item.employee.username }}</td>
+<td colspan="5" class="fw-empty">
+<i class="fa-regular fa-folder-open me-1 opacity-50"></i>
 No tasks assigned
 </td>
 </tr>
@@ -432,12 +204,6 @@ No tasks assigned
 
 </table>
 
-</div>
-
-{% else %}
-
-<div class="empty-box">
-No employees in this department.
 </div>
 
 {% endif %}

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Flowra Task Manager</title>
+<title>{% block title %}Flowra Task Manager{% endblock %}</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -12,163 +12,1309 @@
 <!-- FontAwesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<!-- Google Font -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
 <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='flowra_favicon.ico') }}">
 
-<!-- ONLY CHANGED PARTS — KEEP REST SAME -->
+{% block page_css %}{% endblock %}
 
 <style>
+:root{
+    --fw-primary:#2563eb;
+    --fw-primary-dark:#1d4ed8;
+    --fw-violet:#7c3aed;
+    --fw-grad:linear-gradient(135deg,#2563eb,#7c3aed);
+    --fw-bg:#eef1f8;
+    --fw-card:#ffffff;
+    --fw-border:#e5e7eb;
+    --fw-text:#1f2937;
+    --fw-muted:#6b7280;
+    --fw-sidebar-bg:#ffffff;
+    --fw-sidebar-hover:#f1f5f9;
+    --fw-sidebar-text:#475569;
+    --fw-sidebar-active:#2563eb;
+    --fw-radius:16px;
+    --fw-shadow:0 8px 24px rgba(2,12,27,0.08);
+    --fw-shadow-lg:0 18px 45px rgba(2,12,27,0.14);
+}
+
 *{
-font-family:'Poppins',sans-serif;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
 }
 
 html,body{
-min-height:100%;
+    min-height:100%;
 }
 
 body{
-background:linear-gradient(135deg,#fff,#fff,#fff);
-min-height:100vh;
-color:#1f2937;
-display:flex;
-flex-direction:column;
-
-/* ✅ ADD THIS (FIX OVERLAP) */
-padding-top:110px;
+    background:var(--fw-bg);
+    min-height:100vh;
+    color:var(--fw-text);
+    font-size:13px;
+    line-height:1.5;
 }
 
-/* NAVBAR */
+/* ============ SIDEBAR ============ */
 
-.navbar{
-background:rgba(255,255,255,0.82);
-backdrop-filter:blur(10px);
-box-shadow:0 10px 25px rgba(0,0,0,0.08);
-padding:14px 0;
-min-height:95px;
-
-/* ✅ MAKE FIXED */
-position:fixed;
-top:0;
-width:100%;
-z-index:1000;
+.fw-sidebar{
+    position:fixed;
+    top:0;
+    left:0;
+    bottom:0;
+    width:230px;
+    background:var(--fw-sidebar-bg);
+    display:flex;
+    flex-direction:column;
+    z-index:1050;
+    transition:width .2s ease, transform .25s ease;
+    overflow:hidden;
 }
 
-.navbar-brand{
-font-weight:700;
-font-size:24px;
-display:flex;
-align-items:center;
-gap:14px;
-margin:0;
-padding:0;
-line-height:1;
+.fw-sidebar-brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:16px 18px;
+    border-bottom:1px solid var(--fw-border);
+    flex-shrink:0;
 }
 
-.navbar-brand img{
-height:95px;
-width:auto;
-object-fit:contain;
-display:block;
+.fw-sidebar-brand img{
+    height:34px;
+    width:auto;
+    object-fit:contain;
 }
 
-.navbar-brand span{
-color:#2563eb;
-font-weight:800;
-letter-spacing:0.5px;
-font-size:28px;
+.fw-sidebar-brand span{
+    font-weight:500;
+    font-size:17px;
+    letter-spacing:.5px;
+    color:#1f2937;
 }
 
-/* ✅ RESPONSIVE FIX */
-.navbar .container{
-display:flex;
-justify-content:space-between;
-align-items:center;
-flex-wrap:wrap;
+.fw-sidebar-nav{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+    padding:12px 10px;
 }
 
-/* ✅ MOBILE FIX */
-@media (max-width: 768px){
-
-body{
-padding-top:90px;
+.fw-sidebar-nav::-webkit-scrollbar{
+    display:none;
+    width:0;
+    height:0;
 }
 
-.navbar{
-min-height:80px;
+.fw-nav-group{
+    font-size:10.5px;
+    font-weight:500;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:#5b6579;
+    padding:14px 10px 6px;
 }
 
-.navbar-brand img{
-height:55px;
+.fw-nav-link,
+.fw-nav-toggle{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    width:100%;
+    color:var(--fw-sidebar-text);
+    text-decoration:none;
+    font-size:12.5px;
+    font-weight:500;
+    padding:9px 12px;
+    border-radius:9px;
+    margin-bottom:2px;
+    transition:background .15s,color .15s;
+    border:none;
+    background:none;
+    cursor:pointer;
+    text-align:left;
 }
 
-.navbar-brand span{
-font-size:18px;
+.fw-nav-link i,
+.fw-nav-toggle i:first-child{
+    width:17px;
+    text-align:center;
+    font-size:14px;
+    color:#5b6579;
+    transition:color .15s;
 }
 
-.navbar .btn{
-margin-top:8px;
-width:100%;
+.fw-nav-badge{
+    margin-left:auto;
+    background:#dc2626;
+    color:#fff;
+    font-size:10px;
+    font-weight:700;
+    min-width:17px;
+    height:17px;
+    border-radius:9px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 5px;
 }
 
+.fw-nav-link:hover,
+.fw-nav-toggle:hover{
+    background:var(--fw-sidebar-hover);
+    color:#1f2937;
 }
 
-/* CARDS / UI SAME */
+.fw-nav-link:hover i,
+.fw-nav-toggle:hover i{
+    color:#2563eb;
+}
+
+.fw-nav-link.active,
+.fw-nav-item.active > .fw-nav-toggle{
+    background:var(--fw-sidebar-active);
+    color:#fff;
+}
+
+.fw-nav-link.active i,
+.fw-nav-item.active > .fw-nav-toggle i{
+    color:#fff;
+}
+
+.fw-chevron{
+    margin-left:auto;
+    font-size:10px;
+    color:#5b6579;
+    transition:transform .15s;
+}
+
+.fw-nav-item.open > .fw-nav-toggle .fw-chevron{
+    transform:rotate(180deg);
+}
+
+.fw-nav-sub{
+    display:none;
+    margin:2px 0 4px;
+}
+
+.fw-nav-item.open > .fw-nav-sub{
+    display:block;
+}
+
+.fw-nav-sub a{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#64748b;
+    font-size:12px;
+    font-weight:500;
+    text-decoration:none;
+    padding:7px 12px 7px 18px;
+    border-radius:8px;
+    margin:1px 0;
+    transition:.15s;
+}
+
+.fw-nav-sub a::before{
+    content:"";
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:#5b6579;
+    flex-shrink:0;
+}
+
+.fw-nav-sub a:hover{
+    color:#1f2937;
+    background:var(--fw-sidebar-hover);
+}
+
+.fw-nav-sub a:hover::before{
+    background:#2563eb;
+}
+
+.fw-nav-sub a.active{
+    color:#1f2937;
+    background:var(--fw-sidebar-hover);
+}
+
+.fw-nav-sub a.active::before{
+    background:var(--fw-sidebar-active);
+}
+
+.fw-nav-item .fw-nav-link.disabled,
+.fw-nav-link.disabled{
+    opacity:.45;
+    cursor:default;
+    pointer-events:none;
+}
+
+.fw-announce-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    background:linear-gradient(135deg,#f59e0b,#f97316);
+    color:#fff !important;
+    font-size:12px;
+    font-weight:500;
+    border-radius:9px;
+    padding:9px 12px;
+    text-decoration:none;
+}
+
+.fw-announce-btn i{
+    color:#fff !important;
+    width:auto !important;
+}
+
+.fw-sidebar-badges{
+    padding:12px 12px;
+}
+
+.fw-sidebar-user{
+    padding:12px;
+    border-top:1px solid var(--fw-border);
+    flex-shrink:0;
+}
+
+.fw-user-chip{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    color:#1f2937;
+    font-size:12.5px;
+    font-weight:500;
+    padding:7px 8px;
+    border-radius:9px;
+    background:var(--fw-sidebar-hover);
+    margin-bottom:8px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.fw-user-chip i{
+    color:#8b93a7;
+    font-size:15px;
+}
+
+.fw-logout{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    background:transparent;
+    border:1px solid rgba(239,68,68,0.4);
+    color:#dc2626;
+    font-size:12.5px;
+    font-weight:500;
+    border-radius:9px;
+    padding:9px 12px;
+    text-decoration:none;
+    transition:background .15s;
+}
+
+.fw-logout:hover{
+    background:rgba(239,68,68,.08);
+    color:#b91c1c;
+}
+
+.fw-collapse-btn{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    width:100%;
+    background:none;
+    border:none;
+    color:#64748b;
+    cursor:pointer;
+    font-size:12px;
+    font-weight:500;
+    padding:9px 12px;
+    border-radius:9px;
+    text-align:left;
+    margin-top:8px;
+    transition:.15s;
+}
+
+.fw-collapse-btn:hover{
+    color:#1f2937;
+    background:var(--fw-sidebar-hover);
+}
+
+.fw-collapse-btn i{
+    width:17px;
+    text-align:center;
+    font-size:14px;
+}
+
+/* Collapsed sidebar */
+
+.fw-sidebar-collapsed .fw-sidebar{
+    width:64px;
+}
+
+.fw-sidebar-collapsed .fw-main{
+    margin-left:64px;
+}
+
+.fw-sidebar-collapsed .fw-sidebar-brand{
+    justify-content:center;
+    padding:16px 0;
+}
+
+.fw-sidebar-collapsed .fw-sidebar-brand span{
+    display:none;
+}
+
+.fw-sidebar-collapsed .fw-nav-group{
+    display:none;
+}
+
+.fw-sidebar-collapsed .fw-nav-link,
+.fw-sidebar-collapsed .fw-nav-toggle,
+.fw-sidebar-collapsed .fw-user-chip,
+.fw-sidebar-collapsed .fw-logout,
+.fw-sidebar-collapsed .fw-collapse-btn,
+.fw-sidebar-collapsed .fw-sidebar-brand{
+    justify-content:center;
+    padding:9px 0;
+    font-size:0;
+    line-height:0;
+}
+
+.fw-sidebar-collapsed .fw-nav-link span,
+.fw-sidebar-collapsed .fw-nav-toggle span,
+.fw-sidebar-collapsed .fw-chevron,
+.fw-sidebar-collapsed .fw-nav-sub,
+.fw-sidebar-collapsed .fw-announce-btn,
+.fw-sidebar-collapsed .fw-sidebar-badges,
+.fw-sidebar-collapsed .fw-user-chip span,
+.fw-sidebar-collapsed .fw-logout span,
+.fw-sidebar-collapsed .fw-collapse-btn span{
+    display:none !important;
+}
+
+.fw-sidebar-collapsed .fw-nav-link i,
+.fw-sidebar-collapsed .fw-nav-toggle i:first-child,
+.fw-sidebar-collapsed .fw-logout i,
+.fw-sidebar-collapsed .fw-collapse-btn i,
+.fw-sidebar-collapsed .fw-user-chip i{
+    width:auto;
+    margin:0;
+    font-size:15px;
+    line-height:1;
+}
+
+.fw-sidebar-collapsed .fw-sidebar-nav{
+    padding:12px 6px;
+}
+
+.fw-sidebar-collapsed .fw-collapse-btn i{
+    transform:rotate(180deg);
+}
+
+.fw-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(2,12,27,.5);
+    z-index:1040;
+    display:none;
+}
+
+/* MAIN AREA TO THE RIGHT OF SIDEBAR */
+
+.fw-main{
+    margin-left:230px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+.fw-main-full{
+    margin-left:0;
+}
+
+.fw-topbar-mobile{
+    display:none;
+    align-items:center;
+    gap:12px;
+    background:#fff;
+    border-bottom:1px solid var(--fw-border);
+    padding:10px 16px;
+    position:sticky;
+    top:0;
+    z-index:1020;
+}
+
+.fw-hamburger{
+    border:none;
+    background:transparent;
+    font-size:20px;
+    color:var(--fw-text);
+    cursor:pointer;
+}
+
+/* Desktop topbar */
+
+.fw-topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    background:#fff;
+    border-bottom:1px solid var(--fw-border);
+    padding:12px 22px;
+    position:sticky;
+    top:0;
+    z-index:1010;
+    flex-wrap:wrap;
+}
+
+.fw-topbar .tt-left h1{
+    font-size:18px;
+    font-weight:500;
+    color:var(--fw-text);
+    margin:0;
+    letter-spacing:-0.3px;
+}
+
+.fw-topbar .tt-left small{
+    display:block;
+    font-size:11px;
+    font-weight:500;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:#94a3b8;
+    margin-top:3px;
+}
+
+.fw-topbar .tt-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.tt-btn{
+    width:40px;
+    height:40px;
+    border-radius:11px;
+    border:1px solid var(--fw-border);
+    background:#fff;
+    color:#475569;
+    font-size:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:.15s;
+    text-decoration:none;
+    position:relative;
+}
+
+.tt-btn:hover{
+    color:var(--fw-primary);
+    border-color:#bfdbfe;
+}
+
+.tt-btn .tt-dot{
+    position:absolute;
+    top:-4px;
+    right:-4px;
+    background:#ef4444;
+    color:#fff;
+    font-size:9.5px;
+    font-weight:500;
+    min-width:16px;
+    height:16px;
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 3px;
+}
+
+.tt-search{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    background:#f8fafc;
+    border:1px solid var(--fw-border);
+    border-radius:11px;
+    padding:9px 14px;
+    color:#94a3b8;
+    font-size:13px;
+    text-decoration:none;
+    transition:.15s;
+    position:relative;
+    min-width:300px;
+}
+
+.tt-search:hover{
+    background:#fff;
+    border-color:#bfdbfe;
+}
+
+.tt-search input{
+    border:none;
+    outline:none;
+    flex:1;
+    min-width:0;
+    background:transparent;
+    font-size:13px;
+    color:var(--fw-text);
+}
+
+.tt-search kbd{
+    background:#f1f5f9;
+    border:1px solid #e2e8f0;
+    border-radius:6px;
+    padding:2px 7px;
+    font-size:11px;
+    color:#64748b;
+}
+
+.tt-search-results{
+    position:absolute;
+    top:calc(100% + 8px);
+    left:0;
+    right:0;
+    background:#fff;
+    border:1px solid var(--fw-border);
+    border-radius:14px;
+    box-shadow:0 18px 40px rgba(2,12,27,0.14);
+    z-index:1060;
+    max-height:400px;
+    overflow:auto;
+    display:none;
+}
+
+.tt-search-results .tsr-group{
+    font-size:10.5px;
+    font-weight:500;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:#94a3b8;
+    padding:12px 16px 5px;
+}
+
+.tt-search-results .tsr-item{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:10px 16px;
+    cursor:pointer;
+    text-decoration:none;
+    color:var(--fw-text);
+}
+
+.tt-search-results .tsr-item:hover{
+    background:#f8fafc;
+}
+
+.tt-search-results .tsr-item .tsr-ico{
+    width:32px;
+    height:32px;
+    border-radius:9px;
+    background:#eef2ff;
+    color:#4338ca;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    flex-shrink:0;
+}
+
+.tt-search-results .tsr-item .tsr-main{
+    flex:1;
+    min-width:0;
+}
+
+.tt-search-results .tsr-item .tsr-title{
+    font-size:13px;
+    font-weight:500;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.tt-search-results .tsr-item .tsr-sub{
+    font-size:11.5px;
+    color:#94a3b8;
+    margin-top:2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.tt-search-results .tsr-item .tsr-badge{
+    flex-shrink:0;
+    font-size:10.5px;
+    font-weight:500;
+    background:#f1f5f9;
+    color:#64748b;
+    border-radius:6px;
+    padding:3px 8px;
+    text-transform:capitalize;
+}
+
+.tt-search-results .tsr-empty{
+    padding:16px;
+    font-size:12.5px;
+    color:#94a3b8;
+    text-align:center;
+}
+
+.tt-avatar{
+    width:40px;
+    height:40px;
+    border-radius:11px;
+    background:var(--fw-grad);
+    color:#fff;
+    font-size:14px;
+    font-weight:500;
+    border:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    letter-spacing:.5px;
+}
+
+.fw-dropdown .dropdown-item{
+    font-size:13px;
+    padding:9px 16px;
+    color:var(--fw-text);
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.fw-dropdown .dropdown-item i{
+    width:16px;
+    text-align:center;
+    color:#94a3b8;
+}
+
+.fw-dropdown .dropdown-item:hover{
+    background:#f8fafc;
+}
+
+.fw-dropdown .dropdown-item.text-danger i{
+    color:#dc2626;
+}
+
+/* Mobile */
+@media (max-width: 991px){
+    .fw-sidebar{
+        transform:translateX(-100%);
+    }
+
+    .fw-sidebar.open{
+        transform:translateX(0);
+        box-shadow:0 0 40px rgba(0,0,0,.35);
+    }
+
+    .fw-overlay.show{
+        display:block;
+    }
+
+    .fw-main{
+        margin-left:0;
+    }
+
+    .fw-topbar-mobile{
+        display:flex;
+    }
+
+    .fw-topbar{
+        display:none;
+    }
+
+    .fw-sidebar-collapsed .fw-sidebar{
+        width:230px;
+    }
+}
+
+/* ============ SHARED COMPONENTS ============ */
+
+.fw-container{
+    max-width:1920px;
+    margin:0 auto;
+    padding:20px 22px 40px;
+    width:100%;
+}
+
+.fw-banner{
+    background:var(--fw-grad);
+    color:#fff;
+    border-radius:18px;
+    padding:20px 24px;
+    box-shadow:var(--fw-shadow-lg);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    position:relative;
+    overflow:hidden;
+    margin-bottom:22px;
+}
+
+.fw-banner::after{
+    content:"";
+    position:absolute;
+    right:-60px;
+    top:-60px;
+    width:180px;
+    height:180px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.12);
+}
+
+.fw-banner h2{
+    margin:0;
+    font-weight:500;
+    font-size:19px;
+}
+
+.fw-banner p{
+    margin:4px 0 0 0;
+    opacity:.92;
+    font-size:12.5px;
+}
+
+.fw-banner > *{
+    position:relative;
+    z-index:1;
+}
+
+.fw-card{
+    background:var(--fw-card);
+    border-radius:var(--fw-radius);
+    box-shadow:var(--fw-shadow);
+    border:1px solid rgba(255,255,255,0.6);
+    overflow:hidden;
+}
+
+.fw-card-head{
+    padding:14px 18px;
+    border-bottom:1px solid var(--fw-border);
+    font-weight:500;
+    font-size:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.fw-card-body{
+    padding:18px;
+}
+
+.fw-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    border:none;
+    border-radius:10px;
+    font-weight:500;
+    font-size:12.5px;
+    padding:8px 14px;
+    transition:.15s;
+    text-decoration:none;
+    color:#fff;
+    cursor:pointer;
+    white-space:nowrap;
+}
+
+.fw-btn:hover{
+    transform:translateY(-1px);
+    box-shadow:0 8px 18px rgba(2,12,27,0.16);
+}
+
+.fw-btn-primary{
+    background:var(--fw-grad);
+    color:#fff;
+}
+
+.fw-btn-success{
+    background:linear-gradient(135deg,#16a34a,#22c55e);
+}
+
+.fw-btn-danger{
+    background:linear-gradient(135deg,#ef4444,#dc2626);
+}
+
+.fw-btn-warning{
+    background:linear-gradient(135deg,#f59e0b,#f97316);
+    color:#fff;
+}
+
+.fw-btn-info{
+    background:linear-gradient(135deg,#06b6d4,#2563eb);
+}
+
+.fw-btn-dark{
+    background:linear-gradient(135deg,#111827,#374151);
+}
+
+.fw-btn-light{
+    background:#fff;
+    color:var(--fw-primary-dark);
+}
+
+.fw-btn-outline{
+    background:#fff;
+    border:1.5px solid var(--fw-border);
+    color:#374151;
+}
+
+.fw-btn-outline:hover{
+    border-color:var(--fw-primary);
+    color:var(--fw-primary);
+}
+
+.fw-btn-sm{
+    padding:6px 10px;
+    font-size:12px;
+    border-radius:8px;
+}
+
+/* TABLES */
+
+.fw-table{
+    margin-bottom:0;
+}
+
+.fw-table thead th{
+    background:#f8fafc;
+    color:#374151;
+    font-size:11px;
+    font-weight:500;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    padding:11px 12px;
+    vertical-align:middle;
+    white-space:nowrap;
+    border-bottom:2px solid var(--fw-border);
+}
+
+.fw-table tbody td{
+    vertical-align:middle;
+    font-size:13px;
+    padding:11px 12px;
+    border-color:#f1f5f9;
+}
+
+.fw-table tbody tr:hover{
+    background:#f8fafc;
+}
+
+/* BADGES */
+
+.fw-badge{
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:500;
+    white-space:nowrap;
+}
+
+.fw-badge-success{background:#dcfce7;color:#166534;}
+.fw-badge-danger{background:#fee2e2;color:#991b1b;}
+.fw-badge-warning{background:#fef3c7;color:#92400e;}
+.fw-badge-info{background:#e0f2fe;color:#075985;}
+.fw-badge-secondary{background:#e5e7eb;color:#374151;}
+.fw-badge-primary{background:#e0e7ff;color:#4338ca;}
+
+/* FORMS */
+
+.fw-form-control,
+.fw-form-select{
+    border-radius:10px;
+    border:1.5px solid var(--fw-border);
+    padding:9px 12px;
+    font-size:13px;
+    transition:.2s;
+}
+
+.fw-form-control:focus,
+.fw-form-select:focus{
+    border-color:var(--fw-primary);
+    box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+    outline:none;
+}
+
+.fw-label{
+    font-size:12px;
+    font-weight:500;
+    color:#374151;
+    margin-bottom:6px;
+}
+
+/* EMPTY STATE */
+
+.fw-empty{
+    padding:28px;
+    text-align:center;
+    color:var(--fw-muted);
+    font-size:13px;
+}
+
+/* FLASH MESSAGES */
+
+.fw-flash{
+    position:fixed;
+    top:18px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:2100;
+    width:min(520px, calc(100% - 32px));
+    margin:0;
+    padding:0;
+}
+
+.fw-flash .alert{
+    border:none;
+    border-radius:12px;
+    font-size:13px;
+    box-shadow:0 14px 34px rgba(2,12,27,.2);
+    animation:fwFlashIn .25s ease;
+}
+
+@keyframes fwFlashIn{
+    from{opacity:0;transform:translateY(-8px);}
+    to{opacity:1;transform:translateY(0);}
+}
+
+/* FOOTER */
+
+.app-footer{
+    background:rgba(255,255,255,0.7);
+    border-top:1px solid var(--fw-border);
+    font-size:12px;
+    color:var(--fw-muted);
+    margin-top:auto;
+}
+
+.app-footer p{
+    margin:0;
+}
+
+/* MODALS */
+
+.fw-modal .modal-content{
+    border:none;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:var(--fw-shadow-lg);
+}
+
+.fw-modal .modal-header{
+    background:linear-gradient(135deg,#111827,#1e293b);
+    color:#fff;
+    border:none;
+    font-size:14px;
+}
+
+.fw-modal .modal-header .btn-close{
+    filter:invert(1);
+}
+
+.fw-modal .modal-body{
+    padding:20px;
+}
+
+.fw-modal .modal-footer{
+    border-top:1px solid var(--fw-border);
+}
 </style>
 
 </head>
 
 <body>
 
-{% if request.endpoint != 'main.login' %}
+{% set full_page = request.endpoint in ['main.login', 'main.home', 'main.forgot_password'] %}
 
-<!-- NAVBAR -->
+{% set page_titles = {
+    'main.dashboard': 'Dashboard',
+    'main.admin_panel': 'Dashboard',
+    'main.manager_panel': 'Dashboard',
+    'main.employee_panel': 'Dashboard',
+    'main.task_history': 'Task History',
+    'main.activity_logs': 'Activity Logs',
+    'main.notifications': 'Notifications',
+    'main.analytics': 'Analytics',
+    'main.productivity': 'Productivity',
+    'main.create_user': 'Create User',
+    'main.manage_users': 'Manage Users',
+    'main.edit_user': 'Edit User',
+    'main.create_department': 'Create Department',
+    'main.department_dashboard': 'Manage Departments',
+    'main.manage_departments': 'Manage Departments',
+    'main.edit_department': 'Edit Department',
+    'main.create_task': 'Assign Task',
+    'main.my_tasks': 'My Tasks',
+    'main.task_details': 'Task Details',
+    'main.create_recurring_task': 'Create Recurring Task',
+    'main.create_reminder': 'Set Reminder',
+    'main.reminders_page': 'Reminders',
+    'main.my_reminders': 'My Reminders',
+    'main.export_report': 'Reports',
+    'main.export_task_history': 'Task History',
+    'main.settings': 'Settings'
+} %}
 
-<nav class="navbar navbar-expand-lg">
-<div class="container">
+{% set current_page = page_titles.get(request.endpoint, request.endpoint.split('.')[-1] | replace('_', ' ') | title) %}
+{% set user_initials = (current_user.username or 'U')[:1] | upper %}
 
-<a class="navbar-brand" href="{{ url_for('main.dashboard') }}">
+{% if not full_page %}
+
+<!-- SIDEBAR -->
+
+<aside class="fw-sidebar" id="fwSidebar">
+
+<div class="fw-sidebar-brand">
 <img src="{{ url_for('static', filename='images/flowra(2).png') }}" alt="Flowra Logo">
 <span>FLOWRA</span>
+</div>
+
+{% if current_user.is_authenticated %}
+
+<nav class="fw-sidebar-nav">
+
+{% set is_admin = current_user.role in ['super_admin', 'admin'] %}
+{% set is_manager = current_user.role == 'manager' %}
+{% set is_super_admin = current_user.role == 'super_admin' %}
+
+<div class="fw-nav-group">Menu</div>
+
+<!-- Dashboard -->
+<a class="fw-nav-link{% if request.endpoint in ['main.dashboard','main.admin_panel','main.manager_panel','main.employee_panel'] %} active{% endif %}"
+   href="{{ url_for('main.dashboard') }}">
+<i class="fa-solid fa-gauge"></i><span>Dashboard</span>
 </a>
 
-<div>
-{% if current_user.is_authenticated 
-      and current_user.role in ['admin', 'manager']
-      and request.endpoint != 'main.login'
-      and request.endpoint != 'main.home' %}  
-    <button class="btn btn-warning btn-sm ms-2"
-            data-bs-toggle="modal"
-            data-bs-target="#announcementCreateModal">
-        📢 Announcement
-    </button>
-    {% endif %}
+{% if is_admin or is_manager %}
+<!-- Users -->
+<div class="fw-nav-item{% if request.endpoint in ['main.manage_users','main.create_user','main.edit_user'] %} active open{% endif %}">
+<button class="fw-nav-toggle" type="button">
+<i class="fa-solid fa-users"></i><span>User</span><i class="fa-solid fa-chevron-down fw-chevron"></i>
+</button>
+<div class="fw-nav-sub">
+{% if is_super_admin %}
+<a href="{{ url_for('main.manage_users') }}">Manage Admins</a>
+<a href="{{ url_for('main.create_user') }}">Create Admin</a>
+{% else %}
+<a href="{{ url_for('main.manage_users') }}">{% if current_user.role == 'manager' %}My Team{% else %}Manage Users{% endif %}</a>
+<a href="{{ url_for('main.create_user') }}">{% if current_user.role == 'manager' %}Create Employee{% else %}Create User{% endif %}</a>
+{% endif %}
+</div>
 </div>
 
+{% if not is_super_admin and is_admin %}
+<!-- Departments -->
+<div class="fw-nav-item{% if request.endpoint in ['main.department_dashboard','main.create_department','main.manage_departments','main.edit_department'] %} active open{% endif %}">
+<button class="fw-nav-toggle" type="button">
+<i class="fa-solid fa-building"></i><span>Departments</span><i class="fa-solid fa-chevron-down fw-chevron"></i>
+</button>
+<div class="fw-nav-sub">
+<a href="{{ url_for('main.manage_departments') }}">Manage Departments</a>
+<a href="{{ url_for('main.create_department') }}">Create Department</a>
 </div>
-</nav>
+</div>
+{% endif %}
 {% endif %}
 
-{% if current_user.is_authenticated 
-      and current_user.role in ['admin', 'manager']
-      and request.endpoint != 'main.login'
-      and request.endpoint != 'main.home' %}
+{% if not is_super_admin %}
+<!-- Tasks -->
+<div class="fw-nav-item{% if request.endpoint in ['main.task_history', 'main.create_task', 'main.my_tasks', 'main.task_details', 'main.recurring_task_history'] %} active open{% endif %}">
+<button class="fw-nav-toggle" type="button">
+<i class="fa-solid fa-list-check"></i><span>Tasks</span><i class="fa-solid fa-chevron-down fw-chevron"></i>
+</button>
+<div class="fw-nav-sub">
+<a href="{{ url_for('main.my_tasks') }}">My Tasks</a>
+{% if is_admin or is_manager %}
+<a href="{{ url_for('main.create_task') }}">Assign Task</a>
+{% endif %}
+</div>
+</div>
+{% endif %}
+
+{% if is_admin or is_manager %}
+{% if not is_super_admin %}
+<!-- Announcements -->
+<a class="fw-nav-link" href="#" data-bs-toggle="modal" data-bs-target="#announcementCreateModal">
+<i class="fa-solid fa-bullhorn"></i><span>Announcements</span>
+</a>
+{% endif %}
+
+{% if not is_super_admin %}
+<!-- Analytics -->
+<a class="fw-nav-link{% if request.endpoint == 'main.analytics' %} active{% endif %}"
+   href="{{ url_for('main.analytics') }}">
+<i class="fa-solid fa-chart-pie"></i><span>Analytics</span>
+</a>
+{% endif %}
+{% endif %}
+
+<!-- Notifications -->
+<a class="fw-nav-link{% if request.endpoint in ['main.notifications', 'main.my_reminders'] %} active{% endif %}"
+   href="{{ url_for('main.notifications' if is_super_admin else 'main.my_reminders') }}">
+<i class="fa-regular fa-bell"></i><span>Notifications</span>
+{% if is_super_admin and g.unread_notifications > 0 %}
+<span class="fw-nav-badge">{{ g.unread_notifications }}</span>
+{% endif %}
+</a>
+
+<!-- Activity Logs -->
+<a class="fw-nav-link{% if request.endpoint in ['main.activity_logs', 'main.export_activity_logs'] %} active{% endif %}" href="{{ url_for('main.activity_logs') }}">
+<i class="fa-solid fa-clock-rotate-left"></i><span>Activity Logs</span>
+</a>
+
+{% if is_super_admin %}
+<!-- Companies -->
+<a class="fw-nav-link{% if request.endpoint == 'main.companies' or request.endpoint=='main.create_company' %} active{% endif %}"
+   href="{{ url_for('main.companies') }}">
+<i class="fa-solid fa-building"></i><span>Companies</span>
+</a>
+<!-- Payments / Invoices -->
+<a class="fw-nav-link{% if request.endpoint == 'main.payments' or request.endpoint=='main.invoice' %} active{% endif %}"
+   href="{{ url_for('main.payments') }}">
+<i class="fa-solid fa-file-invoice-dollar"></i><span>Payments</span>
+</a>
+<!-- System Settings -->
+<a class="fw-nav-link{% if request.endpoint == 'main.system_settings' %} active{% endif %}"
+   href="{{ url_for('main.system_settings') }}">
+<i class="fa-solid fa-gear"></i><span>System Settings</span>
+</a>
+{% endif %}
+
+<div class="fw-nav-group">Account</div>
+
+<!-- My Profile -->
+<a class="fw-nav-link{% if request.endpoint == 'main.edit_user' %} active{% endif %}"
+   href="{{ url_for('main.edit_user', id=current_user.get_id()) }}">
+<i class="fa-solid fa-user"></i><span>My Profile</span>
+</a>
+
+<!-- Logout -->
+<a class="fw-nav-link fw-logout-link" href="{{ url_for('main.logout') }}">
+<i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+</a>
+
+</nav>
+
+<div class="fw-sidebar-user">
+
+<div class="fw-user-chip">
+<i class="fa-solid fa-circle-user"></i>
+<span>{{ current_user.username }}</span>
+</div>
+
+<button class="fw-collapse-btn" type="button" onclick="toggleCollapseSidebar()">
+<i class="fa-solid fa-angles-left"></i><span>Collapse sidebar</span>
+</button>
+
+</div>
+
+{% endif %}
+
+</aside>
+
+<div class="fw-overlay" id="fwOverlay"></div>
+
+{% endif %}
+
+<div class="fw-main{% if full_page %} fw-main-full{% endif %}">
+
+{% if not full_page %}
+<div class="fw-topbar">
+    <div class="tt-left">
+        <h1>{{ current_page }}</h1>
+        <small>Flowra Task Manager</small>
+    </div>
+    <div class="tt-right">
+
+        <div class="tt-search" id="globalSearchWrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="globalSearch" placeholder="Search tasks, people, departments" autocomplete="off" aria-label="Search">
+            <kbd>/</kbd>
+            <div class="tt-search-results" id="globalSearchResults"></div>
+        </div>
+
+        {% if current_user.is_authenticated and current_user.role in ['super_admin', 'admin', 'manager'] %}
+        <button class="tt-btn" type="button" data-bs-toggle="modal" data-bs-target="#announcementCreateModal" title="Announcement">
+            <i class="fa-solid fa-bullhorn"></i>
+        </button>
+        {% endif %}
+
+        <a class="tt-btn" href="{{ url_for('main.my_reminders') }}" title="Notifications">
+            <i class="fa-regular fa-bell"></i>
+        </a>
+
+        <div class="dropdown">
+            <button class="tt-avatar" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Account">{{ user_initials }}</button>
+            <ul class="dropdown-menu dropdown-menu-end fw-dropdown">
+                <li><a class="dropdown-item" href="{{ url_for('main.edit_user', id=current_user.get_id()) }}"><i class="fa-solid fa-user"></i> My Profile</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('main.settings') }}"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="{{ url_for('main.logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+{% endif %}
+
+{% if not full_page %}
+<div class="fw-topbar-mobile">
+<button class="fw-hamburger" onclick="toggleSidebar()">
+<i class="fa-solid fa-bars"></i>
+</button>
+<a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('main.dashboard') }}">
+<img src="{{ url_for('static', filename='images/flowra(2).png') }}" alt="Flowra" style="height:30px;">
+<span class="fw-semibold" style="background:var(--fw-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-size:16px;">FLOWRA</span>
+</a>
+</div>
+{% endif %}
+
+<!-- FLASH MESSAGES -->
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="fw-flash">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category if category in ['success','danger','warning','info'] else 'info' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+{% if current_user.is_authenticated
+      and current_user.role in ['super_admin', 'admin', 'manager']
+      and not full_page %}
 
 <!-- Create Announcement Modal -->
-<div class="modal fade" id="announcementCreateModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade fw-modal" id="announcementCreateModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form method="POST" action="{{ url_for('main.create_announcement') }}">
         <div class="modal-header">
-          <h5 class="modal-title">Post Announcement</h5>
+          <h5 class="modal-title"><i class="fa-solid fa-bullhorn me-2"></i>Post Announcement</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <textarea name="message" class="form-control" rows="5" placeholder="Write announcement for everyone..." required></textarea>
+          <textarea name="message" class="form-control fw-form-control" rows="4" placeholder="Write announcement for everyone..." required></textarea>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Post</button>
+          <button type="submit" class="fw-btn fw-btn-primary"><i class="fa-solid fa-paper-plane me-1"></i> Post</button>
         </div>
       </form>
     </div>
@@ -176,12 +1322,60 @@ width:100%;
 </div>
 {% endif %}
 
+<!-- Set Reminder Modal -->
+<div class="modal fade fw-modal" id="reminderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-regular fa-bell me-2"></i>Set Reminder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('main.create_reminder') }}">
+                    <div class="row g-3">
+
+                        <div class="col-12">
+                            <label class="fw-label">Reason</label>
+                            <input type="text" name="reason" class="form-control fw-form-control" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="fw-label">Remind At</label>
+                            <input type="datetime-local" name="remind_at" class="form-control fw-form-control" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="fw-label">End At</label>
+                            <input type="datetime-local" name="end_at" class="form-control fw-form-control">
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_daily" id="dailyCheck">
+                                <label class="form-check-label" for="dailyCheck">
+                                    Daily Reminder
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="submit" class="fw-btn fw-btn-primary">
+                            <i class="fa-regular fa-bell me-1"></i> Save Reminder
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Display Board Modal -->
-<div class="modal fade" id="announcementBoardModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade fw-modal" id="announcementBoardModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">📢 Display Board</h5>
+        <h5 class="modal-title"><i class="fa-solid fa-bullhorn me-2"></i>Display Board</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -198,9 +1392,51 @@ width:100%;
 
 <!-- MAIN CONTENT -->
 
-<div class="container-fluid p-0 main-wrapper">
+<div class="main-wrapper">
 {% block content %}{% endblock %}
 </div>
+
+<footer class="app-footer text-center py-3">
+<p>© 2026 Flowra • Developed by Jodidar India</p>
+</footer>
+
+</div>
+
+<script>
+function toggleSidebar(){
+    const sb = document.getElementById("fwSidebar");
+    const ov = document.getElementById("fwOverlay");
+    if(!sb) return;
+    sb.classList.toggle("open");
+    if(ov) ov.classList.toggle("show");
+}
+
+function toggleCollapseSidebar(){
+    document.body.classList.toggle("fw-sidebar-collapsed");
+    const collapsed = document.body.classList.contains("fw-sidebar-collapsed");
+    localStorage.setItem("fw_sidebar_collapsed", collapsed ? "1" : "0");
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+    if(localStorage.getItem("fw_sidebar_collapsed") === "1"){
+        document.body.classList.add("fw-sidebar-collapsed");
+    }
+
+    const ov = document.getElementById("fwOverlay");
+    if(ov){
+        ov.addEventListener("click", function(){
+            document.getElementById("fwSidebar").classList.remove("open");
+            ov.classList.remove("show");
+        });
+    }
+
+    document.querySelectorAll(".fw-nav-toggle").forEach(function(btn){
+        btn.addEventListener("click", function(){
+            btn.closest(".fw-nav-item").classList.toggle("open");
+        });
+    });
+});
+</script>
 
 <!-- REMINDER SCRIPT -->
 <script>
@@ -299,13 +1535,124 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
-{% if request.endpoint != 'main.login' %}
-<footer class="app-footer text-center py-3">
-<p>© 2026 Flowra • Developed by Jodidar India</p>
-</footer>
-{% endif %}
+<script>
+// GLOBAL SEARCH (tasks, people, departments)
+(function () {
+    const wrap = document.getElementById("globalSearchWrap");
+    const input = document.getElementById("globalSearch");
+    const results = document.getElementById("globalSearchResults");
+    if (!wrap || !input || !results) return;
 
+    let debounce = null;
+
+    const ICONS = {
+        tasks: ["fa-list-check", "#eef2ff", "#4338ca"],
+        people: ["fa-user", "#dcfce7", "#16a34a"],
+        departments: ["fa-city", "#fef3c7", "#d97706"]
+    };
+
+    function render(data) {
+        let html = "";
+        const groups = ["tasks", "people", "departments"];
+
+        groups.forEach(function (key) {
+            const items = data[key] || [];
+            if (!items.length) return;
+
+            const label = key.charAt(0).toUpperCase() + key.slice(1);
+            html += '<div class="tsr-group">' + label + "</div>";
+
+            items.forEach(function (item) {
+                const ico = ICONS[key];
+                let sub = "", badge = "", url = "#";
+
+                if (key === "tasks") {
+                    sub = (item.employee || "Unassigned") + (item.department ? " · " + item.department : "");
+                    badge = item.status;
+                    url = "/task-history";
+                } else if (key === "people") {
+                    sub = item.role + (item.department ? " · " + item.department : "");
+                    badge = item.role;
+                    url = "/edit-user/" + item.id;
+                } else if (key === "departments") {
+                    sub = "Department";
+                    badge = "dept";
+                    url = "/department-dashboard";
+                }
+
+                html += '<a class="tsr-item" href="' + url + '">' +
+                    '<span class="tsr-ico" style="background:' + ico[1] + ';color:' + ico[2] + ';">' +
+                    '<i class="fa-solid ' + ico[0] + '"></i></span>' +
+                    '<span class="tsr-main">' +
+                    '<span class="tsr-title">' + (item.username || item.title || item.name) + "</span>" +
+                    '<span class="tsr-sub">' + sub + "</span></span>" +
+                    '<span class="tsr-badge">' + badge + "</span></a>";
+            });
+        });
+
+        if (!html) {
+            html = '<div class="tsr-empty">No matching tasks, people or departments</div>';
+        }
+
+        results.innerHTML = html;
+        results.style.display = "block";
+    }
+
+    input.addEventListener("input", function () {
+        const q = this.value.trim();
+        if (!q) {
+            results.style.display = "none";
+            return;
+        }
+        clearTimeout(debounce);
+        debounce = setTimeout(function () {
+            fetch("/api/search?q=" + encodeURIComponent(q))
+                .then(res => res.json())
+                .then(render)
+                .catch(function () {
+                    results.style.display = "none";
+                });
+        }, 200);
+    });
+
+    input.addEventListener("focus", function () {
+        if (this.value.trim()) {
+            this.dispatchEvent(new Event("input"));
+        }
+    });
+
+    document.addEventListener("click", function (e) {
+        if (!wrap.contains(e.target)) {
+            results.style.display = "none";
+        }
+    });
+
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "/" &&
+            document.activeElement.tagName !== "INPUT" &&
+            document.activeElement.tagName !== "TEXTAREA") {
+            e.preventDefault();
+            input.focus();
+        }
+        if (e.key === "Escape") {
+            results.style.display = "none";
+            input.blur();
+        }
+    });
+})();
+</script>
+
+<script>
+document.querySelectorAll(".fw-flash .alert").forEach(function (alertEl) {
+    setTimeout(function () {
+        alertEl.classList.remove("show");
+        setTimeout(function () { alertEl.remove(); }, 350);
+    }, 4200);
+});
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+{% block scripts %}{% endblock %}
 </body>
 </html>

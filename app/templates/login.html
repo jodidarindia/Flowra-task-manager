@@ -38,7 +38,7 @@
     <!-- Top Header Area -->
     <div class="text-center" style="margin-bottom: 25px;">
         <img src="{{ url_for('static', filename='images/flowra(2).png') }}" alt="FLOWRA Logo" style="width: 100px; height: 100px; object-fit: contain;   ">
-        <h1 style="font-size: 32px; font-weight: 800; color: #0f172a; margin-bottom: 5px; letter-spacing: -0.5px;">FLOWRA</h1>
+        <h1 style="font-size: 32px; font-weight:500; color: #0f172a; margin-bottom: 5px; letter-spacing: -0.5px;">FLOWRA</h1>
         <p style="font-size: 15px; color: #64748b; margin-bottom: 0;">Organize. Automate. Accelerate.</p>
     </div>
 
@@ -51,20 +51,23 @@
 
             <!-- Email / Username Field -->
             <div style="margin-bottom: 20px;">
-                <label style="display: block; font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 8px;">Email</label>
-                <input class="login-input-custom" type="text" name="username" placeholder="admin" required style="width: 100%; padding: 14px 16px; border-radius: 10px; border: 1px solid transparent; background-color: #eef2f6; color: #0f172a; font-size: 15px; outline: none; transition: 0.25s;">
+                <label style="display: block; font-size: 14px; font-weight:500; color: #334155; margin-bottom: 8px;">Username</label>
+                <input class="login-input-custom" type="text" name="username" placeholder="you@example.com" required style="width: 100%; padding: 14px 16px; border-radius: 10px; border: 1px solid transparent; background-color: #eef2f6; color: #0f172a; font-size: 15px; outline: none; transition: 0.25s;">
             </div>
 
             <!-- Password Field -->
             <div class="position-relative" style="margin-bottom: 24px;">
-                <label style="display: block; font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 8px;">Password</label>
+                <label style="display: block; font-size: 14px; font-weight:500; color: #334155; margin-bottom: 8px;">Password</label>
                 <input class="login-input-custom" type="password" name="password" id="password" placeholder="••••••••" required style="width: 100%; padding: 14px 45px 14px 16px; border-radius: 10px; border: 1px solid transparent; background-color: #eef2f6; color: #0f172a; font-size: 15px; outline: none; transition: 0.25s;">
                 <!-- Kept eye icon for functionality, styled to match minimal theme -->
                 <i class="fa fa-eye" onclick="togglePassword()" style="position: absolute; right: 16px; top: 44px; cursor: pointer; color: #94a3b8; transition: 0.2s;"></i>
+                <div class="text-end" style="margin-top: 8px;">
+                    <a href="{{ url_for('main.forgot_password') }}" class="footer-link" style="color: #2563eb; font-size: 13px; font-weight: 500; text-decoration: none;">Forgot Password?</a>
+                </div>
             </div>
 
             <!-- Submit Button -->
-            <button class="login-btn-custom" type="submit" style="width: 100%; padding: 14px; border: none; border-radius: 10px; background-color: #2563eb; color: #ffffff; font-size: 16px; font-weight: 600; transition: 0.3s; margin-bottom: 20px;">
+            <button class="login-btn-custom" type="submit" style="width: 100%; padding: 14px; border: none; border-radius: 10px; background-color: #2563eb; color: #ffffff; font-size: 16px; font-weight:500; transition: 0.3s; margin-bottom: 20px;">
                 Sign In
             </button>
 
@@ -77,7 +80,7 @@
 
         <!-- Loader Box (hidden by default) -->
         <div id="loaderBox" style="display: none; text-align: center; padding-top: 10px;">
-            <h5 style="margin-bottom: 16px; font-weight: 600; color: #2563eb;">Waiting for approval...</h5>
+            <h5 style="margin-bottom: 16px; font-weight:500; color: #2563eb;">Waiting for approval...</h5>
             <div class="spinner-border text-primary" role="status"></div>
             <p style="font-size: 14px; color: #64748b; margin-top: 12px;">Please wait while the authorized user allows or denies this login.</p>
         </div>
@@ -92,7 +95,7 @@
 
     <!-- Footer Disclaimer Text -->
     <div class="text-center" style="max-width: 600px; margin-top: 40px; padding: 0 20px;">
-        <p style="font-size: 12px; color: #94a3b8; font-weight: 600; ">
+        <p style="font-size: 12px; color: #94a3b8; font-weight:500; ">
             © 2026 JODIDAR INDIA. FLOWRA is a brand owned by JODIDAR INDIA.
         </p>
         
@@ -105,10 +108,13 @@
 /* SHOW PASSWORD */
 function togglePassword(){
     let pass = document.getElementById("password")
+    let icon = document.querySelector(".position-relative i")
     if(pass.type === "password"){
         pass.type = "text"
+        icon.className = "fa fa-eye-slash"
     }else{
         pass.type = "password"
+        icon.className = "fa fa-eye"
     }
 }
 

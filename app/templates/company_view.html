@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ (company.get('company_name')) or 'Company' }} — Details{% endblock %}
+
+{% block content %}
+<div class="cv-page-wrap" style="padding:26px 36px;">
+    <div style="margin-bottom:16px;">
+        <a href="{{ url_for('main.companies') }}" class="cv-back" style="width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:#64748b;background:var(--fw-soft);border:1px solid var(--fw-line);text-decoration:none;font-size:15px;">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+    </div>
+    {% include "company_view_partial.html" %}
+</div>
+{% endblock %}

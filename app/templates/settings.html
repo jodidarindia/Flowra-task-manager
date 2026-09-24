@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+
+<style>
+
+.settings-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
+}
+
+.form-card{
+    background:#fff;
+    border-radius:20px;
+    box-shadow:0 18px 45px rgba(2,12,27,0.1);
+    border:1px solid var(--fw-border);
+    overflow:hidden;
+    margin-bottom:22px;
+}
+
+.form-card .card-head{
+    background:var(--fw-grad);
+    color:#fff;
+    padding:20px 28px;
+    font-weight:500;
+    font-size:15px;
+}
+
+.form-card .card-body{
+    padding:30px;
+}
+
+.info-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px 22px;
+}
+
+.info-grid .ig-item .l{
+    font-size:11px;
+    font-weight:500;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:#94a3b8;
+    margin-bottom:4px;
+}
+
+.info-grid .ig-item .v{
+    font-size:14.5px;
+    font-weight:500;
+    color:var(--fw-text);
+}
+
+@media(max-width:600px){
+    .info-grid{grid-template-columns:1fr;}
+}
+
+</style>
+
+<div class="settings-content pt-4">
+
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-solid fa-gear me-2"></i>Settings</h2>
+        <p>Manage your account and password.</p>
+    </div>
+</div>
+
+<div class="form-card">
+
+<div class="card-head">
+    <i class="fa-solid fa-circle-user me-2"></i>Account
+</div>
+
+<div class="card-body">
+    <div class="info-grid">
+        <div class="ig-item">
+            <div class="l">Username</div>
+            <div class="v">{{ user.username }}</div>
+        </div>
+        <div class="ig-item">
+            <div class="l">Role</div>
+            <div class="v" style="text-transform:capitalize;">{{ user.role }}</div>
+        </div>
+        <div class="ig-item">
+            <div class="l">Email</div>
+            <div class="v">{{ user.email or '-' }}</div>
+        </div>
+        <div class="ig-item">
+            <div class="l">Phone</div>
+            <div class="v">{{ user.phone or '-' }}</div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<div class="form-card">
+
+<div class="card-head">
+    <i class="fa-solid fa-key me-2"></i>Change Password
+</div>
+
+<div class="card-body">
+
+<form method="POST">
+
+<div class="col-12 mb-3 px-0">
+<label class="fw-label">New Password</label>
+<input type="password"
+name="new_password"
+class="form-control fw-form-control"
+minlength="6"
+placeholder="At least 6 characters">
+</div>
+
+<div class="col-12 mb-3 px-0">
+<label class="fw-label">Confirm New Password</label>
+<input type="password"
+name="confirm_password"
+class="form-control fw-form-control"
+minlength="6"
+placeholder="Re-enter new password">
+</div>
+
+<div class="d-flex gap-2 flex-wrap mt-3">
+<a href="{{ url_for('main.dashboard') }}" class="fw-btn fw-btn-outline">
+<i class="fa-solid fa-arrow-left me-1"></i> Cancel
+</a>
+
+<button type="submit" class="fw-btn fw-btn-success flex-fill">
+<i class="fa-solid fa-floppy-disk me-1"></i> Update Settings
+</button>
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}
