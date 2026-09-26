@@ -175,6 +175,7 @@
 .kpi-green{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#16a34a;--kpi-accent:#22c55e;}
 .kpi-red{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626;--kpi-accent:#ef4444;}
 .kpi-amber{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706;--kpi-accent:#f59e0b;}
+.kpi-sky{background:linear-gradient(135deg,#e0f2fe,#bae6fd);color:#0284c7;--kpi-accent:#0ea5e9;}
 
 /* ---------------- GRID + CARDS ---------------- */
 
@@ -695,8 +696,6 @@
 
 </div>
 
-</div>
-
 
 {% else %}
 <!-- KPI CARDS -->
@@ -802,8 +801,6 @@
 
 {% endif %}
 {% if not is_super_admin %}
-{% if not is_super_admin %}
-{% if not is_super_admin %}
 <!-- CHARTS ROW -->
 
 <div class="sys-row sys-row-charts">
@@ -849,8 +846,7 @@
 </div>
 
 {% endif %}
-{% endif %}
-{% endif %}
+
 {% if not is_super_admin %}
 <!-- RECENT TASKS + UPCOMING DEADLINES -->
 
@@ -1191,7 +1187,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script type="application/json" id="chartData">
+<script type="text/plain" id="chartData">
 {"labels": {{ week_labels | tojson }}, "assigned": {{ assigned_counts | tojson }}, "completed": {{ completed_counts | tojson }}, "overview": {{ task_overview | tojson }}}
 </script>
 
@@ -1207,7 +1203,6 @@ const OVERVIEW_COLORS = ["#22c55e", "#2563eb", "#f59e0b", "#ef4444"];
 Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 Chart.defaults.color = "#64748b";
 
-{% if not is_super_admin %}
 {% if not is_super_admin %}
 new Chart(document.getElementById("trendChart"), {
     type: "line",
@@ -1253,9 +1248,6 @@ new Chart(document.getElementById("trendChart"), {
 });
 {% endif %}
 
-{% endif %}
-
-{% if not is_super_admin %}
 {% if not is_super_admin %}
 new Chart(document.getElementById("statusChart"), {
     type: "pie",
@@ -1274,8 +1266,6 @@ new Chart(document.getElementById("statusChart"), {
         plugins: { legend: { display: false } }
     }
 });
-{% endif %}
-
 {% endif %}
 </script>
 

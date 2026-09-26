@@ -10,6 +10,7 @@ from werkzeug.security import check_password_hash
 from app.extensions import mongo
 from app.models import MongoUser, hash_password
 from app.utils.whatsapp import send_whatsapp_message
+from app.utils.phone import normalize_phone
 from bson import ObjectId
 from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
@@ -20,6 +21,7 @@ import re
 import uuid
 import io
 import csv
+import json
 import secrets
 
 bp = Blueprint("main", __name__)
@@ -1225,14 +1227,6 @@ def create_task():
                 "_id": ObjectId(assigned_to)
             })
 
-            print("Assigned To ID:", assigned_to)
-            print("Employee object:", employee)
-
-            if employee:
-
-                print("Employee username:", employee.get("username"))
-                print("Employee phone:", employee.get("phone"))
-
             if employee and employee.get("phone"):
 
                 message = f"""
@@ -1240,32 +1234,29 @@ Hello {employee.get('username')},
 
 You have been assigned a new task.
 
-ðŸ“Œ Task: {title}
-â° Due Date: {due_date}
-ðŸ† Reward Points: {reward_points}
+Task: {title}
+Due Date: {due_date}
+Reward Points: {reward_points}
 
 Please check your dashboard.
 """
 
-                print("About to send WhatsApp message...")
-                print("Message body:", message)
-
-                try:
+                template_sid = current_app.config.get("TWILIO_WHATSAPP_TEMPLATE_SID")
+                if template_sid:
                     send_whatsapp_message(
                         employee.get("phone"),
-                        message
+                        message,
+                        template_sid=template_sid,
+                        template_variables=json.dumps({
+                            "1": str(employee.get('username')),
+                            "2": str(title),
+                            "3": str(due_date),
+                            "4": str(reward_points),
+                            "5": str(task_id)
+                        })
                     )
-
-                    print("send_whatsapp_message function called successfully")
-
-                except Exception as e:
-                    print("WhatsApp Error:", e)
-
-            else:
-                print("Employee phone missing or employee not found")
-
-        else:
-            print("No assigned_to value received")
+                else:
+                    send_whatsapp_message(employee.get("phone"), message)
 
         flash("Task created successfully!", "success")
 
@@ -1917,15 +1908,10 @@ def edit_user(id):
         department_id = request.form.get("department_id")
         supervisor_id = request.form.get("supervisor_id")
 
-        phone_digits = re.sub(r"\D", "", request.form.get("phone") or "")
-
-        if len(phone_digits) == 10:
-            phone = "+91" + phone_digits
-        elif 11 <= len(phone_digits) <= 15:
-            phone = "+" + phone_digits
-        else:
+        phone = normalize_phone(request.form.get("phone"))
+        if not phone:
             flash(
-                "Invalid mobile number format. Use 1234567890, +911234567890 or +91 1234567890",
+                "Invalid phone number. Enter a real, active mobile number (e.g. +91 9876543210).",
                 "danger"
             )
             return redirect(url_for("main.edit_user", id=id))
@@ -3036,7 +3022,7 @@ def create_user():
         if current_user.role == "super_admin":
             role = "admin"
         else:
-            allowed_roles = ["admin", "manager", "employee"] if current_user.role == "admin" else ["manager", "employee"]
+            allowed_roles = ["manager", "employee"]
             role = role if role in allowed_roles else ("employee" if is_manager_creator else "manager")
         status = "inactive" if status == "inactive" else "active"
 
@@ -3060,15 +3046,10 @@ def create_user():
         if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
             errors["email"] = "Please enter a valid email address."
 
-        phone_digits = re.sub(r"\D", "", request.form.get("phone") or "")
-
-        if len(phone_digits) == 10:
-            phone = "+91" + phone_digits
-        elif 11 <= len(phone_digits) <= 15:
-            phone = "+" + phone_digits
-        else:
+        phone = normalize_phone(request.form.get("phone"))
+        if not phone:
             phone = ""
-            errors["phone"] = "Invalid mobile number. Use e.g. +911234567890"
+            errors["phone"] = "Invalid phone number. Enter a real, active mobile number (e.g. +91 9876543210)."
 
         min_password_length = get_system_settings().get("min_password_length", 8)
 
@@ -3520,6 +3501,9 @@ def edit_company(c_id):
         if not re.match(r"^[^@]+@[^@]+\.[^@]+$", admin_email):
             errors["admin_email"] = "Enter a valid admin email."
 
+        if not normalize_phone(admin_phone):
+            errors["admin_phone"] = "Invalid phone number. Enter a real, active mobile number (e.g. +91 9876543210)."
+
         if not errors:
             mongo.db.companies.update_one(
                 {"_id": company["_id"]},
@@ -3538,7 +3522,7 @@ def edit_company(c_id):
                     {"$set": {
                         "username": admin_username,
                         "email": admin_email,
-                        "phone": admin_phone,
+                        "phone": normalize_phone(admin_phone),
                         "company": company_name,
                         "company_gst": gstin,
                         "company_address": address
@@ -3622,6 +3606,9 @@ def create_company():
         if not re.match(r"^[^@]+@[^@]+\.[^@]+$", admin_email):
             errors["admin_email"] = "Enter a valid admin email."
 
+        if not normalize_phone(request.form.get("admin_phone")):
+            errors["admin_phone"] = "Invalid phone number. Enter a real, active mobile number (e.g. +91 9876543210)."
+
         if employee_slots < 1:
             errors["employee_slots"] = "Enter at least 1 employee slot."
 
@@ -3642,7 +3629,7 @@ def create_company():
             admin_doc = {
                 "username": admin_username,
                 "email": admin_email,
-                "phone": (request.form.get("admin_phone") or "").strip(),
+                "phone": (normalize_phone(request.form.get("admin_phone")) or ""),
                 "password_hash": hash_password(request.form.get("admin_password") or "Flowra@123"),
                 "role": "admin",
                 "company": company_name,
@@ -3788,8 +3775,8 @@ def payments():
         opt = {
             "company_id": cid,
             "company_name": cname,
-            "admin_username": (admin.get("username") if admin else None) or c.get("admin_username") or "â€”",
-            "admin_email": (admin.get("email") if admin else "â€”"),
+            "admin_username": (admin.get("username") if admin else None) or c.get("admin_username") or "—",
+            "admin_email": (admin.get("email") if admin else "—"),
             "plan_slots": plan_slots,
             "charge_per": charge_per,
             "due_amount": due_amount
@@ -4478,10 +4465,28 @@ def admin_panel():
     for a in announcements:
         creator_id = a.get("created_by")
         creator = user_map.get(creator_id)
+        created_at = a.get("created_at")
+        created_ist = to_ist(created_at)
+        time_ago = ""
+        if created_ist:
+            now_ist = datetime.now(ZoneInfo("Asia/Kolkata"))
+            diff = now_ist - created_ist
+            secs = int(diff.total_seconds())
+            if secs < 60:
+                time_ago = "just now"
+            elif secs < 3600:
+                time_ago = f"{secs // 60}m ago"
+            elif secs < 86400:
+                time_ago = f"{secs // 3600}h ago"
+            else:
+                time_ago = f"{secs // 86400}d ago"
         latest_announcements.append({
+            "title": (a.get("message", "") or "")[:42],
             "message": a.get("message", ""),
             "creator": creator.get("username") if creator else "Unknown",
-            "created_at_ist": to_ist(a.get("created_at")),
+            "created_at_ist": created_ist,
+            "time_ago": time_ago,
+            "audience": "All Users",
         })
 
     # ---------------- SYSTEM HEALTH ----------------

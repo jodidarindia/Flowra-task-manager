@@ -332,19 +332,19 @@
                 <div class="col-md-6">
                     <div class="cu-field">
                         <label>Email <span class="req">*</span></label>
-                        <input type="email" name="email" class="form-control fw-form-control {% if errors.get('email') %}is-invalid{% endif %}"
+                        <input type="email" name="email" id="cuEmail" class="form-control fw-form-control {% if errors.get('email') %}is-invalid{% endif %}"
                                placeholder="name@flowra.io" value="{{ form.get('email', '') }}" required>
-                        {% if errors.get('email') %}<div class="cu-err">{{ errors['email'] }}</div>{% endif %}
+                        {% if errors.get('email') %}<div class="cu-err">{{ errors['email'] }}</div>{% else %}<div class="cu-err" id="cuEmailErr" style="display:none;"></div>{% endif %}
                     </div>
                 </div>
 
                 <div class="col-md-6">
                     <div class="cu-field">
                         <label>Mobile Number <span class="req">*</span></label>
-                        <input type="tel" name="phone" class="form-control fw-form-control {% if errors.get('phone') %}is-invalid{% endif %}"
+                        <input type="tel" name="phone" id="cuPhone" class="form-control fw-form-control {% if errors.get('phone') %}is-invalid{% endif %}"
                                placeholder="+91 98765 43210" value="{{ form.get('phone', '') }}" required>
                         <div class="cu-hint">Stored on the profile and reused for every task notification. Task assignment never asks for it again.</div>
-                        {% if errors.get('phone') %}<div class="cu-err">{{ errors['phone'] }}</div>{% endif %}
+                        {% if errors.get('phone') %}<div class="cu-err">{{ errors['phone'] }}</div>{% else %}<div class="cu-err" id="cuPhoneErr" style="display:none;"></div>{% endif %}
                     </div>
                 </div>
 
@@ -379,9 +379,6 @@
                         <select name="role" class="form-select fw-form-select" required>
                             <option value="employee" {% if form.get('role', 'employee') not in ('manager', 'admin') %}selected{% endif %}>Employee</option>
                             <option value="manager" {% if form.get('role') == 'manager' %}selected{% endif %}>Manager</option>
-                            {% if current_user.role in ('super_admin', 'admin') %}
-                            <option value="admin" {% if form.get('role') == 'admin' %}selected{% endif %}>Admin</option>
-                            {% endif %}
                         </select>
             {% endif %}
                         <div class="cu-hint">{% if current_user.role == 'super_admin' %}Admins run their own company. Managers run departments. Users see their own work.{% elif current_user.role == 'admin' %}Admins run the company. Managers run departments. Users see their own work.{% else %}Managers run their department. Users see their own work.{% endif %}</div>
@@ -554,10 +551,58 @@ function cuCheckPw() {
 cuConfirm.addEventListener("input", cuCheckPw);
 cuPw.addEventListener("input", cuCheckPw);
 
+const cuEmail = document.getElementById("cuEmail");
+const cuEmailErr = document.getElementById("cuEmailErr");
+const cuPhone = document.getElementById("cuPhone");
+const cuPhoneErr = document.getElementById("cuPhoneErr");
+
+const cuEmailRe = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+function cuCheckEmail() {
+    if (!cuEmail.value.trim()) {
+        cuEmailErr.style.display = "none";
+        cuEmail.classList.remove("is-invalid");
+        return false;
+    }
+    const ok = cuEmailRe.test(cuEmail.value.trim());
+    cuEmailErr.textContent = ok ? "" : "Please enter a valid email address.";
+    cuEmailErr.style.display = ok ? "none" : "block";
+    cuEmail.classList.toggle("is-invalid", !ok);
+    return ok;
+}
+
+function cuCheckPhone() {
+    let d = cuPhone.value.replace(/\D/g, "");
+    if (cuPhone.value.trim()) {
+        if (d.length === 12 && d.startsWith("91")) { d = d.slice(2); }
+        else if (d.length === 11 && d.startsWith("0")) { d = d.slice(1); }
+    }
+    if (!cuPhone.value.trim()) {
+        cuPhoneErr.style.display = "none";
+        cuPhone.classList.remove("is-invalid");
+        return false;
+    }
+    const ok = d.length === 10 && "9867".indexOf(d[0]) !== -1;
+    cuPhoneErr.textContent = ok ? "" : "Invalid mobile number. Must be 10 digits starting with 9, 8, 6 or 7.";
+    cuPhoneErr.style.display = ok ? "none" : "block";
+    cuPhone.classList.toggle("is-invalid", !ok);
+    return ok;
+}
+
+cuEmail.addEventListener("input", cuCheckEmail);
+cuPhone.addEventListener("input", cuCheckPhone);
+cuEmail.addEventListener("blur", cuCheckEmail);
+cuPhone.addEventListener("blur", cuCheckPhone);
+
 document.getElementById("cuForm").addEventListener("submit", function (e) {
-    if (!cuCheckPw()) {
+    const pwOk = cuCheckPw();
+    const emailOk = cuCheckEmail();
+    const phoneOk = cuCheckPhone();
+    if (!pwOk || !emailOk || !phoneOk) {
         e.preventDefault();
-        cuConfirm.focus();
+        if (!emailOk) { cuEmail.focus(); }
+        else if (!phoneOk) { cuPhone.focus(); }
+        else if (!pwOk) { cuConfirm.focus(); }
     }
 });
 </script>

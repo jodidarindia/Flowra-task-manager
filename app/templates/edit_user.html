@@ -30,6 +30,8 @@
     padding:30px;
 }
 
+.fw-err{ color:#dc2626; font-size:12px; margin-top:4px; }
+
 </style>
 
 {% set is_admin_like = current_user.role in ('super_admin', 'admin') %}
@@ -67,9 +69,11 @@ required>
 <label class="fw-label">Email</label>
 <input type="email"
 name="email"
+id="euEmail"
 class="form-control fw-form-control"
 value="{{ user.email }}"
 required>
+<div class="fw-err" id="euEmailErr" style="display:none;"></div>
 </div>
 </div>
 
@@ -77,10 +81,12 @@ required>
 <label class="fw-label">Phone Number</label>
 <input type="text"
 name="phone"
+id="euPhone"
 class="form-control fw-form-control"
 value="{{ user.phone }}"
 placeholder="+919876543210"
 required>
+<div class="fw-err" id="euPhoneErr" style="display:none;"></div>
 </div>
 
 <div class="col-12 col-md-6 mb-3 px-0">
@@ -211,6 +217,57 @@ document.addEventListener("DOMContentLoaded", function () {
             managerDropdown.classList.add("d-none");
         }
     });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const email = document.getElementById("euEmail");
+    const phone = document.getElementById("euPhone");
+    if (!email || !phone) return;
+    const emailErr = document.getElementById("euEmailErr");
+    const phoneErr = document.getElementById("euPhoneErr");
+    const emailRe = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+    function checkEmail() {
+        if (!email.value.trim()) { emailErr.style.display = "none"; email.classList.remove("is-invalid"); return false; }
+        const ok = emailRe.test(email.value.trim());
+        emailErr.textContent = ok ? "" : "Please enter a valid email address.";
+        emailErr.style.display = ok ? "none" : "block";
+        email.classList.toggle("is-invalid", !ok);
+        return ok;
+    }
+
+    function checkPhone() {
+        let d = phone.value.replace(/\D/g, "");
+        if (phone.value.trim()) {
+            if (d.length === 12 && d.startsWith("91")) { d = d.slice(2); }
+            else if (d.length === 11 && d.startsWith("0")) { d = d.slice(1); }
+        }
+        if (!phone.value.trim()) { phoneErr.style.display = "none"; phone.classList.remove("is-invalid"); return false; }
+        const ok = d.length === 10 && "9867".indexOf(d[0]) !== -1;
+        phoneErr.textContent = ok ? "" : "Invalid mobile number. Must be 10 digits starting with 9, 8, 6 or 7.";
+        phoneErr.style.display = ok ? "none" : "block";
+        phone.classList.toggle("is-invalid", !ok);
+        return ok;
+    }
+
+    email.addEventListener("input", checkEmail);
+    email.addEventListener("blur", checkEmail);
+    phone.addEventListener("input", checkPhone);
+    phone.addEventListener("blur", checkPhone);
+
+    const form = document.querySelector(".form-card form");
+    if (form) {
+        form.addEventListener("submit", function (e) {
+            const eOk = checkEmail();
+            const pOk = checkPhone();
+            if (!eOk || !pOk) {
+                e.preventDefault();
+                if (!eOk) { email.focus(); } else { phone.focus(); }
+            }
+        });
+    }
 });
 </script>
 
