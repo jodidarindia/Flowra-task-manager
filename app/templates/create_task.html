@@ -146,8 +146,6 @@
 action="{{ url_for('main.create_task') }}"
 enctype="multipart/form-data" id="assignTaskForm">
 
-<input type="hidden" name="reward_points" value="5">
-
 <div class="mb-3">
 <label class="fw-label">Task Title *</label>
 <input type="text"
@@ -236,13 +234,25 @@ required>
 </div>
 </div>
 
-<div class="mb-3">
+<div class="row">
+<div class="col-md-6 mb-3">
 <label class="fw-label">Estimated Time</label>
 <input type="text"
 name="estimated_time"
 placeholder="e.g. 6h"
 class="form-control fw-form-control">
 <small class="text-muted">Used in analytics to compare estimate against actual.</small>
+</div>
+
+<div class="col-md-6 mb-3">
+<label class="fw-label">Reward Points *</label>
+<select name="reward_points" class="form-select fw-form-select" required>
+<option value="50" selected>50</option>
+<option value="100">100</option>
+<option value="150">150</option>
+</select>
+<small class="text-muted">Employee gets these points after task is approved.</small>
+</div>
 </div>
 
 <div class="mb-3">

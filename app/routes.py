@@ -1057,7 +1057,11 @@ def create_task():
         print("=" * 50)
         due_date_str = request.form.get("due_date")
         start_date_str = request.form.get("start_date")
-        reward_points = int(request.form.get("reward_points", 5))
+        reward_field = request.form.get("reward_points", "50")
+        try:
+            reward_points = int(reward_field)
+        except ValueError:
+            reward_points = 50
         estimated_time = request.form.get("estimated_time")
 
         print("Reward points from form:", reward_points)
@@ -2614,7 +2618,10 @@ def submit_task(id):
         }}
     )
 
-    flash("Task submitted successfully with proof!", "success")
+    flash(
+        f"Task submitted successfully with proof! You earn {task.get('reward_points', 0)} pts once it is approved.",
+        "success"
+    )
 
     return redirect(url_for("main.employee_panel"))
 
