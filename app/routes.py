@@ -4,6 +4,8 @@
     send_file, make_response, g
 )
 from flask import abort
+from flask import current_app
+from flask import request , jsonify
 from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash
@@ -6237,6 +6239,34 @@ def stop_task(id):
 
     return redirect(url_for("main.employee_panel"))
 
+
+# ============================================================
+# WhatsApp Cloud API Webhook
+# ============================================================
+
+@bp.route("/api/whatsapp/webhook", methods=["GET", "POST"])
+def whatsapp_webhook():
+
+    # Meta webhook verification
+    if request.method == "GET":
+        verify_token = request.args.get("hub.verify_token")
+        challenge = request.args.get("hub.challenge")
+
+        expected_token = current_app.config.get(
+            "WHATSAPP_WEBHOOK_VERIFY_TOKEN"
+        )
+
+        if verify_token == expected_token:
+            return challenge, 200
+
+        return "Forbidden", 403
+
+    # WhatsApp webhook events
+    data = request.get_json(silent=True) or {}
+
+    print("WHATSAPP WEBHOOK:", data, flush=True)
+
+    return jsonify({"status": "ok"}), 200
 
 # ---------------- LOGOUT ----------------
 @bp.route("/logout")
