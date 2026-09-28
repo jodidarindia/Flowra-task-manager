@@ -178,6 +178,7 @@
 .st-Completed{ background:#ecfdf5; color:#059669; }
 .st-InProgress{ background:#eff6ff; color:#2563eb; }
 .st-Pending{ background:#f1f5f9; color:#64748b; }
+.st-Active{ background:#eff6ff; color:#2563eb; }
 
 .ov-chip{
     display:inline-block;
@@ -225,6 +226,7 @@
     <a href="{{ url_for('main.my_tasks', filter='in_progress') }}" class="{% if selected=='in_progress' %}active{% endif %}">In Progress <span class="cnt">{{ counts.in_progress }}</span></a>
     <a href="{{ url_for('main.my_tasks', filter='completed') }}" class="{% if selected=='completed' %}active{% endif %}">Completed <span class="cnt">{{ counts.completed }}</span></a>
     <a href="{{ url_for('main.my_tasks', filter='overdue') }}" class="{% if selected=='overdue' %}active{% endif %}">Overdue <span class="cnt">{{ counts.overdue }}</span></a>
+    <a href="{{ url_for('main.my_tasks', filter='history') }}" class="{% if selected=='history' %}active{% endif %}">History <span class="cnt">{{ counts.history }}</span></a>
 </div>
 
 <div class="mt-toolbar">
@@ -253,18 +255,16 @@
     <th>Start Date</th>
     <th>Due Date</th>
     <th>Status</th>
+    <th>Action</th>
 </tr>
 </thead>
 <tbody>
 {% for r in rows %}
-<tr class="task-row" data-title="{{ r.title | lower }}" data-priority="{{ r.priority }}">
+<tr class="task-row" data-title="{{ r.title | lower }}{% if r.parent_title %} {{ r.parent_title | lower }}{% endif %}" data-priority="{{ r.priority }}">
     <td>
         <div class="task-title">
-            {% if is_admin or is_manager %}
-            <a href="{{ url_for('main.task_details', task_id=r.id) }}">{{ r.title }}</a>
-            {% else %}
-            {{ r.title }}
-            {% endif %}
+            <a href="{{ url_for('main.task_view', kind=r.kind, doc_id=r.id) }}">{{ r.title }}</a>
+            {% if r.parent_title %} <small class="text-muted">({{ r.parent_title }})</small>{% endif %}
         </div>
         <span class="cat-badge">{{ r.category }}</span>
     </td>
@@ -283,12 +283,72 @@
         <span class="st-chip st-{{ r.status | replace(' ','') }}">{{ r.status }}</span>
         {% if r.is_overdue %}<span class="ov-chip">Overdue</span>{% endif %}
     </td>
+    <td>
+        <a href="{{ url_for('main.task_view', kind=r.kind, doc_id=r.id) }}" class="fw-btn fw-btn-primary fw-btn-sm mb-1" style="min-width:90px;">
+            <i class="fa-solid fa-eye me-1"></i> View
+        </a>
+        {% if r.kind == 'task' and r.can_submit %}
+            {% if r.actual_status == 'Rejected' %}
+            <div class="border rounded-3 p-2 bg-light mb-2 text-start" style="min-width:190px;">
+                <span class="text-danger fw-semibold d-block mb-2" style="font-size:12px;">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>{{ r.remarks or 'Rejected' }}
+                </span>
+                <form method="POST" action="{{ url_for('main.resubmit_task', id=r.id) }}" enctype="multipart/form-data">
+                    <input type="file" name="proof_files"
+                           class="form-control form-control-sm fw-form-control mb-2"
+                           accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.zip,.xlsx,.csv,.txt"
+                           multiple>
+                    <button type="submit" class="fw-btn fw-btn-primary fw-btn-sm w-100">
+                        <i class="fa-solid fa-circle-check me-1"></i> Resubmit
+                    </button>
+                </form>
+            </div>
+            {% else %}
+            <form method="POST" action="{{ url_for('main.submit_task', id=r.id) }}" enctype="multipart/form-data">
+                <input type="file" name="proof_files"
+                       class="form-control form-control-sm fw-form-control mb-2"
+                       accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.zip,.xlsx,.csv,.txt"
+                       multiple>
+                <button type="submit" class="fw-btn fw-btn-success fw-btn-sm">
+                    <i class="fa-solid fa-circle-check me-1"></i> Submit
+                </button>
+            </form>
+            {% endif %}
+        {% elif r.kind == 'recurring' and r.can_submit %}
+            <form method="POST" action="{{ url_for('main.submit_recurring_task', id=r.id) }}" enctype="multipart/form-data">
+                <input type="file" name="proof_files"
+                       class="form-control form-control-sm fw-form-control mb-2"
+                       accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.zip,.xlsx,.csv,.txt"
+                       multiple>
+                <button type="submit" class="fw-btn fw-btn-success fw-btn-sm">
+                    <i class="fa-solid fa-circle-check me-1"></i> Submit
+                </button>
+            </form>
+        {% elif r.kind == 'subtask' and r.can_submit %}
+            <form method="POST" action="{{ url_for('main.submit_subtask', subtask_id=r.id) }}" enctype="multipart/form-data">
+                <input type="file" name="proof_files"
+                       class="form-control form-control-sm fw-form-control mb-2"
+                       accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.zip,.xlsx,.csv,.txt"
+                       multiple>
+                <button type="submit" class="fw-btn fw-btn-success fw-btn-sm">
+                    <i class="fa-solid fa-circle-check me-1"></i> Complete
+                </button>
+            </form>
+        {% else %}
+            <span class="text-muted small">-</span>
+        {% endif %}
+        {% if r.can_delete %}
+        <button class="fw-btn fw-btn-danger fw-btn-sm delete-task-btn" data-task-id="{{ r.id }}" data-kind="{{ r.kind }}">
+            <i class="fa-solid fa-trash-can"></i>
+        </button>
+        {% endif %}
+    </td>
 </tr>
 {% else %}
-<tr><td colspan="7"><div class="mt-empty">
+<tr><td colspan="8"><div class="mt-empty">
     <i class="fa-regular fa-folder-open"></i>
-    No {{ 'overdue' if selected == 'overdue' else selected if selected != 'all' else '' }}
-    {{ 'tasks ' if selected != 'all' else 'tasks ' }}found
+    No {{ 'overdue' if selected == 'overdue' else 'history items' if selected == 'history' else selected if selected != 'all' else '' }}
+    {{ 'found' if selected != 'all' else 'tasks found' }}
 </div></td></tr>
 {% endfor %}
 </tbody>
@@ -317,6 +377,24 @@ function applyFilters(){
 
 searchBox.addEventListener('input', applyFilters);
 priorityBox.addEventListener('change', applyFilters);
+
+document.addEventListener('click', function (e) {
+    if (e.target.closest('.delete-task-btn')) {
+        const btn = e.target.closest('.delete-task-btn');
+        if (!confirm('Delete this? This cannot be undone.')) return;
+        fetch('/task/delete/' + btn.dataset.taskId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'kind=' + encodeURIComponent(btn.dataset.kind || 'task')
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) { alert(d.message); location.reload(); }
+                else alert(d.message);
+            })
+            .catch(() => alert('Delete failed'));
+    }
+});
 
 </script>
 

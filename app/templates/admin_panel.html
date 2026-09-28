@@ -847,10 +847,10 @@
 
 {% endif %}
 
-{% if not is_super_admin %}
+{% if recent_tasks %}
 <!-- RECENT TASKS + UPCOMING DEADLINES -->
 
-<div class="sys-row sys-row-2">
+<div class="sys-row">
 
     <div class="sys-card">
         <div class="sys-card-head">
@@ -870,6 +870,7 @@
                     <th>Priority</th>
                     <th>Due Date</th>
                     <th>Status</th>
+                    <th>Sub Tasks</th>
                     <th></th>
                 </tr>
             </thead>
@@ -885,7 +886,7 @@
                             {{ task.priority }}
                         </span>
                     </td>
-                    <td style="white-space:nowrap;">{{ task.due_date.strftime('%d %b %Y') if task.due_date else '-' }}</td>
+                    <td style="white-space:nowrap;">{{ task.due_date_ist.strftime('%d %b %Y, %I:%M %p') if task.due_date_ist else (task.due_date.strftime('%d %b %Y') if task.due_date else '-') }}</td>
                     <td>
                         {% if task.status == 'Approved' %}
                         <span class="fw-badge fw-badge-success">Approved</span>
@@ -899,11 +900,47 @@
                         <span class="fw-badge fw-badge-primary">{{ task.status }}</span>
                         {% endif %}
                     </td>
+                    <td style="text-align:left;">
+                        <div class="small mb-1">
+                            {% if task.subtasks %}
+                                <ul style="list-style:none;padding-left:0;margin:0;">
+                                    {% for sub in task.subtasks %}
+                                    <li class="mb-1">
+                                        <i class="fa-solid fa-list-ul me-1 text-primary" style="font-size:11px;"></i>
+                                        {{ sub.title }}
+                                        <span class="fw-badge fw-badge-secondary ms-1">{{ sub.status }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted small">No Sub Tasks</span>
+                            {% endif %}
+                        </div>
+                        <form method="POST"
+                              action="{{ url_for('main.create_subtask', task_id=task.id) }}"
+                              class="mt-2">
+                            <div class="d-flex gap-2" style="max-width:220px;">
+                                <input type="text"
+                                       name="title"
+                                       placeholder="Add Sub Task"
+                                       class="form-control form-control-sm fw-form-control"
+                                       required>
+                                <button class="fw-btn fw-btn-primary fw-btn-sm">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </td>
                     <td style="text-align:right;white-space:nowrap;">
-                        {% if task.proof_file %}
-                        <a href="{{ url_for('main.download_proof', filename=task.proof_file) }}" target="_blank" class="fw-btn fw-btn-info fw-btn-sm">
-                            <i class="fa-solid fa-eye"></i> Proof
+                        <a href="{{ url_for('main.task_view', kind='task', doc_id=task.id) }}" class="fw-btn fw-btn-primary fw-btn-sm">
+                            <i class="fa-solid fa-eye"></i>
                         </a>
+                        {% if task.proof_files %}
+                            {% for f in task.proof_files %}
+                            <a href="{{ url_for('main.download_proof', filename=f) }}" target="_blank" class="fw-btn fw-btn-info fw-btn-sm mb-1 d-inline-block me-1">
+                                <i class="fa-solid fa-file"></i> File {{ loop.index }}
+                            </a>
+                            {% endfor %}
                         {% endif %}
                         {% if task.status == 'Submitted' %}
                         <a href="{{ url_for('main.approve_task', id=task.id) }}" class="fw-btn fw-btn-success fw-btn-sm">
@@ -1103,7 +1140,7 @@
                 <div class="feed-body">
                     <div class="feed-title">{{ evt.text }}</div>
                     <div class="feed-meta">
-                        {{ evt.time.strftime('%d %b %Y, %I:%M %p') if evt.time else '-' }}
+                        {{ evt.time_ist.strftime('%d %b %Y, %I:%M %p') if evt.time_ist else (evt.time.strftime('%d %b %Y, %I:%M %p') if evt.time else '-') }}
                     </div>
                 </div>
             </li>

@@ -50,6 +50,47 @@ def to_ist(dt):
     )
 
 
+def ist_to_utc(dt):
+    if not dt:
+        return None
+
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt)
+        except Exception:
+            return None
+
+    return dt.replace(
+        tzinfo=ZoneInfo("Asia/Kolkata")
+    ).astimezone(
+        ZoneInfo("UTC")
+    ).replace(tzinfo=None)
+
+
+def notify_task_assigned(assignee_id, task_id, task_title, kind="task"):
+    if not assignee_id:
+        return
+
+    assigner = current_user.username if current_user and current_user.is_authenticated else ""
+    assigner_role = current_user.role if current_user and current_user.is_authenticated else ""
+
+    try:
+        mongo.db.notifications.insert_one({
+            "type": "task_assigned",
+            "message": '"{}" was assigned to you'.format(task_title),
+            "target_user_id": str(assignee_id),
+            "assigner": assigner or "Admin",
+            "assigner_role": assigner_role,
+            "ref_task_id": task_id,
+            "ref_kind": kind,
+            "ref_title": task_title,
+            "read": False,
+            "created_at": datetime.utcnow()
+        })
+    except Exception as e:
+        print("Notification insert error:", e)
+
+
 DEFAULT_SYSTEM_SETTINGS = {
     "app_name": "Flowra Task",
     "support_contact": "it-helpdesk@flowra.io",
@@ -283,16 +324,18 @@ def keep_session_alive():
         current_token = getattr(current_user, "active_session_token", None)
 
         if current_token and saved_token != current_token:
-            logout_user()
-            session.clear()
-            return redirect(url_for("main.login"))
+            session["session_token"] = current_token
+            session.permanent = True
 
         if current_user.role == "super_admin":
             reconcile_lock_notifications()
-            g.unread_notifications = mongo.db.notifications.count_documents({
-                "target_role": "super_admin",
-                "read": False
-            })
+
+        g.unread_notifications = mongo.db.notifications.count_documents({
+            "$or": [
+                {"target_user_id": str(current_user.get_id()), "read": False},
+                {"target_role": "super_admin", "read": False}
+            ] if current_user.role == "super_admin" else [{"target_user_id": str(current_user.get_id()), "read": False}]
+        })
 @bp.route("/")
 def home():
     return render_template("home.html")
@@ -1083,7 +1126,7 @@ def create_task():
             if parsed is None:
                 flash("Invalid date format", "danger")
                 return redirect(request.url)
-            due_date = parsed
+            due_date = ist_to_utc(parsed)
 
         start_date = None
 
@@ -1098,7 +1141,7 @@ def create_task():
             if parsed is None:
                 flash("Invalid date format", "danger")
                 return redirect(request.url)
-            start_date = parsed
+            start_date = ist_to_utc(parsed)
 
         if not description:
             description = "General task created"
@@ -1158,6 +1201,25 @@ def create_task():
 
         task_id = str(task_result.inserted_id)
 
+        # Sub tasks (admin/manager add while assigning)
+        subtask_titles = request.form.get("subtask_titles", "").strip()
+        if subtask_titles:
+            try:
+                titles = json.loads(subtask_titles)
+                if isinstance(titles, list):
+                    for st in titles:
+                        st_title = str(st).strip()
+                        if st_title:
+                            mongo.db.sub_tasks.insert_one({
+                                "task_id": task_id,
+                                "title": st_title,
+                                "status": "Pending",
+                                "created_by": str(current_user.get_id()),
+                                "created_at": datetime.utcnow()
+                            })
+            except Exception as e:
+                print("Subtask parse error:", e)
+
         ua = request.headers.get("User-Agent")
 
         log_activity(
@@ -1187,6 +1249,9 @@ def create_task():
                 description='Assigned "{}" to {}'.format(title, assignee_name),
                 device=device_label(ua)
             )
+
+            if assigned_to != str(current_user.get_id()):
+                notify_task_assigned(assigned_to, task_id, title, "task")
 
         # Multiple attachments
         files = request.files.getlist("attachments")
@@ -1362,7 +1427,8 @@ Please check your dashboard.
     return render_template(
         "create_task.html",
         users=assignees,
-        departments=departments
+        departments=departments,
+        now_ist=to_ist(datetime.utcnow())
     )
 
 
@@ -1396,9 +1462,16 @@ def my_tasks():
     if current_user.role == "employee":
         query = {"assigned_to": uid, "is_deleted": {"$ne": True}}
     else:
-        query = {"created_by": uid, "is_deleted": {"$ne": True}}
+        query = {"$or": [{"created_by": uid}, {"assigned_to": uid}], "is_deleted": {"$ne": True}}
 
     tasks = list(mongo.db.tasks.find(query).sort("created_at", -1))
+
+    if current_user.role == "employee":
+        recurring_query = {"assigned_to": uid, "is_deleted": {"$ne": True}}
+    else:
+        recurring_query = {"$or": [{"created_by": uid}, {"assigned_to": uid}], "is_deleted": {"$ne": True}}
+
+    recurring_tasks = list(mongo.db.recurring_tasks.find(recurring_query).sort("created_at", -1))
 
     user_map = {}
     for u in mongo.db.users.find():
@@ -1408,8 +1481,33 @@ def my_tasks():
     for d in mongo.db.departments.find():
         dept_map[str(d["_id"])] = d
 
+    # --- Collect subtasks of the current user's tasks / recurring tasks ---
+    task_ids = [str(t["_id"]) for t in tasks]
+    recurring_task_ids = [str(rt["_id"]) for rt in recurring_tasks]
+
+    sub_query = {}
+    if current_user.role == "employee":
+        sub_query = {
+            "$or": [
+                {"task_id": {"$in": task_ids}} if task_ids else {"task_id": "__none__"},
+                {"recurring_task_id": {"$in": recurring_task_ids}, "task_id": "recurring"} if recurring_task_ids else {"task_id": "__none__"},
+            ]
+        }
+    else:
+        sub_query = {
+            "$or": [
+                {"task_id": {"$in": task_ids}} if task_ids else {"task_id": "__none__"},
+                {"recurring_task_id": {"$in": recurring_task_ids}, "task_id": "recurring"} if recurring_task_ids else {"task_id": "__none__"},
+            ]
+        }
+
+    subtasks = list(mongo.db.sub_tasks.find(sub_query).sort("created_at", -1))
+
+    subtask_task_map = {t["id"]: t for t in [dict(x, id=str(x["_id"])) for x in tasks]}
+    subtask_recurring_map = {rt["id"]: rt for rt in [dict(x, id=str(x["_id"])) for x in recurring_tasks]}
+
     view_rows = []
-    counts = {"all": 0, "pending": 0, "in_progress": 0, "completed": 0, "overdue": 0}
+    counts = {"all": 0, "pending": 0, "in_progress": 0, "completed": 0, "overdue": 0, "history": 0}
 
     for t in tasks:
         t["id"] = str(t["_id"])
@@ -1444,6 +1542,17 @@ def my_tasks():
         if is_overdue:
             counts["overdue"] += 1
 
+        actual_status = t.get("status", "-")
+        is_history = actual_status in ("Submitted", "Approved", "Completed")
+        if is_history:
+            counts["history"] += 1
+
+        can_submit = bool(
+            current_user.role in ("employee", "manager")
+            and t.get("assigned_to") == uid
+            and actual_status in ("Pending", "Rejected")
+        )
+
         if selected == "pending" and display != "Pending":
             continue
         if selected == "in_progress" and display != "In Progress":
@@ -1451,6 +1560,8 @@ def my_tasks():
         if selected == "completed" and display != "Completed":
             continue
         if selected == "overdue" and not is_overdue:
+            continue
+        if selected == "history" and not is_history:
             continue
 
         name_parts = assignee_name.split()
@@ -1464,18 +1575,180 @@ def my_tasks():
             "category": t.get("category") or "Internal",
             "priority": t.get("priority", "-"),
             "status": display,
-            "actual_status": t.get("status", "-"),
+            "actual_status": actual_status,
             "is_overdue": is_overdue,
-            "start_date": start_date.strftime("%d %b %Y") if start_date else "â€”",
-            "due_date": due_date.strftime("%d %b %Y") if due_date else "â€”",
+            "start_date": start_date.strftime("%d %b %Y, %I:%M %p") if start_date else "—",
+            "due_date": due_date.strftime("%d %b %Y, %I:%M %p") if due_date else "—",
             "assignee_name": assignee_name,
             "assignee_role": assignee_role,
             "assignee_initials": initials,
             "creator_name": creator_name,
             "creator_role": creator_role,
             "creator_initials": cinitials,
-            "department": dept_name or "â€”",
+            "department": dept_name or "—",
             "reward_points": t.get("reward_points", 0),
+            "kind": "task",
+            "can_submit": can_submit,
+            "remarks": t.get("remarks"),
+            "parent_id": None,
+            "can_delete": bool(
+                current_user.role in ("super_admin", "admin")
+                or t.get("created_by") == uid
+            ),
+        })
+
+    for rt in recurring_tasks:
+        rt["id"] = str(rt["_id"])
+
+        assignee = user_map.get(rt.get("assigned_to") or "")
+        assignee_name = assignee.get("username") if assignee else "Unassigned"
+        assignee_role = assignee.get("role", "").capitalize() if assignee else ""
+        creator = user_map.get(rt.get("created_by") or "")
+        creator_name = creator.get("username") if creator else "-"
+        creator_role = creator.get("role", "").capitalize() if creator else ""
+
+        dept = dept_map.get(assignee.get("department_id") or "") if assignee else None
+        dept_name = dept.get("name") if dept else ""
+
+        end_date = to_ist(rt.get("end_date"))
+        r_status = "Active" if (not end_date or end_date.date() >= date.today()) else "Completed"
+
+        name_parts = assignee_name.split()
+        initials = "".join(p[0].upper() for p in name_parts[:2]) if name_parts else "?"
+        cname_parts = creator_name.split()
+        cinitials = "".join(p[0].upper() for p in cname_parts[:2]) if cname_parts else "?"
+
+        counts["all"] += 1
+        counts["in_progress" if r_status == "Active" else "completed"] += 1
+        if r_status == "Completed":
+            counts["history"] += 1
+
+        can_submit = bool(
+            current_user.role in ("employee", "manager")
+            and rt.get("assigned_to") == uid
+            and r_status == "Active"
+        )
+
+        if selected == "pending" or selected == "overdue":
+            continue
+        if selected == "in_progress" and r_status != "Active":
+            continue
+        if selected == "completed" and r_status != "Completed":
+            continue
+        if selected == "history" and r_status != "Completed":
+            continue
+
+        view_rows.append({
+            "id": rt["id"],
+            "title": rt.get("title", ""),
+            "category": "Recurring",
+            "priority": rt.get("priority", "-"),
+            "status": r_status,
+            "actual_status": r_status,
+            "is_overdue": False,
+            "start_date": to_ist(rt.get("start_date")).strftime("%d %b %Y, %I:%M %p") if rt.get("start_date") else "—",
+            "due_date": end_date.strftime("%d %b %Y, %I:%M %p") if end_date else "—",
+            "assignee_name": assignee_name,
+            "assignee_role": assignee_role,
+            "assignee_initials": initials,
+            "creator_name": creator_name,
+            "creator_role": creator_role,
+            "creator_initials": cinitials,
+            "department": dept_name or "—",
+            "reward_points": rt.get("reward_points", 0),
+            "kind": "recurring",
+            "can_submit": can_submit,
+            "remarks": None,
+            "parent_id": None,
+            "can_delete": bool(
+                current_user.role in ("super_admin", "admin")
+                or rt.get("created_by") == uid
+            ),
+        })
+
+    # --- Subtasks rows ---
+    for sub in subtasks:
+        sub["id"] = str(sub["_id"])
+
+        if sub.get("task_id") != "recurring":
+            parent = subtask_task_map.get(sub.get("task_id"))
+        else:
+            parent = subtask_recurring_map.get(sub.get("recurring_task_id"))
+
+        if current_user.role == "employee" and not parent:
+            continue
+
+        assignee = user_map.get(parent.get("assigned_to") or "") if parent else None
+        assignee_name = assignee.get("username") if assignee else "-"
+        creator = user_map.get(sub.get("created_by") or "")
+        creator_name = creator.get("username") if creator else "-"
+        creator_role = creator.get("role", "").capitalize() if creator else ""
+
+        dept_name = ""
+        if assignee:
+            dept = dept_map.get(assignee.get("department_id") or "")
+            dept_name = dept.get("name") if dept else ""
+
+        sub_status = sub.get("status", "Pending")
+        s_display = "Completed" if sub_status == "Completed" else "Pending"
+
+        counts["all"] += 1
+        counts["completed" if s_display == "Completed" else "pending"] += 1
+        if s_display == "Completed":
+            counts["history"] += 1
+
+        can_submit = bool(
+            current_user.role in ("employee", "manager")
+            and parent
+            and parent.get("assigned_to") == uid
+            and s_display == "Pending"
+        )
+
+        if selected == "in_progress" or selected == "overdue":
+            continue
+        if selected == "pending" and s_display != "Pending":
+            continue
+        if selected == "completed" and s_display != "Completed":
+            continue
+        if selected == "history" and s_display != "Completed":
+            continue
+
+        name_parts = assignee_name.split()
+        s_initials = "".join(p[0].upper() for p in name_parts[:2]) if name_parts else "?"
+        cname_parts = creator_name.split()
+        cinitials = "".join(p[0].upper() for p in cname_parts[:2]) if cname_parts else "?"
+
+        p_start = to_ist(parent.get("start_date")) if parent and parent.get("start_date") else None
+        p_due = to_ist(parent.get("due_date")) if parent and parent.get("due_date") else None
+
+        view_rows.append({
+            "id": sub["id"],
+            "title": sub.get("title", ""),
+            "category": "Sub Task" if sub.get("task_id") != "recurring" else "Recurring Sub Task",
+            "priority": parent.get("priority", "-") if parent else "-",
+            "status": s_display,
+            "actual_status": sub_status,
+            "is_overdue": False,
+            "start_date": p_start.strftime("%d %b %Y, %I:%M %p") if p_start else "—",
+            "due_date": p_due.strftime("%d %b %Y, %I:%M %p") if p_due else "—",
+            "assignee_name": assignee_name,
+            "assignee_role": assignee.get("role", "").capitalize() if assignee else "",
+            "assignee_initials": s_initials,
+            "creator_name": creator_name,
+            "creator_role": creator_role,
+            "creator_initials": cinitials,
+            "department": dept_name or "—",
+            "reward_points": parent.get("reward_points", 0) if parent else 0,
+            "kind": "subtask",
+            "can_submit": can_submit,
+            "remarks": None,
+            "parent_id": parent.get("id") if parent else None,
+            "parent_title": parent.get("title") if parent else "",
+            "parent_kind": "recurring" if sub.get("task_id") == "recurring" else "task",
+            "can_delete": bool(
+                current_user.role in ("super_admin", "admin")
+                or sub.get("created_by") == uid
+            ),
         })
 
     return render_template(
@@ -1492,21 +1765,33 @@ def my_tasks():
 @bp.route("/task/<task_id>/view")
 @login_required
 def task_details(task_id):
+    return task_view("task", task_id)
 
-    if current_user.role not in ("admin", "manager"):
-        if current_user.role == "super_admin":
-            return redirect(url_for("main.task_history"))
-        return redirect(url_for("main.employee_panel"))
+
+@bp.route("/view/<kind>/<doc_id>")
+@login_required
+def task_view(kind, doc_id):
+
+    kind = kind if kind in ("task", "recurring", "subtask") else "task"
 
     try:
-        task = mongo.db.tasks.find_one({
-            "_id": ObjectId(task_id),
-            "is_deleted": {"$ne": True}
-        })
+        if kind == "task":
+            doc = mongo.db.tasks.find_one({
+                "_id": ObjectId(doc_id),
+                "is_deleted": {"$ne": True}
+            })
+        elif kind == "recurring":
+            doc = mongo.db.recurring_tasks.find_one({
+                "_id": ObjectId(doc_id)
+            })
+        else:
+            doc = mongo.db.sub_tasks.find_one({
+                "_id": ObjectId(doc_id)
+            })
     except Exception:
-        task = None
+        doc = None
 
-    if not task:
+    if not doc:
         flash("Task not found", "danger")
         return redirect(url_for("main.my_tasks"))
 
@@ -1518,8 +1803,8 @@ def task_details(task_id):
     for d in mongo.db.departments.find():
         dept_map[str(d["_id"])] = d
 
-    assignee = user_map.get(task.get("assigned_to") or "")
-    creator = user_map.get(task.get("created_by") or "")
+    assignee = user_map.get(doc.get("assigned_to") or "")
+    creator = user_map.get(doc.get("created_by") or doc.get("assigned_by") or "")
 
     def person(user):
         if not user:
@@ -1537,63 +1822,164 @@ def task_details(task_id):
 
     dept = dept_map.get(assignee.get("department_id") or "") if assignee else None
 
-    attachments = list(mongo.db.task_attachments.find({
-        "task_id": task_id
-    }).sort("uploaded_at", -1))
-
-    comments = list(mongo.db.task_comments.find({
-        "task_id": task_id
-    }).sort("created_at", -1))
-
-    task_comments = list(mongo.db.task_comments.find({
-        "task_id": task_id
-    }))
-
-    activity_count = (
-        mongo.db.task_activity.count_documents({"task_id": task_id})
-        + len(task_comments)
-    )
-
-    reminders = list(mongo.db.reminders.find({
-        "task_id": task_id
-    }).sort("remind_at", 1))
-
     def fmt(v):
         if not v:
-            return "â€”"
+            return "—"
         ist = to_ist(v)
-        return ist.strftime("%d %b %Y") if ist else "â€”"
+        return ist.strftime("%d %b %Y") if ist else "—"
 
     def fmt_dt(v):
         if not v:
-            return "â€”"
+            return "—"
         ist = to_ist(v)
-        return ist.strftime("%d %b %Y at %I:%M %p") if ist else "â€”"
+        return ist.strftime("%d %b %Y at %I:%M %p") if ist else "—"
+
+    can_delete = (current_user.role in ("super_admin", "admin")
+                  or doc.get("created_by") == str(current_user.get_id()))
+
+    if kind == "task":
+        task = doc
+        attachments = list(mongo.db.task_attachments.find({
+            "task_id": doc_id
+        }).sort("uploaded_at", -1))
+        comments = list(mongo.db.task_comments.find({
+            "task_id": doc_id
+        }).sort("created_at", -1))
+        task_comments = list(mongo.db.task_comments.find({
+            "task_id": doc_id
+        }))
+        activity_count = (
+            mongo.db.task_activity.count_documents({"task_id": doc_id})
+            + len(task_comments)
+        )
+        reminders = list(mongo.db.reminders.find({
+            "task_id": doc_id
+        }).sort("remind_at", 1))
+        subtasks = list(mongo.db.sub_tasks.find({
+            "task_id": doc_id
+        }).sort("created_at", 1))
+        for s in subtasks:
+            s["id"] = str(s["_id"])
+        notes = task.get("notes", "")
+        notes_by = creator.get("username") if creator and notes else None
+        parent = None
+        frequency = None
+        display_status = task_display_status(task)
+        task_code = "T{:03d}".format(int(str(task["_id"])[-4:], 16) % 1000)
+        task_title = task.get("title", "")
+        task_description = task.get("description", "")
+        start_date = fmt_dt(task.get("start_date"))
+        due_date = fmt_dt(task.get("due_date"))
+        completed_at = fmt(task.get("completed_at"))
+        estimated_time = task.get("estimated_time") or "—"
+        reward = task.get("reward_points")
+        proof_files = task.get("proof_files") or ([task["proof_file"]] if task.get("proof_file") else [])
+        submitted_at = fmt_dt(task.get("submitted_at"))
+        submitted_by = user_map.get(task.get("submitted_by"))
+        remarks = task.get("remarks")
+        created_at = fmt_dt(task.get("created_at"))
+    elif kind == "recurring":
+        task = doc
+        attachments = []
+        comments = []
+        activity_count = 0
+        reminders = []
+        subtasks = list(mongo.db.sub_tasks.find({
+            "recurring_task_id": doc_id
+        }).sort("created_at", 1))
+        for s in subtasks:
+            s["id"] = str(s["_id"])
+        notes = doc.get("notes", "")
+        notes_by = creator.get("username") if creator and notes else None
+        parent = None
+        frequency = doc.get("frequency") or "-"
+        end = doc.get("end_date")
+        display_status = "Active" if (not end or end.date() >= date.today()) else "Completed"
+        task_code = "R{:03d}".format(int(str(doc["_id"])[-4:], 16) % 1000)
+        task_title = doc.get("title", "")
+        task_description = doc.get("description", "") or "—"
+        start_date = fmt_dt(doc.get("start_date"))
+        due_date = fmt_dt(doc.get("end_date"))
+        completed_at = None
+        estimated_time = "—"
+        reward = doc.get("reward_points")
+        proof_files = []
+        submitted_at = None
+        submitted_by = None
+        remarks = None
+        created_at = fmt_dt(doc.get("created_at"))
+    else:
+        task = doc
+        parent = None
+        if doc.get("task_id"):
+            parent = mongo.db.tasks.find_one({"_id": ObjectId(doc["task_id"]), "is_deleted": {"$ne": True}})
+            parent_kind = "task"
+        elif doc.get("recurring_task_id"):
+            parent = mongo.db.recurring_tasks.find_one({"_id": ObjectId(doc["recurring_task_id"])})
+            parent_kind = "recurring"
+        else:
+            parent_kind = None
+        if parent:
+            parent["view_id"] = str(parent["_id"])
+            parent["view_kind"] = parent_kind
+        attachments = []
+        comments = []
+        activity_count = 0
+        reminders = []
+        subtasks = []
+        notes = ""
+        notes_by = None
+        frequency = None
+        display_status = task.get("status", "-").capitalize()
+        task_code = "S{:03d}".format(int(str(doc["_id"])[-4:], 16) % 1000)
+        task_title = doc.get("title", "")
+        task_description = doc.get("description", "") or "—"
+        start_date = fmt_dt(doc.get("start_date") or doc.get("assigned_at"))
+        due_date = fmt_dt(doc.get("deadline") or doc.get("due_date"))
+        completed_at = fmt(doc.get("completed_at"))
+        estimated_time = "—"
+        reward = None
+        proof_files = doc.get("proof_files") or ([doc["proof_file"]] if doc.get("proof_file") else [])
+        submitted_at = fmt_dt(doc.get("submitted_at") or doc.get("completed_at"))
+        submitted_by = user_map.get(doc.get("submitted_by") or doc.get("completed_by"))
+        remarks = doc.get("remarks")
+        created_at = fmt_dt(doc.get("created_at"))
 
     return render_template(
         "task_details.html",
         task=task,
-        task_id=task_id,
-        task_code="T{:03d}".format(int(str(task["_id"])[-4:], 16) % 1000),
-        title=task.get("title", ""),
-        description=task.get("description", ""),
-        notes=task.get("notes", ""),
-        notes_by=creator.get("username") if creator and task.get("notes") else None,
-        category=task.get("category") or "Internal",
-        priority=task.get("priority", "Low"),
-        display_status=task_display_status(task),
-        actual_status=task.get("status", "-"),
-        start_date=fmt(task.get("start_date")),
-        due_date=fmt(task.get("due_date")),
-        completed_at=fmt(task.get("completed_at")),
-        estimated_time=task.get("estimated_time") or "â€”",
+        task_id=doc_id,
+        kind=kind,
+        task_code=task_code,
+        title=task_title,
+        description=task_description,
+        notes=notes,
+        notes_by=notes_by,
+        category=doc.get("category") or "Internal",
+        priority=doc.get("priority", "Low"),
+        display_status=display_status,
+        actual_status=doc.get("status", "-"),
+        start_date=start_date,
+        due_date=due_date,
+        completed_at=completed_at,
+        estimated_time=estimated_time,
+        reward=reward,
+        frequency=frequency,
         assignee=person(assignee),
         creator=person(creator),
-        department=dept.get("name") if dept else "â€”",
+        department=dept.get("name") if dept else "—",
         attachments=attachments,
         comments=comments,
         activity_count=activity_count,
         reminders=reminders,
+        subtasks=subtasks,
+        parent=parent,
+        proof_files=proof_files,
+        submitted_at=submitted_at,
+        submitted_by=person(submitted_by),
+        remarks=remarks,
+        created_at=created_at,
+        can_delete=can_delete,
         fmt_dt=fmt_dt,
         is_manager=current_user.role == "manager",
     )
@@ -1669,7 +2055,7 @@ def add_task_reminder(task_id):
 
     if remind_at_str:
         try:
-            remind_at = datetime.strptime(remind_at_str, "%Y-%m-%dT%H:%M")
+            remind_at = ist_to_utc(datetime.strptime(remind_at_str, "%Y-%m-%dT%H:%M"))
         except ValueError:
             remind_at = None
 
@@ -1727,24 +2113,12 @@ def create_subtask(task_id):
 
     # ---------------- PERMISSION LOGIC ----------------
 
-    if current_user.role in ("super_admin", "admin"):
+    if current_user.role in ("admin", "manager"):
         pass
 
-    elif current_user.role == "manager":
-
-        employee = mongo.db.users.find_one({
-            "_id": ObjectId(task.get("assigned_to"))
-        }) if task.get("assigned_to") else None
-
-        if not employee or employee.get("supervisor_id") != str(current_user.get_id()):
-            flash("You cannot add subtask to this task", "danger")
-            return redirect(request.referrer or url_for("main.dashboard"))
-
-    elif current_user.role == "employee":
-
-        if task.get("assigned_to") != str(current_user.get_id()):
-            flash("You can only add subtask to your own task", "danger")
-            return redirect(request.referrer or url_for("main.dashboard"))
+    else:
+        flash("Only admin or manager can add subtasks", "danger")
+        return redirect(request.referrer or url_for("main.dashboard"))
 
     title = request.form.get("title")
 
@@ -1761,6 +2135,84 @@ def create_subtask(task_id):
     })
 
     flash("Sub Task Added", "success")
+
+    return redirect(request.referrer or url_for("main.dashboard"))
+
+
+# ---------------- CREATE RECURRING SUBTASK ----------------
+@bp.route("/recurring-task/<task_id>/subtask", methods=["POST"])
+@login_required
+def create_recurring_subtask(task_id):
+
+    recurring_task = mongo.db.recurring_tasks.find_one({
+        "_id": ObjectId(task_id)
+    })
+
+    if not recurring_task:
+        flash("Recurring task not found", "danger")
+        return redirect(request.referrer or url_for("main.dashboard"))
+
+    if current_user.role not in ("admin", "manager"):
+        flash("Only admin or manager can add subtasks", "danger")
+        return redirect(request.referrer or url_for("main.dashboard"))
+
+    title = request.form.get("title")
+
+    if not title:
+        flash("Sub task title required", "danger")
+        return redirect(request.referrer or url_for("main.dashboard"))
+
+    mongo.db.sub_tasks.insert_one({
+        "task_id": "recurring",
+        "recurring_task_id": task_id,
+        "title": title,
+        "status": "Pending",
+        "created_by": str(current_user.get_id()),
+        "created_at": datetime.utcnow()
+    })
+
+    flash("Sub Task Added", "success")
+
+    return redirect(request.referrer or url_for("main.dashboard"))
+
+
+# ---------------- TOGGLE SUBTASK STATUS ----------------
+@bp.route("/subtask/toggle/<subtask_id>")
+@login_required
+def toggle_subtask(subtask_id):
+
+    subtask = mongo.db.sub_tasks.find_one({
+        "_id": ObjectId(subtask_id)
+    })
+
+    if not subtask:
+        flash("Sub task not found", "danger")
+        return redirect(request.referrer or url_for("main.dashboard"))
+
+    task = mongo.db.tasks.find_one({
+        "_id": ObjectId(subtask.get("task_id"))
+    })
+
+    if current_user.role not in ("admin", "manager", "employee"):
+        flash("Unauthorized", "danger")
+        return redirect(request.referrer or url_for("main.dashboard"))
+
+    if current_user.role == "employee":
+        if not task or task.get("assigned_to") != str(current_user.get_id()):
+            flash("You can only complete subtasks of your own task", "danger")
+            return redirect(request.referrer or url_for("main.dashboard"))
+
+    new_status = "Completed" if subtask.get("status") != "Completed" else "Pending"
+
+    mongo.db.sub_tasks.update_one(
+        {"_id": ObjectId(subtask_id)},
+        {"$set": {
+            "status": new_status,
+            "completed_at": datetime.utcnow() if new_status == "Completed" else None
+        }}
+    )
+
+    flash(f"Sub task marked {new_status}", "success")
 
     return redirect(request.referrer or url_for("main.dashboard"))
 
@@ -2049,14 +2501,25 @@ def recurring_task_history():
 
     if current_user.role == "manager":
 
-        employees = list(
-            mongo.db.users.find({
-                "role": "employee",
-                "supervisor_id": str(current_user.get_id())
-            })
-        )
+        manager_dept_id = current_user.department_id
+
+        if manager_dept_id:
+            employees = list(
+                mongo.db.users.find({
+                    "role": "employee",
+                    "department_id": manager_dept_id
+                })
+            )
+        else:
+            employees = list(
+                mongo.db.users.find({
+                    "role": "employee",
+                    "supervisor_id": str(current_user.get_id())
+                })
+            )
 
         employee_ids = [str(emp["_id"]) for emp in employees]
+        employee_ids.append(str(current_user.get_id()))
 
         recurring_tasks = list(
             mongo.db.recurring_tasks.find({
@@ -2072,10 +2535,26 @@ def recurring_task_history():
 
     for task in recurring_tasks:
         task["id"] = str(task["_id"])
+        task["created_at_ist"] = to_ist(task.get("created_at"))
+        task["start_date_ist"] = to_ist(task.get("start_date"))
+        task["end_date_ist"] = to_ist(task.get("end_date"))
+        task["can_delete"] = (
+            current_user.role in ("super_admin", "admin")
+            or task.get("created_by") == str(current_user.get_id())
+        )
+        assigned_user = mongo.db.users.find_one({"_id": ObjectId(task["assigned_to"])}) if task.get("assigned_to") else None
+        task["employee"] = assigned_user
+        task["subtasks"] = list(
+            mongo.db.sub_tasks.find({"recurring_task_id": task["id"]}).sort("created_at", 1)
+        )
+        end = task.get("end_date")
+        task["display_status"] = "Active" if (not end or end.date() >= date.today()) else "Completed"
 
     return render_template(
         "recurring_task_history.html",
-        recurring_tasks=recurring_tasks
+        recurring_tasks=recurring_tasks,
+        is_admin=current_user.role == "admin",
+        is_manager=current_user.role == "manager"
     )
 
 
@@ -2384,10 +2863,29 @@ def create_recurring_task():
     # Employees list according to role
     if current_user.role == "manager":
 
+        manager_dept_id = current_user.department_id
+
+        if manager_dept_id:
+            employees = list(
+                mongo.db.users.find({
+                    "role": "employee",
+                    "department_id": manager_dept_id
+                }).sort("username", 1)
+            )
+        else:
+            employees = list(
+                mongo.db.users.find({
+                    "role": "employee",
+                    "supervisor_id": str(current_user.get_id())
+                }).sort("username", 1)
+            )
+
+    elif current_user.role == "admin":
+
         employees = list(
             mongo.db.users.find({
-                "role": "employee",
-                "supervisor_id": str(current_user.get_id())
+                "role": {"$in": ["employee", "manager"]},
+                "company": current_user.company
             }).sort("username", 1)
         )
 
@@ -2395,31 +2893,13 @@ def create_recurring_task():
 
         employees = list(
             mongo.db.users.find({
-                "role": "employee"
+                "role": {"$in": ["employee", "manager"]}
             }).sort("username", 1)
         )
 
     # Recurring task history according to role
-    if current_user.role == "manager":
-
-        employee_ids = [str(emp["_id"]) for emp in employees]
-
-        if employee_ids:
-
-            recurring_tasks = list(
-                mongo.db.recurring_tasks.find({
-                    "assigned_to": {"$in": employee_ids}
-                }).sort("created_at", -1)
-            )
-
-        else:
-            recurring_tasks = []
-
-    else:
-
-        recurring_tasks = list(
-            mongo.db.recurring_tasks.find().sort("created_at", -1)
-        )
+    for emp in employees:
+        emp["id"] = str(emp["_id"])
 
     if request.method == "POST":
 
@@ -2427,15 +2907,31 @@ def create_recurring_task():
         assigned_to = request.form.get("assigned_to")
         start_date_raw = request.form.get("start_date")
         end_date_raw = request.form.get("end_date")
+
+        def parse_dt(raw):
+            if not raw:
+                return None
+            for fmt in ("%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+                try:
+                    return ist_to_utc(datetime.strptime(raw, fmt))
+                except ValueError:
+                    continue
+            return None
         frequency = (request.form.get("frequency") or "").strip().lower()
+        description = request.form.get("description")
+        reward_points = request.form.get("reward_points", "50")
+        try:
+            reward_points = int(reward_points)
+        except ValueError:
+            reward_points = 50
+        priority = (request.form.get("priority") or "Medium").strip()
 
         if not title:
             flash("Task title is required.", "danger")
 
             return render_template(
                 "create_recurring_task.html",
-                employees=employees,
-                recurring_tasks=recurring_tasks
+                employees=employees
             )
 
         if not assigned_to:
@@ -2443,8 +2939,7 @@ def create_recurring_task():
 
             return render_template(
                 "create_recurring_task.html",
-                employees=employees,
-                recurring_tasks=recurring_tasks
+                employees=employees
             )
 
         if frequency not in ["daily", "weekly", "monthly"]:
@@ -2452,29 +2947,17 @@ def create_recurring_task():
 
             return render_template(
                 "create_recurring_task.html",
-                employees=employees,
-                recurring_tasks=recurring_tasks
+                employees=employees
             )
 
-        try:
-            start_date = datetime.strptime(
-                start_date_raw,
-                "%Y-%m-%d"
-            )
+        start_date = parse_dt(start_date_raw)
+        end_date = parse_dt(end_date_raw)
 
-            end_date = datetime.strptime(
-                end_date_raw,
-                "%Y-%m-%d"
-            )
-
-        except (ValueError, TypeError):
-
-            flash("Invalid start date or end date.", "danger")
-
+        if not start_date or not end_date:
+            flash("Please enter valid Start and Repeat Until date & time.", "danger")
             return render_template(
                 "create_recurring_task.html",
-                employees=employees,
-                recurring_tasks=recurring_tasks
+                employees=employees
             )
 
         if end_date < start_date:
@@ -2486,13 +2969,12 @@ def create_recurring_task():
 
             return render_template(
                 "create_recurring_task.html",
-                employees=employees,
-                recurring_tasks=recurring_tasks
+                employees=employees
             )
 
         employee = mongo.db.users.find_one({
             "_id": ObjectId(assigned_to),
-            "role": "employee"
+            "role": {"$in": ["employee", "manager"]}
         })
 
         if not employee:
@@ -2501,37 +2983,68 @@ def create_recurring_task():
 
             return render_template(
                 "create_recurring_task.html",
-                employees=employees,
-                recurring_tasks=recurring_tasks
+                employees=employees
             )
 
         # Manager restriction
-        if (
-            current_user.role == "manager"
-            and employee.get("supervisor_id") != str(current_user.get_id())
-        ):
+        if current_user.role == "manager":
+            target_user = mongo.db.users.find_one({"_id": ObjectId(assigned_to)})
+            manager_dept_id = current_user.department_id
+            allowed = False
+            if target_user and target_user.get("role") == "employee":
+                if manager_dept_id and target_user.get("department_id") == manager_dept_id:
+                    allowed = True
+                elif not manager_dept_id and target_user.get("supervisor_id") == str(current_user.get_id()):
+                    allowed = True
+            if not allowed:
+                flash(
+                    "You can assign recurring tasks only to your own employees.",
+                    "danger"
+                )
 
-            flash(
-                "You can assign recurring tasks only to your own employees.",
-                "danger"
-            )
+                return render_template(
+                    "create_recurring_task.html",
+                    employees=employees
+                )
 
-            return render_template(
-                "create_recurring_task.html",
-                employees=employees,
-                recurring_tasks=recurring_tasks
-            )
-
-        mongo.db.recurring_tasks.insert_one({
+        recurring_result = mongo.db.recurring_tasks.insert_one({
             "title": title,
+            "description": description,
             "assigned_to": assigned_to,
             "start_date": start_date,
             "end_date": end_date,
             "frequency": frequency,
+            "priority": priority,
+            "reward_points": reward_points,
+            "is_deleted": False,
             "last_generated": None,
             "created_by": str(current_user.get_id()),
             "created_at": datetime.utcnow()
         })
+
+        if assigned_to != str(current_user.get_id()):
+            notify_task_assigned(assigned_to, str(recurring_result.inserted_id), title, "recurring")
+
+        subtask_titles = request.form.get("subtask_titles", "").strip()
+
+        if subtask_titles:
+            try:
+                titles = json.loads(subtask_titles)
+            except (ValueError, TypeError):
+                titles = [subtask_titles]
+
+            if isinstance(titles, list):
+                for t in titles:
+                    t = str(t).strip()
+                    if t:
+                        mongo.db.sub_tasks.insert_one({
+                            "task_id": "recurring",
+                            "recurring_task_id": str(recurring_result.inserted_id),
+                            "title": t,
+                            "status": "Pending",
+                            "created_by": str(current_user.get_id()),
+                            "created_at": datetime.utcnow()
+                        })
 
         flash("Recurring task created successfully!", "success")
 
@@ -2539,8 +3052,7 @@ def create_recurring_task():
 
     return render_template(
         "create_recurring_task.html",
-        employees=employees,
-        recurring_tasks=recurring_tasks
+        employees=employees
     )
 
 # ---------------- DELETE TASK ----------------
@@ -2548,9 +3060,16 @@ def create_recurring_task():
 @login_required
 def delete_task(task_id):
 
-    task = mongo.db.tasks.find_one({
-        "_id": ObjectId(task_id)
-    })
+    kind = request.form.get("kind", "task")
+
+    if kind == "recurring":
+        task = mongo.db.recurring_tasks.find_one({"_id": ObjectId(task_id)})
+    elif kind == "subtask":
+        task = mongo.db.sub_tasks.find_one({"_id": ObjectId(task_id)})
+        if task and not mongo.db.tasks.find_one({"_id": ObjectId(task.get("task_id"))}):
+            pass
+    else:
+        task = mongo.db.tasks.find_one({"_id": ObjectId(task_id)})
 
     if not task:
         return jsonify({
@@ -2564,13 +3083,20 @@ def delete_task(task_id):
             "message": "You are not authorized!"
         }), 403
 
-    mongo.db.tasks.update_one(
-        {"_id": ObjectId(task_id)},
-        {"$set": {
-            "is_deleted": True,
-            "deleted_at": datetime.utcnow()
-        }}
-    )
+    if kind == "recurring":
+        mongo.db.recurring_tasks.delete_one({"_id": ObjectId(task_id)})
+        mongo.db.sub_tasks.delete_many({"recurring_task_id": str(task_id)})
+        mongo.db.reminders.delete_many({"recurring_task_id": str(task_id)})
+        mongo.db.tasks.delete_many({"recurring_id": str(task_id)})
+    elif kind == "subtask":
+        mongo.db.sub_tasks.delete_one({"_id": ObjectId(task_id)})
+    else:
+        mongo.db.tasks.delete_one({"_id": ObjectId(task_id)})
+        mongo.db.sub_tasks.delete_many({"task_id": str(task_id)})
+        mongo.db.task_attachments.delete_many({"task_id": str(task_id)})
+        mongo.db.task_comments.delete_many({"task_id": str(task_id)})
+        mongo.db.task_activity.delete_many({"task_id": str(task_id)})
+        mongo.db.reminders.delete_many({"task_id": str(task_id)})
 
     return jsonify({
         "success": True,
@@ -2589,33 +3115,49 @@ def submit_task(id):
         flash("Task not found", "danger")
         return redirect(url_for("main.dashboard"))
 
-    if current_user.role != "employee":
+    if current_user.role not in ("employee", "manager"):
         flash("Unauthorized", "danger")
         return redirect(url_for("main.dashboard"))
 
+    if task.get("assigned_to") != str(current_user.get_id()):
+        flash("You can only submit your own tasks", "danger")
+        return redirect(url_for("main.my_tasks"))
+
     filename = None
+    proof_files = []
 
     file = request.files.get("proof_file")
+    files = request.files.getlist("proof_files")
+
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    os.makedirs(upload_folder, exist_ok=True)
 
     if file and file.filename != "":
-
         filename = secure_filename(file.filename)
+        file.save(os.path.join(upload_folder, filename))
+        proof_files.append(filename)
 
-        upload_folder = current_app.config["UPLOAD_FOLDER"]
+    for f in files:
+        if f and f.filename != "":
+            name = secure_filename(f.filename)
+            f.save(os.path.join(upload_folder, name))
+            proof_files.append(name)
 
-        os.makedirs(upload_folder, exist_ok=True)
+    update_data = {
+        "status": "Submitted",
+        "submitted_at": datetime.utcnow(),
+        "submitted_by": str(current_user.get_id())
+    }
 
-        file_path = os.path.join(upload_folder, filename)
+    if filename:
+        update_data["proof_file"] = filename
 
-        file.save(file_path)
+    if proof_files:
+        update_data["proof_files"] = proof_files
 
     mongo.db.tasks.update_one(
         {"_id": ObjectId(id)},
-        {"$set": {
-            "proof_file": filename,
-            "status": "Submitted",
-            "submitted_at": datetime.utcnow()
-        }}
+        {"$set": update_data}
     )
 
     flash(
@@ -2623,7 +3165,7 @@ def submit_task(id):
         "success"
     )
 
-    return redirect(url_for("main.employee_panel"))
+    return redirect(request.referrer or url_for("main.my_tasks"))
 
 # ---------------- DOWNLOAD PROOF ----------------
 @bp.route("/uploads/<filename>")
@@ -2645,7 +3187,218 @@ def download_proof(filename):
     )
 
 
-@bp.route('/set-reminder', methods=['POST'])
+# ---------------- SUBMIT RECURRING TASK (generates today's occurrence) ----------------
+@bp.route("/recurring-task/submit/<id>", methods=["POST"])
+@login_required
+def submit_recurring_task(id):
+    if current_user.role not in ("employee", "manager"):
+        flash("Unauthorized", "danger")
+        return redirect(url_for("main.dashboard"))
+
+    recurring = mongo.db.recurring_tasks.find_one({
+        "_id": ObjectId(id),
+        "is_deleted": {"$ne": True}
+    })
+
+    if not recurring:
+        flash("Recurring task not found", "danger")
+        return redirect(url_for("main.my_tasks"))
+
+    if recurring.get("assigned_to") != str(current_user.get_id()):
+        flash("You can only submit your own recurring tasks", "danger")
+        return redirect(url_for("main.my_tasks"))
+
+    start_date = recurring.get("start_date")
+    end_date = recurring.get("end_date")
+    today = datetime.utcnow()
+
+    if not start_date or not end_date or not (start_date.date() <= today.date() <= end_date.date()):
+        flash("Recurring task is not active today", "danger")
+        return redirect(request.referrer or url_for("main.my_tasks"))
+
+    recurring_task_id = str(recurring["_id"])
+    generated_date = today.strftime("%Y-%m-%d")
+
+    existing_task = mongo.db.tasks.find_one({
+        "recurring_task_id": recurring_task_id,
+        "generated_date": generated_date
+    })
+
+    # Reuse the occurrence if already generated, else create one
+    task_id = None
+    if existing_task:
+        task_id = str(existing_task["_id"])
+    else:
+        new_task = {
+            "title": recurring.get("title", "Recurring Task"),
+            "description": recurring.get("description", ""),
+            "priority": recurring.get("priority", "Medium"),
+            "due_date": datetime.combine(today.date(), datetime.min.time()),
+            "start_date": datetime.combine(today.date(), datetime.min.time()),
+            "category": "Recurring",
+            "notes": "",
+            "assigned_to": str(current_user.get_id()),
+            "created_by": recurring.get("created_by"),
+            "reward_points": recurring.get("reward_points", 50),
+            "estimated_time": "",
+            "status": "Pending",
+            "is_deleted": False,
+            "recurring_task_id": recurring_task_id,
+            "generated_date": generated_date,
+            "created_at": today,
+            "attachment": None
+        }
+        result = mongo.db.tasks.insert_one(new_task)
+        task_id = str(result.inserted_id)
+
+        for sub in mongo.db.sub_tasks.find({"recurring_task_id": recurring_task_id}):
+            mongo.db.sub_tasks.insert_one({
+                "task_id": task_id,
+                "title": sub.get("title", ""),
+                "status": "Pending",
+                "created_by": recurring.get("created_by"),
+                "created_at": today
+            })
+
+        mongo.db.recurring_tasks.update_one(
+            {"_id": ObjectId(id)},
+            {"$set": {"last_generated": today}}
+        )
+
+    # Save proof files on the occurrence task
+    filename = None
+    proof_files = []
+
+    file = request.files.get("proof_file")
+    files = request.files.getlist("proof_files")
+
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    os.makedirs(upload_folder, exist_ok=True)
+
+    if file and file.filename != "":
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(upload_folder, filename))
+        proof_files.append(filename)
+
+    for f in files:
+        if f and f.filename != "":
+            name = secure_filename(f.filename)
+            f.save(os.path.join(upload_folder, name))
+            proof_files.append(name)
+
+    update_data = {
+        "status": "Submitted",
+        "submitted_at": datetime.utcnow()
+    }
+
+    if filename:
+        update_data["proof_file"] = filename
+
+    if proof_files:
+        update_data["proof_files"] = proof_files
+
+    mongo.db.tasks.update_one(
+        {"_id": ObjectId(task_id)},
+        {"$set": update_data}
+    )
+
+    flash(
+        "Recurring task submitted successfully! It will earn points once approved.",
+        "success"
+    )
+
+    return redirect(request.referrer or url_for("main.my_tasks"))
+
+
+# ---------------- SUBMIT SUB TASK (with optional proof file) ----------------
+@bp.route("/subtask/submit/<subtask_id>", methods=["POST"])
+@login_required
+def submit_subtask(subtask_id):
+    subtask = mongo.db.sub_tasks.find_one({
+        "_id": ObjectId(subtask_id)
+    })
+
+    if not subtask:
+        flash("Sub task not found", "danger")
+        return redirect(request.referrer or url_for("main.my_tasks"))
+
+    if subtask.get("status") == "Completed":
+        flash("Sub task already completed", "danger")
+        return redirect(request.referrer or url_for("main.my_tasks"))
+
+    task = None
+    parent_id = subtask.get("task_id")
+    recurring_id = subtask.get("recurring_task_id")
+
+    if parent_id and parent_id != "recurring":
+        task = mongo.db.tasks.find_one({"_id": ObjectId(parent_id)})
+
+    if current_user.role == "employee":
+        if task:
+            if task.get("assigned_to") != str(current_user.get_id()):
+                flash("You can only submit subtasks of your own task", "danger")
+                return redirect(request.referrer or url_for("main.my_tasks"))
+        elif recurring_id:
+            recurring = mongo.db.recurring_tasks.find_one({"_id": ObjectId(recurring_id)})
+            if not recurring or recurring.get("assigned_to") != str(current_user.get_id()):
+                flash("You can only submit subtasks of your own recurring task", "danger")
+                return redirect(request.referrer or url_for("main.my_tasks"))
+        else:
+            flash("Unauthorized", "danger")
+            return redirect(request.referrer or url_for("main.my_tasks"))
+    elif current_user.role == "manager":
+        if task:
+            if task.get("assigned_to") != str(current_user.get_id()):
+                flash("You can only submit subtasks of your own task", "danger")
+                return redirect(request.referrer or url_for("main.my_tasks"))
+        elif recurring_id:
+            recurring = mongo.db.recurring_tasks.find_one({"_id": ObjectId(recurring_id)})
+            if not recurring or recurring.get("assigned_to") != str(current_user.get_id()):
+                flash("You can only submit subtasks of your own recurring task", "danger")
+                return redirect(request.referrer or url_for("main.my_tasks"))
+        else:
+            flash("Unauthorized", "danger")
+            return redirect(request.referrer or url_for("main.my_tasks"))
+
+    filename = None
+    proof_files = []
+
+    file = request.files.get("proof_file")
+    files = request.files.getlist("proof_files")
+
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    os.makedirs(upload_folder, exist_ok=True)
+
+    if file and file.filename != "":
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(upload_folder, filename))
+        proof_files.append(filename)
+
+    for f in files:
+        if f and f.filename != "":
+            name = secure_filename(f.filename)
+            f.save(os.path.join(upload_folder, name))
+            proof_files.append(name)
+
+    update_data = {
+        "status": "Completed",
+        "completed_at": datetime.utcnow()
+    }
+
+    if filename:
+        update_data["proof_file"] = filename
+
+    if proof_files:
+        update_data["proof_files"] = proof_files
+
+    mongo.db.sub_tasks.update_one(
+        {"_id": ObjectId(subtask_id)},
+        {"$set": update_data}
+    )
+
+    flash("Sub task completed successfully!", "success")
+
+    return redirect(request.referrer or url_for("main.my_tasks"))
 @login_required
 def set_reminder():
 
@@ -2917,13 +3670,31 @@ def approve_task(id):
     if current_user.role not in ["super_admin", "admin", "manager"]:
         return "Unauthorized"
 
-    task = mongo.db.tasks.find_one({
-        "_id": ObjectId(id)
-    })
+    try:
+        task = mongo.db.tasks.find_one({
+            "_id": ObjectId(id)
+        })
+    except Exception:
+        task = None
 
     if not task:
         flash("Task not found", "danger")
         return redirect(url_for("main.dashboard"))
+
+    # Manager can approve/reject only EMPLOYEE tasks.
+    # If assigned to a manager (or any non-employee), only admin/super_admin can act.
+    assigned_user = None
+    if task.get("assigned_to"):
+        try:
+            assigned_user = mongo.db.users.find_one({"_id": ObjectId(task["assigned_to"])})
+        except Exception:
+            assigned_user = None
+
+    assignee_role = assigned_user.get("role") if assigned_user else "employee"
+
+    if current_user.role == "manager" and assignee_role != "employee":
+        flash("Managers can only approve tasks of employees.", "danger")
+        return redirect(url_for("main.manager_panel"))
 
     print("Approving task:", str(task["_id"]))
     print("Task reward points:", task.get("reward_points"))
@@ -4089,7 +4860,7 @@ def invoice(payment_id):
     payment_doc["method_display"] = {
         "upi": "UPI", "cash": "Cash", "bank": "Bank Transfer", "bank transfer": "Bank Transfer",
         "card": "Card", "cheque": "Cheque"
-    }.get((payment_doc.get("method") or "").lower(), (payment_doc.get("method") or "").title() if payment_doc.get("method") else "â€”")
+    }.get((payment_doc.get("method") or "").lower(), (payment_doc.get("method") or "").title() if payment_doc.get("method") else "—")
     payment_doc["employees"] = employees
 
     if request.args.get("format") == "pdf":
@@ -4237,6 +5008,7 @@ def department_dashboard():
 
             for task in tasks:
                 task["id"] = str(task["_id"])
+                task["due_date_ist"] = to_ist(task.get("due_date"))
 
             employee_cards.append({
                 "employee": emp,
@@ -4431,7 +5203,9 @@ def admin_panel():
             "reward_points": t.get("reward_points", 0),
             "created_at_ist": to_ist(t.get("created_at")),
             "due_date": t.get("due_date"),
-            "proof_file": t.get("proof_file"),
+            "due_date_ist": to_ist(t.get("due_date")),
+            "proof_files": t.get("proof_files") or ([t["proof_file"]] if t.get("proof_file") else []),
+            "subtasks": list(mongo.db.sub_tasks.find({"task_id": str(t["_id"])}).sort("created_at", 1)),
         })
 
     overdue_sorted = sorted(
@@ -4745,6 +5519,7 @@ def admin_panel():
                 "text": "{} created this task".format(creator_name),
                 "desc": "",
                 "time": created_at,
+                "time_ist": to_ist(created_at),
             })
             assigned_to = t.get("assigned_to")
             if assigned_to and assigned_to in user_map:
@@ -4753,6 +5528,7 @@ def admin_panel():
                     "text": "{} is working on \"{}\"".format(user_map[assigned_to].get("username"), t.get("title", "")),
                     "desc": "",
                     "time": created_at,
+                    "time_ist": to_ist(created_at),
                 })
     companies_count = mongo.db.companies.count_documents({}) if is_super else 0
     admin_count = mongo.db.users.count_documents({"role": "admin"}) if is_super else 0
@@ -5284,6 +6060,8 @@ def manager_panel():
 
     employee_ids = [str(emp["_id"]) for emp in employees]
 
+    employee_ids.append(str(current_user.get_id()))
+
     if employee_ids:
 
         tasks = list(
@@ -5298,6 +6076,12 @@ def manager_panel():
 
     for task in tasks:
         task["id"] = str(task["_id"])
+        task["can_delete"] = task.get("created_by") == str(current_user.get_id())
+        task["due_date_ist"] = to_ist(task.get("due_date"))
+
+        task["subtasks"] = list(
+            mongo.db.sub_tasks.find({"task_id": task["id"]}).sort("created_at", 1)
+        )
         
         if task.get("assigned_to"):
   
@@ -5310,10 +6094,35 @@ def manager_panel():
         else:
 
            task["assignee"] = None
+
+    recurring_tasks = list(
+        mongo.db.recurring_tasks.find({
+            "assigned_to": {"$in": employee_ids},
+            "is_deleted": {"$ne": True}
+        }).sort("created_at", -1)
+    )
+
+    for rtask in recurring_tasks:
+        rtask["id"] = str(rtask["_id"])
+        rtask["subtasks"] = list(
+            mongo.db.sub_tasks.find({"recurring_task_id": rtask["id"]}).sort("created_at", 1)
+        )
+        assignee = mongo.db.users.find_one({"_id": ObjectId(rtask["assigned_to"])}) if rtask.get("assigned_to") else None
+        rtask["assignee"] = assignee
+        creator = mongo.db.users.find_one({"_id": ObjectId(rtask["created_by"])}) if rtask.get("created_by") else None
+        rtask["creator"] = creator
+        end = rtask.get("end_date")
+        rtask["display_status"] = "Active" if (not end or end.date() >= date.today()) else "Completed"
+
     return render_template(
         "manager_panel.html",
         tasks=tasks,
-        employees=employees
+        employees=employees,
+        recurring_tasks=recurring_tasks,
+        manager_points=current_user.points or 0,
+        manager_total_tasks=mongo.db.tasks.count_documents({"assigned_to": str(current_user.get_id()), "is_deleted": {"$ne": True}}),
+        manager_approved_tasks=mongo.db.tasks.count_documents({"assigned_to": str(current_user.get_id()), "status": "Approved", "is_deleted": {"$ne": True}}),
+        manager_submitted_tasks=mongo.db.tasks.count_documents({"assigned_to": str(current_user.get_id()), "status": "Submitted", "is_deleted": {"$ne": True}})
     )
 # ---------------- EMPLOYEE PANEL ----------------
 @bp.route("/employee")
@@ -5360,6 +6169,15 @@ def employee_panel():
 
     for task in tasks:
         task["id"] = str(task["_id"])
+        task["due_date_ist"] = to_ist(task.get("due_date"))
+
+        task["subtasks"] = list(
+            mongo.db.sub_tasks.find({"task_id": task["id"]}).sort("created_at", 1)
+        )
+
+        for sub in task["subtasks"]:
+            if "_id" in sub:
+                sub["_id_str"] = str(sub["_id"])
 
         if task.get("created_by"):
             creator = mongo.db.users.find_one({
@@ -5381,11 +6199,29 @@ def employee_panel():
     if employee:
         employee["id"] = str(employee["_id"])
 
+    recurring_tasks = list(
+        mongo.db.recurring_tasks.find({
+            "assigned_to": user_id,
+            "is_deleted": {"$ne": True}
+        }).sort("created_at", -1)
+    )
+
+    for rtask in recurring_tasks:
+        rtask["id"] = str(rtask["_id"])
+        rtask["subtasks"] = list(
+            mongo.db.sub_tasks.find({"recurring_task_id": rtask["id"]}).sort("created_at", 1)
+        )
+        creator = mongo.db.users.find_one({"_id": ObjectId(rtask["created_by"])}) if rtask.get("created_by") else None
+        rtask["creator"] = creator
+        end = rtask.get("end_date")
+        rtask["display_status"] = "Active" if (not end or end.date() >= date.today()) else "Completed"
+
     return render_template(
         "employee_panel.html",
         tasks=tasks,
         employee=employee,
-        active_filter=filter_type
+        active_filter=filter_type,
+        recurring_tasks=recurring_tasks
     )
 
 
@@ -5398,7 +6234,7 @@ def analytics():
         flash("Unauthorized", "danger")
         return redirect(url_for("main.dashboard"))
 
-    if current_user.role in ("super_admin", "admin"):
+    if current_user.role == "super_admin":
 
         employees = list(
             mongo.db.users.find({
@@ -5406,14 +6242,33 @@ def analytics():
             })
         )
 
-    else:
+    elif current_user.role == "admin":
 
         employees = list(
             mongo.db.users.find({
                 "role": "employee",
-                "supervisor_id": str(current_user.get_id())
+                "company": current_user.company
             })
         )
+
+    else:
+
+        manager_dept_id = current_user.department_id
+
+        if manager_dept_id:
+            employees = list(
+                mongo.db.users.find({
+                    "role": "employee",
+                    "department_id": manager_dept_id
+                })
+            )
+        else:
+            employees = list(
+                mongo.db.users.find({
+                    "role": "employee",
+                    "supervisor_id": str(current_user.get_id())
+                })
+            )
 
     employee_ids = [str(emp["_id"]) for emp in employees]
 
@@ -5422,7 +6277,7 @@ def analytics():
         tasks = list(
             mongo.db.tasks.find({
                 "assigned_to": {"$in": employee_ids},
-                "is_deleted": False
+                "is_deleted": {"$ne": True}
             })
         )
 
@@ -5441,19 +6296,15 @@ def analytics():
         if t.get("status") != "Approved"
     ])
 
-    today = date.today()
+    now_utc = datetime.utcnow()
 
     overdue_tasks = []
 
     for t in tasks:
         due_date = t.get("due_date")
 
-        if due_date and t.get("status") != "Approved":
-
-            due_date_only = due_date.date() if hasattr(due_date, "date") else due_date
-
-            if due_date_only < today:
-                overdue_tasks.append(t)
+        if due_date and t.get("status") != "Approved" and due_date < now_utc:
+            overdue_tasks.append(t)
 
     overdue = len(overdue_tasks)
 
@@ -5513,9 +6364,11 @@ def analytics():
         }) if assigned_to else None
 
         overdue_task_data.append({
+            "id": str(task["_id"]),
             "title": task.get("title"),
             "employee": employee.get("username") if employee else "-",
             "due_date": task.get("due_date"),
+            "due_date_ist": to_ist(task.get("due_date")),
             "status": task.get("status")
         })
 
@@ -5615,6 +6468,46 @@ def notifications():
 
     return render_template(
         "notifications.html",
+        entries=entries
+    )
+
+
+@bp.route("/my-notifications")
+@login_required
+def my_notifications():
+
+    uid = str(current_user.get_id())
+
+    mongo.db.notifications.update_many(
+        {"target_user_id": uid, "read": False},
+        {"$set": {"read": True}}
+    )
+
+    entries = list(
+        mongo.db.notifications
+        .find({"target_user_id": uid})
+        .sort("created_at", -1)
+        .limit(100)
+    )
+
+    for e in entries:
+        e["id"] = str(e.get("_id"))
+        e["time_ist"] = to_ist(e.get("created_at"))
+
+        kind = e.get("ref_kind") or "task"
+        if e.get("ref_task_id"):
+            e["view_url"] = url_for(
+                "main.task_view",
+                kind=kind,
+                doc_id=e["ref_task_id"]
+            )
+
+        name_parts = (e.get("assigner") or "").split()
+        e["initials"] = "".join(p[0].upper() for p in name_parts[:2]) or "A"
+        e["_avatar_color"] = "#2563eb"
+
+    return render_template(
+        "my_notifications.html",
         entries=entries
     )
 
@@ -5771,6 +6664,7 @@ def task_history():
         )
 
         employee_ids = [str(emp["_id"]) for emp in employees]
+        employee_ids.append(str(current_user.get_id()))
 
         query = {
             "assigned_to": {"$in": employee_ids},
@@ -5804,6 +6698,14 @@ def task_history():
 
         task["id"] = str(task["_id"])
 
+        task["subtasks"] = list(
+            mongo.db.sub_tasks.find({"task_id": task["id"]}).sort("created_at", 1)
+        )
+
+        for sub in task["subtasks"]:
+            if "_id" in sub:
+                sub["_id_str"] = str(sub["_id"])
+
         task["created_at_ist"] = to_ist(
             task.get("created_at")
         )
@@ -5811,6 +6713,21 @@ def task_history():
         task["completed_at_ist"] = to_ist(
             task.get("completed_at")
         )
+
+        task["submitted_at_ist"] = to_ist(
+            task.get("submitted_at")
+        )
+
+        task["proof_file_list"] = task.get("proof_files") or (
+            [task["proof_file"]] if task.get("proof_file") else []
+        )
+
+        task["can_delete"] = (
+            current_user.role in ("super_admin", "admin")
+            or task.get("created_by") == str(current_user.get_id())
+        )
+
+        task["due_date_ist"] = to_ist(task.get("due_date"))
 
         # Employee name
         assigned_to = task.get("assigned_to")
@@ -6026,13 +6943,31 @@ def reject_task(id):
 
     remarks = request.form.get("remarks")
 
-    task = mongo.db.tasks.find_one({
-        "_id": ObjectId(id)
-    })
+    try:
+        task = mongo.db.tasks.find_one({
+            "_id": ObjectId(id)
+        })
+    except Exception:
+        task = None
 
     if not task:
         flash("Task not found", "danger")
         return redirect(url_for("main.dashboard"))
+
+    # Manager can approve/reject only EMPLOYEE tasks.
+    # If assigned to a manager (or any non-employee), only admin can act.
+    assigned_user = None
+    if task.get("assigned_to"):
+        try:
+            assigned_user = mongo.db.users.find_one({"_id": ObjectId(task["assigned_to"])})
+        except Exception:
+            assigned_user = None
+
+    assignee_role = assigned_user.get("role") if assigned_user else "employee"
+
+    if current_user.role == "manager" and assignee_role != "employee":
+        flash("Managers can only reject tasks of employees.", "danger")
+        return redirect(url_for("main.manager_panel"))
 
     mongo.db.tasks.update_one(
         {"_id": ObjectId(id)},
@@ -6098,7 +7033,7 @@ def productivity():
 @login_required
 def resubmit_task(id):
 
-    if current_user.role != "employee":
+    if current_user.role not in ("employee", "manager"):
         return "Unauthorized"
 
     task = mongo.db.tasks.find_one({
@@ -6107,10 +7042,14 @@ def resubmit_task(id):
 
     if not task:
         flash("Task not found", "danger")
-        return redirect(url_for("main.employee_panel"))
+        return redirect(url_for("main.my_tasks"))
+
+    if task.get("assigned_to") != str(current_user.get_id()):
+        flash("You can only resubmit your own tasks", "danger")
+        return redirect(url_for("main.my_tasks"))
 
     if task.get("status") != "Rejected":
-        return redirect(url_for("main.employee_panel"))
+        return redirect(url_for("main.my_tasks"))
 
     update_data = {
         "status": "Submitted",
@@ -6119,24 +7058,32 @@ def resubmit_task(id):
     }
 
     file = request.files.get("proof_file")
+    files = request.files.getlist("proof_files")
+
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    os.makedirs(upload_folder, exist_ok=True)
+
+    new_files = []
 
     if file and file.filename != "":
-
-        upload_folder = current_app.config["UPLOAD_FOLDER"]
-        os.makedirs(upload_folder, exist_ok=True)
-
         old_file = task.get("proof_file")
-
         if old_file:
             old_path = os.path.join(upload_folder, old_file)
             if os.path.exists(old_path):
                 os.remove(old_path)
-
         filename = secure_filename(file.filename)
-        new_path = os.path.join(upload_folder, filename)
-        file.save(new_path)
+        file.save(os.path.join(upload_folder, filename))
+        new_files.append(filename)
 
-        update_data["proof_file"] = filename
+    for f in files:
+        if f and f.filename != "":
+            name = secure_filename(f.filename)
+            f.save(os.path.join(upload_folder, name))
+            new_files.append(name)
+
+    if new_files:
+        update_data["proof_files"] = new_files
+        update_data["proof_file"] = new_files[0]
 
     mongo.db.tasks.update_one(
         {"_id": ObjectId(id)},
@@ -6145,7 +7092,7 @@ def resubmit_task(id):
 
     flash("Task resubmitted successfully!", "success")
 
-    return redirect(url_for("main.employee_panel"))
+    return redirect(request.referrer or url_for("main.my_tasks"))
 
 
 @bp.route("/download_attachment/<filename>")

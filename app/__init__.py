@@ -42,6 +42,23 @@ def create_app():
     from app.routes import bp
     app.register_blueprint(bp)
 
+    if not scheduler.running:
+        try:
+            from app.jobs import recurring_task_job
+            scheduler.add_job(
+                recurring_task_job,
+                "interval",
+                minutes=10,
+                args=[app],
+                id="recurring_task_job",
+                replace_existing=True,
+                max_instances=1
+            )
+            scheduler.start()
+            print("Recurring task scheduler started")
+        except Exception as e:
+            print("Scheduler start error:", e)
+
     @login_manager.user_loader
     def load_user(user_id):
         try:
@@ -91,5 +108,12 @@ def create_app():
                     return redirect(url_for("main.home"))
 
             session["last_activity"] = now.isoformat()
+
+    @app.after_request
+    def add_no_cache_headers(resp):
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
 
     return app

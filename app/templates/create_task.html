@@ -218,19 +218,21 @@ class="form-control fw-form-control">
 
 <div class="row">
 <div class="col-md-6 mb-3">
-<label class="fw-label">Start Date *</label>
-<input type="date"
+<label class="fw-label">Start Date &amp; Time *</label>
+<input type="datetime-local"
 name="start_date"
 class="form-control fw-form-control"
+value="{{ now_ist.strftime('%Y-%m-%dT%H:%M') if now_ist else '' }}"
 required>
 </div>
 
 <div class="col-md-6 mb-3">
-<label class="fw-label">Due Date *</label>
-<input type="date"
+<label class="fw-label">Due Date &amp; Time *</label>
+<input type="datetime-local"
 name="due_date"
 class="form-control fw-form-control"
 required>
+<small class="text-muted">Deadline with time — when the task must be completed.</small>
 </div>
 </div>
 
@@ -262,6 +264,25 @@ name="attachments"
 class="form-control fw-form-control"
 multiple>
 <small class="text-muted">Attach a file — up to 10 MB.</small>
+</div>
+
+<div class="mb-4">
+<label class="fw-label">Sub Tasks</label>
+<div class="d-flex gap-2 mb-2">
+    <input type="text"
+           id="subtaskInput"
+           placeholder="e.g. Research, then draft"
+           class="form-control fw-form-control">
+    <button type="button"
+            class="fw-btn fw-btn-outline fw-btn-sm"
+            id="addSubtaskBtn"
+            style="min-width:90px;">
+        <i class="fa-solid fa-plus me-1"></i> Add
+    </button>
+</div>
+<small class="text-muted">Break the task into smaller subtasks. Sub tasks appear beside the task for the assignee.</small>
+<div id="subtaskList" class="mt-2"></div>
+<input type="hidden" name="subtask_titles" id="subtaskTitles" value="">
 </div>
 
 <div class="mb-4">
@@ -425,6 +446,47 @@ deptSelect.addEventListener('change', applyDeptFilter);
 assigneeSelect.addEventListener('change', function(){
     updatePreview(this.options[this.selectedIndex]);
 });
+
+(function initSubtask(){
+    const input = document.getElementById('subtaskInput');
+    const addBtn = document.getElementById('addSubtaskBtn');
+    const list = document.getElementById('subtaskList');
+    const hidden = document.getElementById('subtaskTitles');
+    let items = [];
+
+    function render(){
+        list.innerHTML = '';
+        items.forEach((it, i) => {
+            const row = document.createElement('div');
+            row.className = 'd-flex align-items-center justify-content-between rounded-2 border px-3 py-2 mb-1';
+            row.style.background = '#f8fafc';
+            row.innerHTML =
+                '<span class="small fw-semibold"><i class="fa-solid fa-list-ul me-2 text-primary"></i>' +
+                it.replace(/</g, '&lt;') + '</span>' +
+                '<button type="button" class="btn-close fw-reward-del" data-idx="' + i + '"></button>';
+            row.querySelector('.fw-reward-del').addEventListener('click', function(){
+                items.splice(Number(this.dataset.idx), 1);
+                render();
+            });
+            list.appendChild(row);
+        });
+        hidden.value = JSON.stringify(items);
+    }
+
+    function add(){
+        const v = input.value.trim();
+        if (!v) return;
+        items.push(v);
+        input.value = '';
+        input.focus();
+        render();
+    }
+
+    addBtn.addEventListener('click', add);
+    input.addEventListener('keydown', function(e){
+        if (e.key === 'Enter') { e.preventDefault(); add(); }
+    });
+})();
 
 (function init(){
     applyDeptFilter();

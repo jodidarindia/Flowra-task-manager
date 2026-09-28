@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Recurring Task History{% endblock %}
+{% block content %}
+
+<style>
+.recurring-content{
+    padding:0 22px;
+    max-width:1920px;
+    margin:0 auto;
+}
+</style>
+
+<div class="recurring-content pt-4">
+
+<div class="fw-banner">
+    <div>
+        <h2><i class="fa-solid fa-rotate me-2"></i>Recurring Task History</h2>
+        <p>All recurring tasks assigned to you and your team.</p>
+    </div>
+    {% if is_admin or is_manager %}
+    <a href="{{ url_for('main.create_recurring_task') }}" class="fw-btn fw-btn-light">
+        <i class="fa-solid fa-plus me-1"></i>Assign Recurring Task
+    </a>
+    {% endif %}
+</div>
+
+<div class="fw-card mt-3">
+
+<div class="fw-card-head">
+    <span><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Recurring Task History</span>
+    <span class="fw-badge fw-badge-primary">{{ recurring_tasks|length }} Recurring</span>
+</div>
+
+<div class="fw-card-body">
+
+{% if recurring_tasks %}
+<div class="table-responsive">
+<table class="table table-bordered fw-table align-middle text-center">
+<thead>
+<tr>
+<th>S.No</th>
+<th>Task Title</th>
+<th>Assigned To</th>
+<th>Status</th>
+<th>Start Date</th>
+<th>Repeat Until</th>
+<th>Frequency</th>
+<th>Priority</th>
+<th>Reward</th>
+<th>Last Generated</th>
+<th>Sub Tasks</th>
+<th>Created At</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+{% for task in recurring_tasks %}
+<tr>
+<td>{{ loop.index }}</td>
+<td class="fw-semibold">{{ task.title }}</td>
+<td>{{ task.employee.username if task.employee else '-' }}</td>
+<td>
+<span class="fw-badge {{ 'fw-badge-success' if task.display_status == 'Completed' else 'fw-badge-info' }}">{{ task.display_status }}</span>
+</td>
+<td>{{ task.start_date_ist.strftime('%d-%m-%Y %I:%M %p') if task.start_date_ist else (task.start_date.strftime('%d-%m-%Y') if task.start_date else '-') }}</td>
+<td>{{ task.end_date_ist.strftime('%d-%m-%Y %I:%M %p') if task.end_date_ist else (task.end_date.strftime('%d-%m-%Y') if task.end_date else '-') }}</td>
+<td>
+<span class="fw-badge fw-badge-primary">{{ task.frequency|capitalize if task.frequency else '-' }}</span>
+</td>
+<td>
+{% if task.priority %}
+<span class="fw-badge {{ 'fw-badge-danger' if task.priority == 'High' else ('fw-badge-warning' if task.priority == 'Medium' else 'fw-badge-secondary') }}">{{ task.priority }}</span>
+{% else %}
+<span class="text-muted">-</span>
+{% endif %}
+</td>
+<td>
+<span class="fw-badge fw-badge-success">{{ task.reward_points or 50 }} pts</span>
+</td>
+<td>{{ task.last_generated.strftime('%d-%m-%Y') if task.last_generated else '-' }}</td>
+<td>
+{% if task.subtasks %}
+<ul class="small text-start mb-0" style="list-style:none;padding-left:0;">
+{% for sub in task.subtasks %}
+<li class="mb-1">
+<span class="me-1 {{ 'text-success' if sub.status == 'Completed' else 'text-muted' }}">
+{% if sub.status == 'Completed' %}<i class="fa-solid fa-check"></i>{% else %}<i class="fa-regular fa-square"></i>{% endif %}
+</span>
+<span class="{{ 'text-decoration-line-through text-success' if sub.status == 'Completed' else '' }}">{{ sub.title }}</span>
+</li>
+{% endfor %}
+</ul>
+{% else %}
+<span class="text-muted small">No Sub Tasks</span>
+{% endif %}
+{% if is_admin or is_manager %}
+<form method="POST"
+      action="{{ url_for('main.create_recurring_subtask', task_id=task.id) }}"
+      class="mt-1">
+    <div class="d-flex gap-1" style="max-width:200px;">
+        <input type="text"
+               name="title"
+               placeholder="Add Sub Task"
+               class="form-control form-control-sm fw-form-control"
+               required>
+        <button class="fw-btn fw-btn-primary fw-btn-sm">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+    </div>
+</form>
+{% endif %}
+</td>
+<td>{{ task.created_at_ist.strftime('%d-%m-%Y %I:%M %p') if task.created_at_ist else (task.created_at.strftime('%d-%m-%Y %I:%M %p') if task.created_at else '-') }}</td>
+<td>
+<a href="{{ url_for('main.task_view', kind='recurring', doc_id=task.id) }}"
+   class="fw-btn fw-btn-primary fw-btn-sm mb-1">
+    <i class="fa-solid fa-eye me-1"></i> View
+</a>
+{% if task.can_delete %}
+<button class="fw-btn fw-btn-danger fw-btn-sm delete-task-btn"
+        data-task-id="{{ task.id }}" data-kind="recurring">
+    <i class="fa-solid fa-trash-can"></i>
+</button>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="fw-empty">
+<i class="fa-regular fa-calendar-xmark fa-2x mb-2 d-block opacity-50"></i>
+No recurring tasks found.
+</div>
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('click', function (e) {
+    if (e.target.closest('.delete-task-btn')) {
+        const btn = e.target.closest('.delete-task-btn');
+        if (!confirm('Delete this recurring task? This cannot be undone.')) return;
+        fetch('/task/delete/' + btn.dataset.taskId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'kind=' + encodeURIComponent(btn.dataset.kind || 'recurring')
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) { alert(d.message); location.reload(); }
+                else alert(d.message);
+            })
+            .catch(() => alert('Delete failed'));
+    }
+});
+</script>
+{% endblock %}
+
+{% endblock %}

@@ -259,6 +259,7 @@
                     <th>Employee</th>
                     <th>Due Date</th>
                     <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -266,12 +267,18 @@
                 <tr>
                     <td class="fw-semibold">{{ task.title }}</td>
                     <td>{{ task.employee }}</td>
-                    <td>{{ task.due_date.strftime('%d %b %Y') if task.due_date else '-' }}</td>
+                    <td>{{ task.due_date_ist.strftime('%d %b %Y, %I:%M %p') if task.due_date_ist else (task.due_date.strftime('%d %b %Y') if task.due_date else '-') }}</td>
                     <td><span class="fw-badge fw-badge-danger">{{ task.status }}</span></td>
+                    <td>
+                        <a href="{{ url_for('main.task_view', kind='task', doc_id=task.id) }}"
+                           class="fw-btn fw-btn-primary fw-btn-sm">
+                            <i class="fa-solid fa-eye me-1"></i> View
+                        </a>
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="4" class="fw-empty">
+                    <td colspan="5" class="fw-empty">
                         <i class="fa-regular fa-face-smile fa-2x mb-2 d-block opacity-50"></i>
                         No overdue tasks
                     </td>

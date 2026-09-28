@@ -65,6 +65,24 @@
     overflow-x:auto;
 }
 
+.fw-sub-check{
+    background:#fff;
+    color:#64748b;
+    border:1.5px solid #cbd5e1;
+    border-radius:6px;
+    width:26px;
+    height:26px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    font-size:12px;
+}
+.fw-sub-check:hover{
+    border-color:var(--fw-primary, #2d6fff);
+    color:var(--fw-primary, #2d6fff);
+}
+
 @media(max-width:768px){
     .employee-topbar{
         align-items:flex-start;
@@ -174,7 +192,9 @@
             <td>{{ task.creator.username if task.creator else '-' }}</td>
 
             <td>
-                {% if task.due_date %}
+                {% if task.due_date_ist %}
+                    {{ task.due_date_ist.strftime('%d %b %Y, %I:%M %p') }}
+                {% elif task.due_date %}
                     {{ task.due_date.strftime('%d %b %Y') }}
                 {% else %}
                     -
@@ -226,11 +246,18 @@
             </td>
 
             <td>
-                {% if task.proof_file %}
+                {% if task.proof_files %}
+                    {% for f in task.proof_files %}
+                    <a href="{{ url_for('main.download_proof', filename=f) }}"
+                       target="_blank"
+                       class="fw-btn fw-btn-outline fw-btn-sm mb-1 d-inline-block me-1">
+                        <i class="fas fa-file-alt me-1"></i> File {{ loop.index }}
+                    </a>
+                    {% endfor %}
+                {% elif task.proof_file %}
                     <a href="{{ url_for('main.download_proof', filename=task.proof_file) }}"
                        target="_blank"
-                       class="fw-btn fw-btn-outline fw-btn-sm"
-                       style="border-color:#dcfce7;color:#166534;">
+                       class="fw-btn fw-btn-outline fw-btn-sm">
                         <i class="fas fa-file-alt me-1"></i> View
                     </a>
                 {% else %}
@@ -238,49 +265,55 @@
                 {% endif %}
             </td>
 
-            <td>
+<td>
                 {% if task.subtasks %}
-                    <ul class="small text-start mb-2" style="list-style:none;padding-left:0;">
+                    <ul class="small text-start mb-0" style="list-style:none;padding-left:0;">
                         {% for sub in task.subtasks %}
-                        <li class="mb-1">
-                            {{ sub.title }}
-                            <span class="fw-badge fw-badge-secondary ms-1">{{ sub.status }}</span>
+                        <li class="mb-1 d-flex align-items-center gap-2">
+                            <form method="GET"
+                                  action="{{ url_for('main.toggle_subtask', subtask_id=sub._id_str) }}"
+                                  class="d-inline mb-0">
+                                <button type="submit"
+                                        class="fw-sub-check"
+                                        title="Click to toggle done"
+                                        {% if sub.status == 'Completed' %}style="background:#16a34a;border-color:#16a34a;color:#fff;"{% endif %}
+                                        onclick="return confirm('Mark this sub task as {{ 'Pending' if sub.status == 'Completed' else 'Completed' }}?');">
+                                    {% if sub.status == 'Completed' %}
+                                        <i class="fa-solid fa-check"></i>
+                                    {% else %}
+                                        <i class="fa-regular fa-square"></i>
+                                    {% endif %}
+                                </button>
+                            </form>
+                            <span class="{% if sub.status == 'Completed' %}text-decoration-line-through text-success{% endif %}">
+                                {{ sub.title }}
+                            </span>
+                            <span class="fw-badge ms-1 {{ 'fw-badge-success' if sub.status == 'Completed' else 'fw-badge-secondary' }}">{{ sub.status }}</span>
                         </li>
                         {% endfor %}
                     </ul>
                 {% else %}
                     <span class="text-muted small">No Sub Tasks</span>
                 {% endif %}
-
-                <form method="POST"
-                      action="{{ url_for('main.create_subtask', task_id=task.id) }}"
-                      class="mt-2 text-start">
-                    <div class="d-flex gap-2">
-                        <input type="text"
-                               name="title"
-                               placeholder="Add Sub Task"
-                               class="form-control form-control-sm fw-form-control"
-                               required>
-                        <button class="fw-btn fw-btn-primary fw-btn-sm">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                    </div>
-                </form>
             </td>
 
             <td>
+                <a href="{{ url_for('main.task_view', kind='task', doc_id=task.id) }}"
+                   class="fw-btn fw-btn-primary fw-btn-sm w-100 mb-2">
+                    <i class="fa-solid fa-eye me-1"></i> View
+                </a>
                 {% if task.status == 'Pending' %}
                 <form method="POST"
                       action="{{ url_for('main.submit_task', id=task.id) }}"
                       enctype="multipart/form-data">
                     <input type="file"
-                           name="proof_file"
+                           name="proof_files"
                            class="form-control form-control-sm fw-form-control mb-2"
-                           accept=".jpg,.png,.pdf,.jpeg,.doc,.docx"
-                           required>
+                           accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.zip,.xlsx,.csv"
+                           multiple>
                     <button type="submit"
                             class="fw-btn fw-btn-success fw-btn-sm w-100 mb-2">
-                        <i class="fa-solid fa-upload me-1"></i> Submit
+                        <i class="fa-solid fa-circle-check me-1"></i> Mark as Complete
                     </button>
                 </form>
                 {% endif %}
@@ -294,12 +327,13 @@
                           action="{{ url_for('main.resubmit_task', id=task.id) }}"
                           enctype="multipart/form-data">
                         <input type="file"
-                               name="proof_file"
+                               name="proof_files"
                                class="form-control form-control-sm fw-form-control mb-2"
-                               required>
+                               accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.zip,.xlsx,.csv"
+                               multiple>
                         <button type="submit"
                                 class="fw-btn fw-btn-primary fw-btn-sm w-100">
-                            <i class="fa-solid fa-rotate-right me-1"></i> Resubmit
+                            <i class="fa-solid fa-circle-check me-1"></i> Mark as Complete
                         </button>
                     </form>
                 </div>
@@ -344,6 +378,62 @@ data-task="{{ task.id }}">
     <div class="fw-empty">
         <i class="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
         No tasks found in this section.
+    </div>
+</div>
+{% endif %}
+
+<hr>
+
+<h5 class="fw-section-title mb-3">Recurring Tasks</h5>
+
+{% if recurring_tasks %}
+<div class="fw-card">
+    <div class="table-responsive">
+        <table class="table fw-table mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Frequency</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Priority</th>
+                    <th>Reward</th>
+                    <th>Subtasks</th>
+                    <th>Assigned By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rtask in recurring_tasks %}
+                <tr>
+                    <td class="fw-task-title">{{ rtask.title }}</td>
+                    <td><span class="fw-badge fw-badge-{{ 'success' if rtask.display_status == 'Completed' else 'info' }}">{{ rtask.display_status }}</span></td>
+                    <td><span class="fw-badge fw-badge-info">{{ rtask.frequency }}</span></td>
+                    <td>{{ rtask.start_date.strftime('%d-%m-%Y') if rtask.start_date else '-' }}</td>
+                    <td>{{ rtask.end_date.strftime('%d-%m-%Y') if rtask.end_date else '-' }}</td>
+                    <td><span class="fw-badge fw-badge-{{ 'success' if rtask.priority == 'Low' else ('warning' if rtask.priority == 'Medium' else 'danger') }}">{{ rtask.priority or '-' }}</span></td>
+                    <td>{{ rtask.reward_points or '-' }}</td>
+                    <td>
+                        {% if rtask.subtasks %}
+                            {% for sub in rtask.subtasks %}
+                                <span class="fw-badge fw-badge-secondary">{{ sub.title }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">None</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ rtask.creator.username if rtask.creator else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="fw-card">
+    <div class="fw-empty">
+        <i class="fa-regular fa-repeat fa-2x mb-2 d-block opacity-50"></i>
+        No recurring tasks assigned to you.
     </div>
 </div>
 {% endif %}

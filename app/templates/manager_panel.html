@@ -120,16 +120,38 @@
         </div>
     </div>
 
+    <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#f97316);"><i class="fa-solid fa-trophy"></i></div>
+        <div class="stat-info">
+            <h5>My Reward Points</h5>
+            <h3 style="color:#b45309;font-weight:600;">{{ manager_points }}</h3>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="fa-solid fa-list-check"></i></div>
+        <div class="stat-info">
+            <h5>My Tasks (Assigned)</h5>
+            <h3>{{ manager_total_tasks }} <small class="text-muted" style="font-size:12px;">({{ manager_approved_tasks }} approved)</small></h3>
+        </div>
+    </div>
+
 </div>
 
-<div class="fw-card">
+<div class="fw-card tt-tasks-card">
     <div class="fw-card-head">
         <span><i class="fa-solid fa-table-list me-2 text-primary"></i>Team Tasks Overview</span>
         <span class="fw-badge fw-badge-primary">{{ employees|length }} Employee{{ '' if employees|length == 1 else 's' }}</span>
     </div>
 
+    <div class="tt-filter-tabs d-flex align-items-center gap-2 px-3 pt-3">
+        <button type="button" class="tt-fbtn active" data-tt-filter="all">All Tasks</button>
+        <button type="button" class="tt-fbtn" data-tt-filter="mine">My Tasks</button>
+        <button type="button" class="tt-fbtn" data-tt-filter="assigned">Assigned Tasks</button>
+    </div>
+
     <div class="table-responsive">
-        <table class="table fw-table align-middle text-center">
+        <table class="table fw-table align-middle text-center tt-tasks-table">
             <thead>
                 <tr>
                     <th>Title</th>
@@ -139,12 +161,14 @@
                     <th>Status</th>
                     <th>Due Date</th>
                     <th>Proof of Task</th>
+                    <th>Sub Tasks</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for task in tasks %}
-                <tr>
+                <tr data-mine="{{ 'yes' if task.assigned_to == current_user.get_id() else 'no' }}"
+                    data-assigned-by-me="{{ 'yes' if task.created_by == current_user.get_id() else 'no' }}">
                     <td class="fw-semibold">{{ task.title }}</td>
                     <td class="text-start">{{ task.description }}</td>
                     <td>
@@ -179,11 +203,19 @@
                     </td>
 
                     <td>
-                        {{ task.due_date.strftime('%d %b %Y') if task.due_date else '-' }}
+                        {{ task.due_date_ist.strftime('%d %b %Y, %I:%M %p') if task.due_date_ist else (task.due_date.strftime('%d %b %Y') if task.due_date else '-') }}
                     </td>
 
                     <td>
-                        {% if task.proof_file %}
+                        {% if task.proof_files %}
+                            {% for f in task.proof_files %}
+                            <a href="{{ url_for('main.download_proof', filename=f) }}"
+                               target="_blank"
+                               class="fw-btn fw-btn-info fw-btn-sm mb-1 d-inline-block me-1">
+                               <i class="fa-solid fa-file me-1"></i> File {{ loop.index }}
+                            </a>
+                            {% endfor %}
+                        {% elif task.proof_file %}
                             <a href="{{ url_for('main.download_proof', filename=task.proof_file) }}"
                                target="_blank"
                                class="fw-btn fw-btn-info fw-btn-sm">
@@ -194,8 +226,56 @@
                         {% endif %}
                     </td>
 
+                    <td>
+                        <div class="text-start small mb-2" style="max-width:220px;">
+                            {% if task.subtasks %}
+                                <ul style="list-style:none;padding-left:0;margin:0;">
+                                    {% for sub in task.subtasks %}
+                                    <li class="mb-1">
+                                        <i class="fa-solid fa-list-ul me-1 text-primary" style="font-size:11px;"></i>
+                                        {{ sub.title }}
+                                        <span class="fw-badge fw-badge-secondary ms-1">{{ sub.status }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted small">No Sub Tasks</span>
+                            {% endif %}
+                        </div>
+                        <form method="POST"
+                              action="{{ url_for('main.create_subtask', task_id=task.id) }}"
+                              class="mt-2 text-start">
+                            <div class="d-flex gap-2">
+                                <input type="text"
+                                       name="title"
+                                       placeholder="Add Sub Task"
+                                       class="form-control form-control-sm fw-form-control"
+                                       required>
+                                <button class="fw-btn fw-btn-primary fw-btn-sm">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </td>
+
                     <td class="action-box">
-                        {% if task.status == 'Submitted' %}
+                        <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
+                            <a href="{{ url_for('main.task_view', kind='task', doc_id=task.id) }}"
+                               class="fw-btn fw-btn-primary fw-btn-sm"
+                               title="View Details"
+                               style="padding:6px 10px;">
+                               <i class="fa-solid fa-eye"></i>
+                            </a>
+                            {% if task.can_delete %}
+                            <button class="fw-btn fw-btn-danger fw-btn-sm delete-task-btn"
+                                    data-task-id="{{ task.id }}"
+                                    title="Delete"
+                                    style="padding:6px 10px;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% if task.status == 'Submitted' and task.assignee and task.assignee.role == 'employee' %}
                             <div class="d-flex flex-column gap-2">
                                 <a href="{{ url_for('main.approve_task', id=task.id) }}"
                                    class="fw-btn fw-btn-success fw-btn-sm">
@@ -218,6 +298,8 @@
                             <span class="fw-badge fw-badge-success">Approved</span>
                         {% elif task.status == 'Rejected' %}
                             <span class="fw-badge fw-badge-danger">Rejected</span>
+                        {% elif task.status == 'Submitted' %}
+                            <span class="fw-badge fw-badge-info">Submitted (Admin only)</span>
                         {% else %}
                             <span class="fw-badge fw-badge-secondary">{{ task.status }}</span>
                         {% endif %}
@@ -225,7 +307,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="8" class="fw-empty">
+                    <td colspan="9" class="fw-empty">
                         <i class="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
                         No tasks assigned yet.
                     </td>
@@ -236,6 +318,166 @@
     </div>
 </div>
 
+<hr>
+
+<h5 class="fw-section-title mb-3">Recurring Tasks</h5>
+
+{% if recurring_tasks %}
+<div class="fw-card">
+    <div class="table-responsive">
+        <table class="table fw-table mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Assigned To</th>
+                    <th>Status</th>
+                    <th>Frequency</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Priority</th>
+                    <th>Reward</th>
+                    <th>Subtasks</th>
+                    <th>Assigned By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rtask in recurring_tasks %}
+                <tr>
+                    <td class="fw-task-title">{{ rtask.title }}</td>
+                    <td>{{ rtask.assignee.username if rtask.assignee else '-' }}</td>
+                    <td><span class="fw-badge fw-badge-{{ 'success' if rtask.display_status == 'Completed' else 'info' }}">{{ rtask.display_status }}</span></td>
+                    <td><span class="fw-badge fw-badge-info">{{ rtask.frequency }}</span></td>
+                    <td>{{ rtask.start_date.strftime('%d-%m-%Y') if rtask.start_date else '-' }}</td>
+                    <td>{{ rtask.end_date.strftime('%d-%m-%Y') if rtask.end_date else '-' }}</td>
+                    <td><span class="fw-badge fw-badge-{{ 'success' if rtask.priority == 'Low' else ('warning' if rtask.priority == 'Medium' else 'danger') }}">{{ rtask.priority or '-' }}</span></td>
+                    <td>{{ rtask.reward_points or '-' }}</td>
+                    <td>
+                        {% if rtask.subtasks %}
+                            {% for sub in rtask.subtasks %}
+                                <span class="fw-badge fw-badge-secondary">{{ sub.title }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">None</span>
+                        {% endif %}
+                        <form method="POST"
+                              action="{{ url_for('main.create_recurring_subtask', task_id=rtask.id) }}"
+                              class="mt-1">
+                            <div class="d-flex gap-1" style="max-width:200px;">
+                                <input type="text"
+                                       name="title"
+                                       placeholder="Add Sub Task"
+                                       class="form-control form-control-sm fw-form-control"
+                                       required>
+                                <button class="fw-btn fw-btn-primary fw-btn-sm">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </td>
+                    <td>{{ rtask.creator.username if rtask.creator else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+{% else %}
+<div class="fw-card">
+    <div class="fw-empty">
+        <i class="fa-regular fa-repeat fa-2x mb-2 d-block opacity-50"></i>
+        No recurring tasks assigned yet.
+    </div>
+</div>
+{% endif %}
+
+</div>
+
+<script>
+document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".delete-task-btn");
+    if (!btn) return;
+    const taskId = btn.dataset.taskId;
+    if (!confirm("Are you sure you want to delete this task? This action cannot be undone.")) return;
+
+    fetch(`/task/delete/${taskId}`, { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("Task deleted successfully!");
+                window.location.reload();
+            } else {
+                alert(data.message || "Could not delete task");
+            }
+        })
+        .catch(() => alert("Could not delete task"));
+});
+</script>
+
+<style>
+.tt-filter-tabs{
+    flex-wrap:wrap;
+    padding-bottom:14px;
+}
+.tt-fbtn{
+    border:1px solid var(--fw-border, #d5dbe5);
+    background:#fff;
+    color:#475569;
+    border-radius:999px;
+    padding:6px 14px;
+    font-size:12.5px;
+    font-weight:500;
+    cursor:pointer;
+    transition:.15s;
+}
+.tt-fbtn:hover{
+    background:#eef2ff;
+    color:#1d4ed8;
+}
+.tt-fbtn.active{
+    background:var(--fw-grad);
+    color:#fff;
+    border-color:transparent;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const tabs = document.querySelectorAll(".tt-fbtn");
+    const rows = document.querySelectorAll(".tt-tasks-table tbody tr[data-mine]");
+    const card = document.querySelector(".tt-tasks-card");
+    let emptyRow = document.querySelector(".tt-empty-row");
+
+    function applyFilter(filter){
+        let visible = 0;
+        rows.forEach(function(row){
+            const mine = row.dataset.mine === "yes";
+            const assignedByMe = row.dataset.assignedByMe === "yes";
+            let show = true;
+            if (filter === "mine") show = mine;
+            else if (filter === "assigned") show = assignedByMe;
+            row.style.display = show ? "" : "none";
+            if (show) visible++;
+        });
+
+        if (!emptyRow){
+            emptyRow = document.createElement("tr");
+            emptyRow.className = "tt-empty-row";
+            emptyRow.innerHTML = '<td colspan="9" class="fw-empty">' +
+                '<i class="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>No tasks found in this tab.</td>';
+            const tbody = rows.length ? rows[0].parentNode : null;
+            if (tbody) tbody.appendChild(emptyRow);
+        }
+        emptyRow.style.display = visible === 0 ? "" : "none";
+    }
+
+    tabs.forEach(function(tab){
+        tab.addEventListener("click", function(){
+            tabs.forEach(function(t){ t.classList.remove("active"); });
+            tab.classList.add("active");
+            applyFilter(tab.dataset.ttFilter);
+        });
+    });
+});
+</script>
 
 {% endblock %}

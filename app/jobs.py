@@ -1,71 +1,108 @@
 from datetime import datetime, timedelta
-from app import db
-from app.models import RecurringTask, User, Reminder
-from app.utils.whatsapp import send_whatsapp_message
+from app.extensions import mongo
 
 
 def recurring_task_job(app):
     with app.app_context():
         today = datetime.utcnow().date()
 
-        tasks = RecurringTask.query.all()
+        recurring_tasks = list(
+            mongo.db.recurring_tasks.find({"is_deleted": {"$ne": True}})
+        )
 
-        for task in tasks:
-            if not (task.start_date <= today <= task.end_date):
+        for task in recurring_tasks:
+            start_date = task.get("start_date")
+            end_date = task.get("end_date")
+            frequency = task.get("frequency", "")
+
+            if not start_date or not end_date:
                 continue
 
-            if task.last_generated == today:
+            if not (start_date.date() <= today <= end_date.date()):
                 continue
 
-            should_send = False
+            last_generated = task.get("last_generated")
 
-            if task.frequency == "daily":
-                should_send = True
-            elif task.frequency == "weekly":
-                should_send = today.weekday() == task.start_date.weekday()
-            elif task.frequency == "monthly":
-                should_send = today.day == task.start_date.day
+            if isinstance(last_generated, datetime) and last_generated.date() == today:
+                continue
+            if isinstance(last_generated, str):
+                try:
+                    if datetime.fromisoformat(last_generated).date() == today:
+                        continue
+                except ValueError:
+                    pass
 
-            if not should_send:
+            should_create = False
+
+            if frequency == "daily":
+                should_create = True
+            elif frequency == "weekly":
+                should_create = today.weekday() == start_date.weekday()
+            elif frequency == "monthly":
+                should_create = today.day == start_date.day
+
+            if not should_create:
                 continue
 
-            user = User.query.get(task.assigned_to)
+            assigned_to = task.get("assigned_to")
+            user = mongo.db.users.find_one({"_id": __import__("bson").ObjectId(assigned_to)}) if assigned_to else None
 
             if not user:
-                print(f"Recurring task skipped: user not found for task {task.id}")
+                print(f"Recurring task skipped: user not found for task {task.get('_id')}")
                 continue
 
-            if user.phone:
-                message = f"""
-🔁 Recurring Task Reminder
+            recurring_task_id = str(task["_id"])
 
-Hello {user.username},
+            existing = mongo.db.tasks.find_one({
+                "recurring_task_id": recurring_task_id,
+                "generated_date": today.strftime("%Y-%m-%d")
+            })
 
-Task: {task.title}
-📅 Date: {today}
-🔁 Frequency: {task.frequency.title()}
+            if existing:
+                continue
 
-Please complete your task today.
-"""
-                try:
-                    send_whatsapp_message(user.phone, message)
-                    print(f"Recurring WhatsApp sent to {user.username}")
-                except Exception as e:
-                    print("Recurring WhatsApp error:", e)
+            task_data = {
+                "title": task.get("title", "Recurring Task"),
+                "description": task.get("description", ""),
+                "priority": task.get("priority", "Medium"),
+                "due_date": datetime.combine(today, datetime.min.time()),
+                "start_date": datetime.combine(today, datetime.min.time()),
+                "category": "Recurring",
+                "notes": "",
+                "assigned_to": assigned_to,
+                "created_by": task.get("created_by"),
+                "reward_points": task.get("reward_points", 50),
+                "estimated_time": "",
+                "status": "Pending",
+                "is_deleted": False,
+                "recurring_task_id": recurring_task_id,
+                "generated_date": today.strftime("%Y-%m-%d"),
+                "created_at": datetime.utcnow(),
+                "attachment": None
+            }
 
-            try:
-                reminder = Reminder(
-                    reason=f"Recurring Task: {task.title}",
-                    remind_at=datetime.utcnow() + timedelta(seconds=5),
-                    end_at=None,
-                    user_id=user.id,
-                    is_daily=False,
-                    active=True
-                )
-                db.session.add(reminder)
-            except Exception as e:
-                print("Recurring reminder error:", e)
+            result = mongo.db.tasks.insert_one(task_data)
 
-            task.last_generated = today
+            new_task_id = str(result.inserted_id)
 
-        db.session.commit()
+            template_subtasks = list(
+                mongo.db.sub_tasks.find({"recurring_task_id": recurring_task_id})
+            )
+
+            for sub in template_subtasks:
+                mongo.db.sub_tasks.insert_one({
+                    "task_id": new_task_id,
+                    "title": sub.get("title", ""),
+                    "status": "Pending",
+                    "created_by": task.get("created_by"),
+                    "created_at": datetime.utcnow()
+                })
+
+            mongo.db.recurring_tasks.update_one(
+                {"_id": task["_id"]},
+                {"$set": {"last_generated": datetime.utcnow()}}
+            )
+
+            print(f"Recurring task generated: {task.get('title')} for {user.get('username')}")
+
+        return True

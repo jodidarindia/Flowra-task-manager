@@ -534,6 +534,24 @@ body{
     padding:0 3px;
 }
 
+.tt-btn-chip{
+    position:absolute;
+    top:-6px;
+    right:-6px;
+    background:#ef4444;
+    color:#fff;
+    font-size:10px;
+    font-weight:600;
+    min-width:18px;
+    height:18px;
+    padding:0 5px;
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 2px 6px rgba(220,38,38,.4);
+}
+
 .tt-search{
     display:flex;
     align-items:center;
@@ -876,6 +894,19 @@ body{
     color:var(--fw-primary);
 }
 
+.fw-btn-secondary{
+    background:#eef2f7;
+    color:#475569;
+    border:1px solid #d5dbe5;
+}
+
+.fw-btn:disabled{
+    opacity:.55;
+    cursor:not-allowed;
+    transform:none;
+    box-shadow:none;
+}
+
 .fw-btn-sm{
     padding:6px 10px;
     font-size:12px;
@@ -1137,9 +1168,23 @@ body{
 </button>
 <div class="fw-nav-sub">
 <a href="{{ url_for('main.my_tasks') }}">My Tasks</a>
+<a href="{{ url_for('main.task_history') }}">Task History</a>
 {% if is_admin or is_manager %}
 <a href="{{ url_for('main.create_task') }}">Assign Task</a>
 {% endif %}
+</div>
+</div>
+{% endif %}
+
+{% if is_admin or is_manager and not is_super_admin %}
+<!-- Recurring Tasks -->
+<div class="fw-nav-item{% if request.endpoint in ['main.create_recurring_task', 'main.recurring_task_history'] %} active open{% endif %}">
+<button class="fw-nav-toggle" type="button">
+<i class="fa-solid fa-rotate"></i><span>Recurring Task</span><i class="fa-solid fa-chevron-down fw-chevron"></i>
+</button>
+<div class="fw-nav-sub">
+<a href="{{ url_for('main.create_recurring_task') }}">Assign Recurring Task</a>
+<a href="{{ url_for('main.recurring_task_history') }}">Recurring Task History</a>
 </div>
 </div>
 {% endif %}
@@ -1161,10 +1206,10 @@ body{
 {% endif %}
 {% endif %}
 
-<!-- Notifications -->
+<!-- Reminder -->
 <a class="fw-nav-link{% if request.endpoint in ['main.notifications', 'main.my_reminders'] %} active{% endif %}"
    href="{{ url_for('main.notifications' if is_super_admin else 'main.my_reminders') }}">
-<i class="fa-regular fa-bell"></i><span>Notifications</span>
+<i class="fa-regular fa-bell"></i><span>Reminder</span>
 {% if is_super_admin and g.unread_notifications > 0 %}
 <span class="fw-nav-badge">{{ g.unread_notifications }}</span>
 {% endif %}
@@ -1252,8 +1297,11 @@ body{
         </button>
         {% endif %}
 
-        <a class="tt-btn" href="{{ url_for('main.my_reminders') }}" title="Notifications">
+        <a class="tt-btn" href="{{ url_for('main.my_notifications') }}" title="Notifications">
             <i class="fa-regular fa-bell"></i>
+            {% if g.unread_notifications > 0 %}
+            <span class="tt-btn-chip">{{ g.unread_notifications }}</span>
+            {% endif %}
         </a>
 
         <div class="dropdown">
@@ -1455,41 +1503,45 @@ function playAlarm(id, reason){
     alarm.play().catch(e => console.log("Autoplay blocked:", e))
 
     let box = document.createElement("div")
+    box.style.position = "fixed"
+    box.style.top = "20px"
+    box.style.right = "20px"
+    box.style.background = "#111827"
+    box.style.color = "white"
+    box.style.padding = "15px 20px"
+    box.style.borderRadius = "12px"
+    box.style.zIndex = "9999"
+    box.style.boxShadow = "0 10px 30px rgba(0,0,0,0.3)"
+    box.style.display = "flex"
+    box.style.alignItems = "center"
+    box.style.gap = "10px"
+    box.dataset.rid = id
 
-    box.innerHTML = `
-    <div style="
-        position:fixed;
-        top:20px;
-        right:20px;
-        background:#111827;
-        color:white;
-        padding:15px 20px;
-        border-radius:12px;
-        z-index:9999;
-        box-shadow:0 10px 30px rgba(0,0,0,0.3);
-    ">
-        🔔 ${reason || "Reminder"}
-        <button onclick="stopReminder(${id})"
-        style="
-            margin-left:10px;
-            background:#ff4d6d;
-            color:white;
-            border:none;
-            padding:6px 12px;
-            border-radius:8px;
-        ">
-        Stop
-        </button>
-    </div>
-    `
+    let msg = document.createElement("span")
+    msg.textContent = "🔔 " + (reason || "Reminder")
 
+    let btn = document.createElement("button")
+    btn.textContent = "Stop"
+    btn.style.background = "#ff4d6d"
+    btn.style.color = "white"
+    btn.style.border = "none"
+    btn.style.padding = "6px 12px"
+    btn.style.borderRadius = "8px"
+    btn.style.cursor = "pointer"
+    btn.onclick = function(){ stopReminder(id) }
+
+    box.appendChild(msg)
+    box.appendChild(btn)
     document.body.appendChild(box)
 }
 
 function stopReminder(id){
     alarm.pause()
     alarm.currentTime = 0
-
+    activeReminders.clear()
+    document.querySelectorAll('[data-rid]').forEach(function(el){
+        el.remove()
+    })
     fetch("/stop_reminder/"+id,{
         method:"POST"
     })
@@ -1648,6 +1700,14 @@ document.querySelectorAll(".fw-flash .alert").forEach(function (alertEl) {
         alertEl.classList.remove("show");
         setTimeout(function () { alertEl.remove(); }, 350);
     }, 4200);
+});
+</script>
+
+<script>
+window.addEventListener("pageshow", function (event) {
+    if (event.persisted) {
+        window.location.reload();
+    }
 });
 </script>
 

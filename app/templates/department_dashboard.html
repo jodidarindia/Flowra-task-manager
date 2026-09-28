@@ -127,6 +127,7 @@
 <th>Employee</th>
 <th>Task Title</th>
 <th>Description</th>
+<th>Due Date</th>
 <th>Status</th>
 <th>Work Status</th>
 <th>Action</th>
@@ -148,6 +149,10 @@
 <td>{{ task.title }}</td>
 
 <td>{{ task.description or '-' }}</td>
+
+<td>
+{{ task.due_date_ist.strftime('%d %b %Y, %I:%M %p') if task.due_date_ist else (task.due_date.strftime('%d %b %Y') if task.due_date else '-') }}
+</td>
 
 <td>
 {% if task.status == 'Approved' %}
@@ -172,6 +177,10 @@
 </td>
 
 <td>
+<a href="{{ url_for('main.task_view', kind='task', doc_id=task.id) }}"
+class="fw-btn fw-btn-primary fw-btn-sm mb-1">
+<i class="fa-solid fa-eye me-1"></i> View
+</a>
 {% if task.status == 'Submitted' %}
 <a href="{{ url_for('main.approve_task', id=task.id) }}"
 class="fw-btn fw-btn-success fw-btn-sm mb-0">

@@ -47,6 +47,7 @@
             <th>Employee</th>
             <th>Status</th>
             <th>Points</th>
+            <th>Sub Tasks</th>
             <th>Created At</th>
             <th>Completed At</th>
             <th>Deleted</th>
@@ -96,6 +97,44 @@
             <td><span class="fw-badge fw-badge-success">{{ task.reward_points or 0 }} pts</span></td>
 
             <td>
+                {% if task.subtasks %}
+                    <ul class="small text-start mb-0" style="list-style:none;padding-left:0;">
+                        {% for sub in task.subtasks %}
+                        <li class="mb-1">
+                            <span class="me-1 {{ 'text-success' if sub.status == 'Completed' else 'text-muted' }}">
+                                {% if sub.status == 'Completed' %}
+                                    <i class="fa-solid fa-check"></i>
+                                {% else %}
+                                    <i class="fa-regular fa-square"></i>
+                                {% endif %}
+                            </span>
+                            <span class="{{ 'text-decoration-line-through text-success' if sub.status == 'Completed' else '' }}">{{ sub.title }}</span>
+                            <span class="fw-badge ms-1 {{ 'fw-badge-success' if sub.status == 'Completed' else 'fw-badge-secondary' }}">{{ sub.status }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <span class="text-muted small">No Sub Tasks</span>
+                {% endif %}
+                {% if current_user.role in ['super_admin','admin','manager'] %}
+                <form method="POST"
+                      action="{{ url_for('main.create_subtask', task_id=task.id) }}"
+                      class="mt-1">
+                    <div class="d-flex gap-1" style="max-width:200px;">
+                        <input type="text"
+                               name="title"
+                               placeholder="Add Sub Task"
+                               class="form-control form-control-sm fw-form-control"
+                               required>
+                        <button class="fw-btn fw-btn-primary fw-btn-sm">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </td>
+
+            <td>
                 {{ task.created_at_ist.strftime('%d %b %Y %I:%M %p') if task.created_at_ist else '-' }}
             </td>
 
@@ -112,33 +151,47 @@
             </td>
 
             <td>
-                {% if task.proof_file %}
-                <a href="{{ url_for('main.download_proof', filename=task.proof_file) }}"
-                   target="_blank"
-                   class="fw-btn fw-btn-info fw-btn-sm">
-                    <i class="fa-solid fa-eye me-1"></i> View
-                </a>
+                {% if task.proof_file_list %}
+                    {% for f in task.proof_file_list %}
+                    <a href="{{ url_for('main.download_proof', filename=f) }}"
+                       target="_blank"
+                       class="fw-btn fw-btn-info fw-btn-sm mb-1">
+                        <i class="fa-solid fa-eye me-1"></i> {{ loop.index }}
+                    </a>
+                    {% endfor %}
                 {% else %}
                 <span class="text-muted">No Proof</span>
                 {% endif %}
             </td>
 
             <td>
-                {% if task.status == "Approved" %}
-                <span class="fw-badge fw-badge-success">Completed</span>
-                {% elif task.work_status == "Started" %}
-                <span class="fw-badge fw-badge-primary">Started</span>
-                {% elif task.status == "Pending" %}
-                <span class="fw-badge fw-badge-warning">Pending</span>
-                {% else %}
-                <span class="fw-badge fw-badge-secondary">Stopped</span>
-                {% endif %}
+                <div class="d-flex flex-column gap-1 align-items-start">
+                    <a href="{{ url_for('main.task_view', kind='task', doc_id=task.id) }}"
+                       class="fw-btn fw-btn-primary fw-btn-sm" style="width:100%">
+                        <i class="fa-solid fa-eye me-1"></i> View
+                    </a>
+                    {% if task.status == "Approved" %}
+                    <span class="fw-badge fw-badge-success">Completed</span>
+                    {% elif task.work_status == "Started" %}
+                    <span class="fw-badge fw-badge-primary">Started</span>
+                    {% elif task.status == "Pending" %}
+                    <span class="fw-badge fw-badge-warning">Pending</span>
+                    {% else %}
+                    <span class="fw-badge fw-badge-secondary">Stopped</span>
+                    {% endif %}
+                    {% if task.can_delete %}
+                    <button class="fw-btn fw-btn-danger fw-btn-sm delete-task-btn"
+                            data-task-id="{{ task.id }}" style="width:100%;">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                    {% endif %}
+                </div>
             </td>
         </tr>
 
         {% else %}
         <tr>
-            <td colspan="10" class="fw-empty">
+            <td colspan="11" class="fw-empty">
                 <i class="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
                 No task history found
             </td>
@@ -194,6 +247,20 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("m_created").innerText = button.getAttribute("data-created") || "-";
         document.getElementById("m_completed").innerText = button.getAttribute("data-completed") || "-";
         document.getElementById("m_deleted").innerText = button.getAttribute("data-deleted") || "-";
+    });
+
+    document.addEventListener("click", function (e) {
+        if (e.target.closest(".delete-task-btn")) {
+            const btn = e.target.closest(".delete-task-btn");
+            if (!confirm('Delete this task? This cannot be undone.')) return;
+            fetch('/task/delete/' + btn.dataset.taskId, { method: 'POST' })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) { alert(d.message); location.reload(); }
+                    else alert(d.message);
+                })
+                .catch(() => alert('Delete failed'));
+        }
     });
 });
 </script>

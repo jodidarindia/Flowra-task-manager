@@ -272,11 +272,17 @@
 
 </div>
 
-{% if actual_status != 'Approved' %}
+{% if actual_status != 'Approved' and kind == 'task' %}
 <div>
 <form method="POST" action="{{ url_for('main.task_mark_complete', task_id=task_id) }}" onsubmit="return confirm('Mark this task as complete?')">
 <button class="fw-btn fw-btn-primary"><i class="fa-solid fa-check me-1"></i> Mark complete</button>
 </form>
+</div>
+{% endif %}
+
+{% if can_delete %}
+<div>
+<button class="fw-btn fw-btn-danger delete-task-btn" data-task-id="{{ task_id }}"><i class="fa-solid fa-trash-can me-1"></i> Delete</button>
 </div>
 {% endif %}
 
@@ -293,6 +299,78 @@
 </div>
 </div>
 
+{% if parent %}
+<div class="td-card">
+<div class="sec-head"><h5>Part of</h5></div>
+<div class="sec-body">
+    <a href="{{ url_for('main.task_view', kind=parent.view_kind, doc_id=parent.view_id) }}" class="att-dl"><i class="fa-solid fa-link me-1"></i>{{ parent.title }}</a>
+</div>
+</div>
+{% endif %}
+
+<!-- Submission -->
+{% if proof_files or submitted_at or remarks %}
+<div class="td-card">
+<div class="sec-head"><h5><i class="fa-solid fa-paper-plane me-1"></i> Submission</h5></div>
+<div class="sec-body">
+    {% if submitted_at %}
+    <p class="mb-2"><span class="lab" style="color:#64748b;font-size:.78rem">Submitted at</span><br>
+        <span class="fw-semibold">{{ submitted_at }}</span>
+    {% if submitted_by.name != '-' %}
+        by <span class="fw-semibold">{{ submitted_by.name }}</span>
+    {% endif %}
+    </p>
+    {% endif %}
+    {% if proof_files %}
+    <div class="mb-2">
+        <div class="lab" style="color:#64748b;font-size:.78rem;margin-bottom:6px">Submitted proof files</div>
+        {% for f in proof_files %}
+        <div class="att-row">
+            <div class="d-flex align-items-center gap-3">
+                <i class="fa-solid fa-file"></i>
+                <div>
+                    <div>{{ f }}</div>
+                </div>
+            </div>
+            <a class="att-dl" href="{{ url_for('main.download_proof', filename=f) }}"><i class="fa-solid fa-download me-1"></i>Download</a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if remarks %}
+    <div class="td-notes" style="background:#fef2f2">
+        <i class="fa-solid fa-circle-exclamation me-2" style="color:#dc2626"></i>{{ remarks }}
+        <div class="by">Reject reason</div>
+    </div>
+    {% endif %}
+</div>
+</div>
+{% endif %}
+
+<!-- Sub Tasks -->
+{% if subtasks %}
+<div class="td-card">
+<div class="sec-head"><h5><i class="fa-solid fa-list-check me-1"></i> Sub Tasks {{ subtasks | length }}</h5></div>
+<div class="sec-body">
+    {% for s in subtasks %}
+    <div class="att-row">
+        <div class="d-flex align-items-center gap-3">
+            <i class="fa-regular fa-circle-check"></i>
+            <div>
+                <div>{{ s.title }}</div>
+                <div class="att-meta">
+                    {{ s.status }}
+                    {% if s.status == 'Completed' %}&middot; {{ fmt_dt(s.completed_at) }}{% endif %}
+                </div>
+            </div>
+        </div>
+        <a class="att-dl" href="{{ url_for('main.task_view', kind='subtask', doc_id=s.id) }}">View</a>
+    </div>
+    {% endfor %}
+</div>
+</div>
+{% endif %}
+
 <!-- Notes -->
 {% if notes %}
 <div class="td-card">
@@ -304,6 +382,7 @@
 {% endif %}
 
 <!-- Attachments -->
+{% if kind == 'task' %}
 <div class="td-card">
 <div class="sec-head">
     <h5><i class="fa-solid fa-paperclip me-1"></i> {{ attachments | length }} {{ 'file' if attachments | length == 1 else 'files' }}</h5>
@@ -329,8 +408,10 @@
     {% endfor %}
 </div>
 </div>
+{% endif %}
 
 <!-- Comments -->
+{% if kind == 'task' %}
 <div class="td-card">
 <div class="sec-head">
     <h5><i class="fa-regular fa-comment me-1"></i> Comments {{ comments | length }}</h5>
@@ -365,6 +446,7 @@
 
 </div>
 </div>
+{% endif %}
 
 </div>
 
@@ -422,9 +504,28 @@
     <span class="val">{{ due_date }}</span>
 </div>
 
+{% if frequency %}
+<div class="dl-row">
+    <span class="lab">Frequency</span>
+    <span class="val">{{ frequency }}</span>
+</div>
+{% endif %}
+
+{% if reward %}
+<div class="dl-row">
+    <span class="lab">Reward Points</span>
+    <span class="val">{{ reward }}</span>
+</div>
+{% endif %}
+
 <div class="dl-row">
     <span class="lab">Estimated</span>
     <span class="val">{{ estimated_time }}</span>
+</div>
+
+<div class="dl-row">
+    <span class="lab">Created</span>
+    <span class="val">{{ created_at }}</span>
 </div>
 
 {% if completed_at %}
@@ -434,6 +535,7 @@
 </div>
 {% endif %}
 
+{% if kind == 'task' %}
 <div class="dl-row">
     <span class="lab">Reminders</span>
     <span class="val">{{ reminders | length }} {{ 'set' if reminders | length != 1 else 'set' }}</span>
@@ -459,6 +561,7 @@
         <button class="fw-btn fw-btn-outline btn-sm" style="white-space:nowrap"><i class="fa-solid fa-plus me-1"></i>Add</button>
     </div>
 </form>
+{% endif %}
 
 </div>
 </div>
@@ -468,4 +571,24 @@
 
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+{% if can_delete %}
+<script>
+document.addEventListener('click', function (e) {
+    if (e.target.closest('.delete-task-btn')) {
+        const btn = e.target.closest('.delete-task-btn');
+        if (!confirm('Delete this task? This cannot be undone.')) return;
+        fetch('/task/delete/' + btn.dataset.taskId, { method: 'POST' })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) { alert(d.message); window.location.href = '/my-tasks'; }
+                else alert(d.message);
+            })
+            .catch(() => alert('Delete failed'));
+    }
+});
+</script>
+{% endif %}
 {% endblock %}
