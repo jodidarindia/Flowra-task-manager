@@ -273,9 +273,9 @@
                        placeholder="+91 98765 43210" value="{{ form.get('admin_phone','') }}">
             </div>
             <div>
-                <label class="fw-label">Admin Password <span class="hint">(default Flowra@123)</span></label>
-                <input type="password" name="admin_password" class="form-control fw-form-control"
-                       placeholder="Leave empty for default">
+                <label class="fw-label">Admin Password</label>
+                <input type="text" class="form-control fw-form-control" readonly
+                       value="Auto-generated &amp; emailed to the admin" style="background:#f8fafc;">
             </div>
         </div>
     </div>

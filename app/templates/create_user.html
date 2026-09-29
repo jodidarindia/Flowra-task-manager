@@ -194,6 +194,35 @@
     color:var(--fw-primary);
 }
 
+.cu-auto-pw{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    background:#eef4ff;
+    border:1px solid #c7d9f7;
+    border-radius:12px;
+    padding:14px 16px;
+}
+
+.cu-auto-pw i{
+    color:var(--fw-primary);
+    font-size:18px;
+    margin-top:2px;
+}
+
+.cu-auto-pw strong{
+    display:block;
+    color:#1e293b;
+    font-size:13.5px;
+    margin-bottom:4px;
+}
+
+.cu-auto-pw small{
+    color:#475569;
+    font-size:12.5px;
+    line-height:1.5;
+}
+
 .cu-status{
     display:flex;
     gap:16px;
@@ -449,36 +478,27 @@
 
                 <div class="col-md-6">
                     <div class="cu-field">
-                        <label>Password <span class="req">*</span></label>
-                        <div class="cu-pw-wrap">
-                            <input type="password" name="password" id="cuPassword" class="form-control fw-form-control {% if errors.get('password') %}is-invalid{% endif %}"
-                                   placeholder="At least 8 characters" minlength="8" value="{{ form.get('password', '') }}"
-                                   autocomplete="new-password" required>
-                            <button type="button" class="cu-pw-toggle" onclick="cuTogglePw('cuPassword', this)" tabindex="-1" aria-label="Show password">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
+                        <label>Status</label>
+                        <div class="cu-status-wrap">
+                            <div class="cu-status">
+                                <label><input type="radio" name="status" value="active" {% if status != 'inactive' %}checked{% endif %}> Active</label>
+                                <label><input type="radio" name="status" value="inactive" {% if status == 'inactive' %}checked{% endif %}> Inactive</label>
+                            </div>
                         </div>
-                        <div class="cu-hint">At least 8 characters.</div>
-                        {% if errors.get('password') %}<div class="cu-err">{{ errors['password'] }}</div>{% endif %}
+                        <div class="cu-hint">Inactive accounts cannot sign in.</div>
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-12">
                     <div class="cu-field">
-                        <label>Confirm Password <span class="req">*</span></label>
-                        <div class="cu-pw-wrap">
-                            <input type="password" name="confirm_password" id="cuConfirm" class="form-control fw-form-control {% if errors.get('confirm') %}is-invalid{% endif %}"
-                                   placeholder="Re-enter the password" value="{{ form.get('confirm_password', '') }}"
-                                   autocomplete="new-password" required>
-                            <button type="button" class="cu-pw-toggle" onclick="cuTogglePw('cuConfirm', this)" tabindex="-1" aria-label="Show password">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
+                        <label>Password</label>
+                        <div class="cu-auto-pw">
+                            <i class="fa-solid fa-key"></i>
+                            <div>
+                                <strong>A secure password will be generated automatically.</strong>
+                                <small>The account password is created by the system and sent along with the sign-in details to the user's email. Nobody, including you, needs to enter it manually.</small>
+                            </div>
                         </div>
-                        {% if errors.get('confirm') %}
-                        <div class="cu-err">{{ errors['confirm'] }}</div>
-                        {% else %}
-                        <div class="cu-hint invalid" id="cuPwErr" style="display:none;">Passwords do not match.</div>
-                        {% endif %}
                     </div>
                 </div>
 
@@ -528,29 +548,6 @@ imageInput.addEventListener("change", function () {
     }
 });
 
-const cuPw = document.getElementById("cuPassword");
-const cuConfirm = document.getElementById("cuConfirm");
-const cuPwErr = document.getElementById("cuPwErr");
-
-function cuTogglePw(id, btn) {
-    const inp = document.getElementById(id);
-    const show = inp.type === "password";
-    inp.type = show ? "text" : "password";
-    btn.querySelector("i").className = show ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
-}
-
-function cuCheckPw() {
-    if (cuPw.value !== cuConfirm.value) {
-        cuPwErr.style.display = "block";
-        return false;
-    }
-    cuPwErr.style.display = "none";
-    return true;
-}
-
-cuConfirm.addEventListener("input", cuCheckPw);
-cuPw.addEventListener("input", cuCheckPw);
-
 const cuEmail = document.getElementById("cuEmail");
 const cuEmailErr = document.getElementById("cuEmailErr");
 const cuPhone = document.getElementById("cuPhone");
@@ -595,14 +592,12 @@ cuEmail.addEventListener("blur", cuCheckEmail);
 cuPhone.addEventListener("blur", cuCheckPhone);
 
 document.getElementById("cuForm").addEventListener("submit", function (e) {
-    const pwOk = cuCheckPw();
     const emailOk = cuCheckEmail();
     const phoneOk = cuCheckPhone();
-    if (!pwOk || !emailOk || !phoneOk) {
+    if (!emailOk || !phoneOk) {
         e.preventDefault();
         if (!emailOk) { cuEmail.focus(); }
-        else if (!phoneOk) { cuPhone.focus(); }
-        else if (!pwOk) { cuConfirm.focus(); }
+        else { cuPhone.focus(); }
     }
 });
 </script>

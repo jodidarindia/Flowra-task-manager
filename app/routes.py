@@ -12,6 +12,7 @@ from werkzeug.security import check_password_hash
 from app.extensions import mongo
 from app.models import MongoUser, hash_password
 from app.utils.whatsapp import send_whatsapp_message
+from app.utils.email import send_account_credentials_email
 from app.utils.phone import normalize_phone
 from bson import ObjectId
 from datetime import datetime, date, timedelta
@@ -25,6 +26,7 @@ import io
 import csv
 import json
 import secrets
+import string
 
 bp = Blueprint("main", __name__)
 
@@ -3789,8 +3791,6 @@ def create_user():
         department_id = request.form.get("department_id")
         role = request.form.get("role")
         status = request.form.get("status", "active")
-        password = request.form.get("password")
-        confirm_password = request.form.get("confirm_password")
         company = (request.form.get("company") or "").strip() or None
         company_gst = (request.form.get("company_gst") or "").strip() or None
         company_address = (request.form.get("company_address") or "").strip() or None
@@ -3832,12 +3832,7 @@ def create_user():
             errors["phone"] = "Invalid phone number. Enter a real, active mobile number (e.g. +91 9876543210)."
 
         min_password_length = get_system_settings().get("min_password_length", 8)
-
-        if not password or len(password) < min_password_length:
-            errors["password"] = "Password must be at least {} characters long.".format(min_password_length)
-
-        if password != confirm_password:
-            errors["confirm"] = "Passwords do not match."
+        generated_password = _generate_random_password(min_password_length)
 
         if not errors:
             existing_user = mongo.db.users.find_one({
@@ -3909,7 +3904,7 @@ def create_user():
             "supervisor_id": supervisor_id,
             "status": status,
             "profile_image": profile_image,
-            "password_hash": hash_password(password),
+            "password_hash": hash_password(generated_password),
             "points": 0,
             "is_logged_in": False,
             "active_session_token": None,
@@ -3958,7 +3953,15 @@ def create_user():
                         {"$set": {"company_id": str(co_result.inserted_id)}}
                     )
 
-        flash("User created successfully!", "success")
+        email_sent = send_account_credentials_email(
+            email, username, generated_password, role, company, status
+        )
+
+        if email_sent:
+            flash("User created successfully! Credentials were emailed to the user.", "success")
+        else:
+            flash("User created successfully, but the credentials email could not be sent "
+                  "(SMTP not configured). Please share the password manually.", "warning")
         return redirect(url_for("main.manage_users"))
 
     return render_template(
@@ -3968,6 +3971,13 @@ def create_user():
         errors={},
         status="active"
     )
+
+
+def _generate_random_password(min_length=8):
+    """Generate a cryptographically secure random password."""
+    length = max(min_length, 10)
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 def next_invoice_no():
@@ -4406,11 +4416,15 @@ def create_company():
 
         if not errors:
 
+            generated_admin_password = _generate_random_password(
+                get_system_settings().get("min_password_length", 8)
+            )
+
             admin_doc = {
                 "username": admin_username,
                 "email": admin_email,
                 "phone": (normalize_phone(request.form.get("admin_phone")) or ""),
-                "password_hash": hash_password(request.form.get("admin_password") or "Flowra@123"),
+                "password_hash": hash_password(generated_admin_password),
                 "role": "admin",
                 "company": company_name,
                 "company_id": None,
@@ -4457,8 +4471,17 @@ def create_company():
                 username=current_user.username
             )
 
-            flash("Company '{}' and its admin created. Billing (â‚¹{:,}) will be raised from the Payments page.".format(
-                company_name, total_amount), "success")
+            email_sent = send_account_credentials_email(
+                admin_email, admin_username, generated_admin_password,
+                "admin", company_name, "active"
+            )
+
+            if email_sent:
+                flash("Company '{}' and its admin created. Billing (â‚¹{:,}) will be raised from the Payments page. Credentials were emailed to the admin.".format(
+                    company_name, total_amount), "success")
+            else:
+                flash("Company '{}' and its admin created. Billing (â‚¹{:,}) will be raised from the Payments page. Note: the credentials email could not be sent (SMTP not configured).".format(
+                    company_name, total_amount), "warning")
             return redirect(url_for("main.companies"))
 
         flash("Please fix the highlighted fields.", "danger")
@@ -6234,6 +6257,8 @@ def analytics():
         flash("Unauthorized", "danger")
         return redirect(url_for("main.dashboard"))
 
+    is_admin_view = False
+
     if current_user.role == "super_admin":
 
         employees = list(
@@ -6243,32 +6268,47 @@ def analytics():
         )
 
     elif current_user.role == "admin":
+        is_admin_view = True
 
         employees = list(
             mongo.db.users.find({
-                "role": "employee",
+                "role": {"$in": ["employee", "manager"]},
                 "company": current_user.company
             })
         )
 
+        departments = [
+            {
+                "id": str(d["_id"]),
+                "name": d.get("name")
+            }
+            for d in mongo.db.departments.find({
+                "company": current_user.company,
+                "status": {"$ne": "inactive"}
+            })
+        ]
+
     else:
+        is_admin_view = False
 
         manager_dept_id = current_user.department_id
 
         if manager_dept_id:
             employees = list(
                 mongo.db.users.find({
-                    "role": "employee",
+                    "role": {"$in": ["employee", "manager"]},
                     "department_id": manager_dept_id
                 })
             )
         else:
             employees = list(
                 mongo.db.users.find({
-                    "role": "employee",
+                    "role": {"$in": ["employee", "manager"]},
                     "supervisor_id": str(current_user.get_id())
                 })
             )
+
+        departments = []
 
     employee_ids = [str(emp["_id"]) for emp in employees]
 
@@ -6353,6 +6393,99 @@ def analytics():
     project_remaining = total - approved if total >= approved else 0
     progress_percent = round((approved / total) * 100, 2) if total > 0 else 0
 
+    dept_names = []
+    dept_completed = []
+    dept_points = []
+    dept_report = []
+    dept_employee_list = []
+
+    if is_admin_view:
+
+        known_dept_ids = {d["id"] for d in departments}
+
+        users_by_dept = {d["id"]: [] for d in departments}
+        users_by_dept["__none__"] = []
+
+        for emp in employees:
+            dept_key = str(emp.get("department_id") or "")
+            if dept_key in known_dept_ids:
+                users_by_dept[dept_key].append(emp)
+            else:
+                users_by_dept["__none__"].append(emp)
+
+        dept_order = [d["id"] for d in departments] + (["__none__"] if users_by_dept["__none__"] else [])
+
+        for dept_id in dept_order:
+
+            dept_name = next(
+                (d["name"] for d in departments if d["id"] == dept_id),
+                "No Department"
+            )
+
+            dept_users = users_by_dept.get(dept_id, [])
+            dept_user_ids = [str(u["_id"]) for u in dept_users]
+            dept_tasks = [
+                t for t in tasks
+                if t.get("assigned_to") in dept_user_ids
+            ]
+
+            d_completed = len([
+                t for t in dept_tasks
+                if t.get("status") == "Approved"
+            ])
+
+            d_pending = len([
+                t for t in dept_tasks
+                if t.get("status") != "Approved"
+            ])
+
+            d_in_progress = len([
+                t for t in dept_tasks
+                if t.get("work_status") == "Started"
+            ])
+
+            d_points = sum(u.get("points", 0) for u in dept_users)
+
+            dept_names.append(dept_name)
+            dept_completed.append(d_completed)
+            dept_points.append(d_points)
+
+            top_member = max(dept_users, key=lambda u: u.get("points", 0)) if dept_users else None
+
+            dept_report.append({
+                "name": dept_name,
+                "members": len(dept_users),
+                "completed": d_completed,
+                "pending": d_pending,
+                "in_progress": d_in_progress,
+                "points": d_points,
+                "top_employee": top_member.get("username") if top_member else "-",
+                "top_points": top_member.get("points", 0) if top_member else 0
+            })
+
+            member_rows = []
+
+            for u in sorted(dept_users, key=lambda x: x.get("points", 0), reverse=True):
+                uid = str(u["_id"])
+                u_tasks = [
+                    t for t in dept_tasks
+                    if t.get("assigned_to") == uid
+                ]
+                member_rows.append({
+                    "name": u.get("username"),
+                    "role": u.get("role"),
+                    "completed": len([t for t in u_tasks if t.get("status") == "Approved"]),
+                    "pending": len([t for t in u_tasks if t.get("status") != "Approved"]),
+                    "in_progress": len([t for t in u_tasks if t.get("work_status") == "Started"]),
+                    "points": u.get("points", 0)
+                })
+
+            dept_employee_list.append({
+                "dept": dept_name,
+                "top_employee": top_member.get("username") if top_member else "-",
+                "members": member_rows
+            })
+
     overdue_task_data = []
 
     for task in overdue_tasks:
@@ -6387,14 +6520,23 @@ def analytics():
             productivity_trend[completed_at.month - 1] += 1
 
     top_performer = None
+    top_performer_detail = ""
 
-    if employees:
+    if is_admin_view:
+        if dept_report:
+            best_dept = max(dept_report, key=lambda d: d.get("points", 0))
+            top_performer = best_dept.get("name")
+            top_performer_detail = "{} members, {} points".format(
+                best_dept.get("members", 0), best_dept.get("points", 0)
+            )
+    elif employees:
         top_emp = max(
             employees,
             key=lambda e: e.get("points", 0)
         )
 
         top_performer = top_emp.get("username")
+        top_performer_detail = "{} points".format(top_emp.get("points", 0))
 
     return render_template(
         "analytics.html",
@@ -6412,7 +6554,14 @@ def analytics():
         overdue_tasks=overdue_task_data,
         month_labels=month_labels,
         productivity_trend=productivity_trend,
-        top_performer=top_performer
+        top_performer=top_performer,
+        top_performer_detail=top_performer_detail,
+        is_admin_view=is_admin_view,
+        dept_names=dept_names,
+        dept_completed=dept_completed,
+        dept_points=dept_points,
+        dept_report=dept_report,
+        dept_employee_list=dept_employee_list
     )
     
 

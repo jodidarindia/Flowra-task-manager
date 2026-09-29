@@ -139,7 +139,13 @@
 <div class="fw-banner">
     <div>
         <h2><i class="fa-solid fa-chart-line me-2"></i>Flowra Analytics Dashboard</h2>
-        <p>Track employee performance, progress, overdue work, and productivity trends.</p>
+        <p>
+            {% if is_admin_view %}
+            Track department performance, overdue work, and productivity trends.
+            {% else %}
+            Track employee performance, progress, overdue work, and productivity trends.
+            {% endif %}
+        </p>
     </div>
     <a class="fw-btn fw-btn-sm" style="background:#fff;color:#1d4ed8;" href="{{ url_for('main.export_report_pdf') }}">
         <i class="fa-solid fa-file-pdf me-1"></i> Export Full Report
@@ -185,12 +191,137 @@
 </div>
 
 {% if top_performer %}
+{% if is_admin_view %}
+<div class="alert alert-success text-center shadow-sm top-performer">
+    <i class="fa-solid fa-trophy me-2"></i>Top Department: <strong>{{ top_performer }}</strong>
+    <span class="d-block mt-1" style="font-size:12.5px;font-weight:400;">{{ top_performer_detail }}</span>
+</div>
+{% else %}
 <div class="alert alert-success text-center shadow-sm top-performer">
     <i class="fa-solid fa-trophy me-2"></i>Top Performer: <strong>{{ top_performer }}</strong>
+    <span class="d-block mt-1" style="font-size:12.5px;font-weight:400;">{{ top_performer_detail }}</span>
 </div>
 {% endif %}
+{% endif %}
 
-<!-- CHARTS ROW 1 -->
+{% if is_admin_view %}
+
+<!-- CHARTS ROW 1 (admin) -->
+<div class="row g-4 mt-1">
+    <div class="col-12 col-lg-6">
+        <div class="analytics-card chart-card">
+            <h5><i class="fa-solid fa-bars-progress me-2 text-primary"></i>Task Completed per Department</h5>
+            <div class="chart-wrap">
+                <canvas id="deptCompletedChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="analytics-card chart-card">
+            <h5><i class="fa-solid fa-coins me-2 text-primary"></i>Employee Points by Department</h5>
+            <div class="chart-wrap">
+                <canvas id="deptPointsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DEPARTMENT REPORT -->
+<div class="analytics-card table-card mt-4">
+    <h4 class="mb-3 text-center" style="font-size:15px;">
+        <i class="fa-solid fa-building-user me-2 text-primary"></i>Department Performance Report
+    </h4>
+    <div class="table-responsive">
+        <table class="table table-bordered fw-table text-center align-middle">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Members</th>
+                    <th>Completed Tasks</th>
+                    <th>Pending Tasks</th>
+                    <th>In Progress</th>
+                    <th>Total Points</th>
+                    <th>Top Performer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept in dept_report %}
+                <tr>
+                    <td class="fw-semibold">{{ dept.name }}</td>
+                    <td>{{ dept.members }}</td>
+                    <td><span class="fw-badge fw-badge-success">{{ dept.completed }}</span></td>
+                    <td><span class="fw-badge fw-badge-warning">{{ dept.pending }}</span></td>
+                    <td><span class="fw-badge fw-badge-info">{{ dept.in_progress }}</span></td>
+                    <td><strong>{{ dept.points }}</strong></td>
+                    <td>{{ dept.top_employee }} <span class="text-muted" style="font-size:12px;">({{ dept.top_points }} pts)</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="fw-empty">
+                        <i class="fa-regular fa-face-smile fa-2x mb-2 d-block opacity-50"></i>
+                        No department data
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- EMPLOYEE LEADERBOARD PER DEPARTMENT -->
+<div class="analytics-card table-card mt-4">
+    <h4 class="mb-3 text-center" style="font-size:15px;">
+        <i class="fa-solid fa-ranking-star me-2 text-primary"></i>Employee Performance by Department
+    </h4>
+    {% for dept in dept_employee_list %}
+    <div style="margin-bottom:22px;">
+        <h5 style="font-size:13.5px;font-weight:600;color:#334155;">
+            <i class="fa-solid fa-building me-2 text-primary"></i>{{ dept.dept }}
+            <span class="text-muted ms-2" style="font-size:12px;font-weight:400;">Top: {{ dept.top_employee }}</span>
+        </h5>
+        <div class="table-responsive">
+            <table class="table table-bordered fw-table text-center align-middle">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Role</th>
+                        <th>Completed</th>
+                        <th>Pending</th>
+                        <th>In Progress</th>
+                        <th>Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in dept.members %}
+                    <tr>
+                        <td class="fw-semibold">{{ m.name }}</td>
+                        <td class="text-capitalize">{{ m.role }}</td>
+                        <td><span class="fw-badge fw-badge-success">{{ m.completed }}</span></td>
+                        <td><span class="fw-badge fw-badge-warning">{{ m.pending }}</span></td>
+                        <td><span class="fw-badge fw-badge-info">{{ m.in_progress }}</span></td>
+                        <td><strong>{{ m.points }}</strong></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="fw-empty">No members</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="fw-empty py-3">
+        <i class="fa-regular fa-face-smile fa-2x mb-2 d-block opacity-50"></i>
+        No employee data
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+
+<!-- CHARTS ROW 1 (manager) -->
 <div class="row g-4 mt-1">
     <div class="col-12 col-lg-6">
         <div class="analytics-card chart-card">
@@ -203,47 +334,15 @@
 
     <div class="col-12 col-lg-6">
         <div class="analytics-card chart-card">
-            <h5><i class="fa-solid fa-percent me-2 text-primary"></i>Project Progress</h5>
-
-            <div>
-                <div class="progress">
-                    <div class="progress-bar"
-                         id="projectProgressBar"
-                         role="progressbar"
-                         aria-valuenow="{{ progress_percent }}"
-                         aria-valuemin="0"
-                         aria-valuemax="100">
-                        {{ progress_percent }}%
-                    </div>
-                </div>
-
-                <div class="mt-4 text-center">
-                    <strong>Completed:</strong> {{ project_completed }}
-                    &nbsp; | &nbsp;
-                    <strong>Remaining:</strong> {{ project_remaining }}
-                </div>
-
-                <div class="mt-4">
-                    <div class="row g-3 text-center">
-                        <div class="col-6">
-                            <div class="analytics-card summary-card">
-                                <h6>Completion %</h6>
-                                <h3 class="text-success">{{ progress_percent }}%</h3>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="analytics-card summary-card">
-                                <h6>Total Scope</h6>
-                                <h3 class="text-primary">{{ total }}</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <h5><i class="fa-solid fa-coins me-2 text-primary"></i>Employee Points</h5>
+            <div class="chart-wrap">
+                <canvas id="pointsChart"></canvas>
             </div>
-
         </div>
     </div>
 </div>
+
+{% endif %}
 
 <!-- OVERDUE -->
 <div class="analytics-card table-card mt-4">
@@ -300,16 +399,34 @@
         </div>
     </div>
 
+    {% if is_admin_view %}
     <div class="col-12 col-lg-6">
         <div class="analytics-card chart-card">
-            <h5><i class="fa-solid fa-coins me-2 text-primary"></i>Employee Points</h5>
+            <h5><i class="fa-solid fa-trophy me-2 text-primary"></i>Top Performer by Department</h5>
             <div class="chart-wrap">
-                <canvas id="pointsChart"></canvas>
+                <canvas id="deptTopChart"></canvas>
             </div>
         </div>
     </div>
+    {% else %}
+    <div class="col-12 col-lg-6">
+        <div class="analytics-card chart-card">
+            <h5><i class="fa-solid fa-trophy me-2 text-primary"></i>Top Performer</h5>
+            <div class="top-performer-box" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:290px;">
+                {% if top_performer %}
+                <div style="font-size:40px;color:#f59e0b;margin-bottom:12px;"><i class="fa-solid fa-trophy"></i></div>
+                <h3 style="font-weight:600;color:#0f172a;margin-bottom:4px;">{{ top_performer }}</h3>
+                <span class="fw-badge fw-badge-success" style="font-size:14px;">{{ top_performer_detail }}</span>
+                {% else %}
+                <div class="fw-empty">No data</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
+{% if not is_admin_view %}
 <!-- EMPLOYEE REPORT -->
 <div class="analytics-card table-card mt-4">
     <h4 class="mb-3 text-center" style="font-size:15px;">
@@ -340,6 +457,7 @@
         </table>
     </div>
 </div>
+{% endif %}
 
 </div>
 
@@ -347,59 +465,212 @@
 
 <script id="analytics-data" type="application/json">
 {
+  "isAdminView": {{ is_admin_view | tojson }},
   "employeeNames": {{ employee_names | tojson }},
   "employeeCompleted": {{ employee_completed | tojson }},
   "employeePoints": {{ employee_points | tojson }},
   "monthLabels": {{ month_labels | tojson }},
   "productivityTrend": {{ productivity_trend | tojson }},
-  "progressPercent": {{ progress_percent | tojson }}
+  "progressPercent": {{ progress_percent | tojson }},
+  "deptNames": {{ dept_names | tojson }},
+  "deptCompleted": {{ dept_completed | tojson }},
+  "deptPoints": {{ dept_points | tojson }},
+  "deptTopPoints": {{ dept_report | map(attribute='top_points') | list | tojson }}
 }
 </script>
 
 <script>
 const analyticsData = JSON.parse(document.getElementById("analytics-data").textContent);
 
+const isAdminView = analyticsData.isAdminView;
 const employeeNames = analyticsData.employeeNames;
 const employeeCompleted = analyticsData.employeeCompleted;
 const employeePoints = analyticsData.employeePoints;
 const monthLabels = analyticsData.monthLabels;
 const productivityTrend = analyticsData.productivityTrend;
 const progressPercent = analyticsData.progressPercent;
+const deptNames = analyticsData.deptNames;
+const deptCompleted = analyticsData.deptCompleted;
+const deptPoints = analyticsData.deptPoints;
+const deptTopPoints = analyticsData.deptTopPoints;
 
-document.getElementById("projectProgressBar").style.width = progressPercent + "%";
-
-new Chart(document.getElementById("employeeChart"), {
-    type: "bar",
-    data: {
-        labels: employeeNames,
-        datasets: [{
-            label: "Completed Tasks",
-            data: employeeCompleted,
-            backgroundColor: "#2563eb",
-            borderRadius: 8,
-            maxBarThickness: 40
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false }
+if (!isAdminView) {
+    new Chart(document.getElementById("employeeChart"), {
+        type: "bar",
+        data: {
+            labels: employeeNames,
+            datasets: [{
+                label: "Completed Tasks",
+                data: employeeCompleted,
+                backgroundColor: "#2563eb",
+                borderRadius: 8,
+                maxBarThickness: 40
+            }]
         },
-        scales: {
-            x: {
-                ticks: {
-                    autoSkip: false,
-                    maxRotation: 45,
-                    minRotation: 0
-                }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
             },
-            y: {
-                beginAtZero: true
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 5
+                    }
+                }
             }
         }
-    }
-});
+    });
+
+    new Chart(document.getElementById("pointsChart"), {
+        type: "bar",
+        data: {
+            labels: employeeNames,
+            datasets: [{
+                label: "Points",
+                data: employeePoints,
+                backgroundColor: "#14b8a6",
+                borderRadius: 8,
+                maxBarThickness: 40
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 50
+                    }
+                }
+            }
+        }
+    });
+}
+
+if (isAdminView) {
+    new Chart(document.getElementById("deptCompletedChart"), {
+        type: "bar",
+        data: {
+            labels: deptNames,
+            datasets: [{
+                label: "Completed Tasks",
+                data: deptCompleted,
+                backgroundColor: "#2563eb",
+                borderRadius: 8,
+                maxBarThickness: 40
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 5
+                    }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById("deptPointsChart"), {
+        type: "bar",
+        data: {
+            labels: deptNames,
+            datasets: [{
+                label: "Points",
+                data: deptPoints,
+                backgroundColor: "#14b8a6",
+                borderRadius: 8,
+                maxBarThickness: 40
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById("deptTopChart"), {
+        type: "bar",
+        data: {
+            labels: deptNames,
+            datasets: [{
+                label: "Top Performer Points",
+                data: deptTopPoints,
+                backgroundColor: "#f59e0b",
+                borderRadius: 8,
+                maxBarThickness: 40
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
 
 new Chart(document.getElementById("trendChart"), {
     type: "line",
@@ -420,39 +691,6 @@ new Chart(document.getElementById("trendChart"), {
         maintainAspectRatio: false,
         plugins: {
             legend: { display: false }
-        }
-    }
-});
-
-new Chart(document.getElementById("pointsChart"), {
-    type: "bar",
-    data: {
-        labels: employeeNames,
-        datasets: [{
-            label: "Points",
-            data: employeePoints,
-            backgroundColor: "#14b8a6",
-            borderRadius: 8,
-            maxBarThickness: 40
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            x: {
-                ticks: {
-                    autoSkip: false,
-                    maxRotation: 45,
-                    minRotation: 0
-                }
-            },
-            y: {
-                beginAtZero: true
-            }
         }
     }
 });
