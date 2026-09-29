@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FLOWRA Tasks | Smart Team Execution Platform</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="icon"
+        type="image/x-icon"
+        href="{{ url_for('static', filename='flowra_favicon.ico') }}"
+    >
+
+    <style>
+
+        /* =========================================================
+           FLOWRA - CLEAN BLUE SAAS THEME
+        ========================================================= */
+
+        :root {
+            --blue: #075BFF;
+            --blue-dark: #0047D6;
+            --blue-light: #F4F7FF;
+            --black: #050505;
+            --dark: #111827;
+            --text: #4B5563;
+            --muted: #6B7280;
+            --border: #D9DDE5;
+            --white: #FFFFFF;
+            --green: #20D26B;
+            --orange: #FF8A00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--white);
+            color: var(--black);
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* =========================================================
+           NAVBAR
+        ========================================================= */
+
+        .navbar {
+            height: 78px;
+            background: rgba(255,255,255,.96);
+            border-bottom: 1px solid #E8EAF0;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .navbar-inner {
+            height: 100%;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--black);
+        }
+
+        .logo-img {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        .brand-text {
+            font-size: 25px;
+            font-weight: 900;
+            letter-spacing: -1.3px;
+        }
+
+        .nav-center {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-link {
+            color: #4B5563 !important;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 14px !important;
+            transition: .2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--blue) !important;
+        }
+
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .login-outline {
+            color: var(--black);
+            border: 1px solid var(--black);
+            background: white;
+            border-radius: 10px;
+            padding: 10px 23px;
+            font-size: 14px;
+            font-weight: 700;
+            transition: .2s ease;
+        }
+
+        .login-outline:hover {
+            background: var(--black);
+            color: white;
+        }
+
+        .get-started {
+            color: white;
+            background: var(--blue);
+            border-radius: 10px;
+            padding: 11px 23px;
+            font-size: 14px;
+            font-weight: 700;
+            transition: .2s ease;
+            box-shadow: 0 8px 22px rgba(7,91,255,.18);
+        }
+
+        .get-started:hover {
+            background: var(--blue-dark);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .menu-btn {
+            display: none;
+            border: none;
+            background: transparent;
+            font-size: 25px;
+            color: var(--dark);
+        }
+
+        /* =========================================================
+           HERO
+        ========================================================= */
+
+        .hero {
+            position: relative;
+            padding: 105px 0 90px;
+            background: white;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            width: 480px;
+            height: 480px;
+            right: -250px;
+            top: 80px;
+            background: #EEF4FF;
+            border-radius: 50%;
+            filter: blur(5px);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            margin-bottom: 25px;
+        }
+
+        .hero-badge .badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 0 5px rgba(32,210,107,.10);
+        }
+
+        .hero h1 {
+            color: var(--black);
+            font-size: clamp(3rem, 6vw, 5.7rem);
+            line-height: .99;
+            letter-spacing: -4px;
+            font-weight: 900;
+            max-width: 850px;
+            margin-bottom: 27px;
+        }
+
+        .hero h1 .blue-text {
+            color: var(--blue);
+        }
+
+        .hero-description {
+            max-width: 650px;
+            color: var(--text);
+            font-size: 17px;
+            line-height: 1.85;
+            margin-bottom: 32px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .primary-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: var(--blue);
+            color: white;
+            border-radius: 10px;
+            padding: 15px 31px;
+            font-size: 15px;
+            font-weight: 800;
+            transition: .25s ease;
+            box-shadow: 0 12px 28px rgba(7,91,255,.20);
+        }
+
+        .primary-btn:hover {
+            background: var(--blue-dark);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 17px 32px rgba(7,91,255,.25);
+        }
+
+        .secondary-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: white;
+            color: var(--black);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px 31px;
+            font-size: 15px;
+            font-weight: 700;
+            transition: .25s ease;
+        }
+
+        .secondary-btn:hover {
+            border-color: var(--black);
+            color: var(--black);
+            transform: translateY(-2px);
+        }
+
+        .trust-row {
+            display: flex;
+            align-items: center;
+            gap: 27px;
+            flex-wrap: wrap;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .trust-icon {
+            color: var(--blue);
+            font-size: 16px;
+        }
+
+        .trust-green {
+            color: var(--green);
+        }
+
+        .trust-orange {
+            color: var(--orange);
+        }
+
+        /* =========================================================
+           DASHBOARD PREVIEW
+        ========================================================= */
+
+        .preview-wrapper {
+            position: relative;
+            z-index: 3;
+            margin-top: 65px;
+        }
+
+        .browser-card {
+            background: white;
+            border: 1px solid #DDE2EA;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 30px 90px rgba(15,23,42,.12);
+        }
+
+        .browser-top {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+            gap: 8px;
+            background: #F8F9FB;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .browser-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot-red {
+            background: #FF5F57;
+        }
+
+        .dot-yellow {
+            background: #FFBD2E;
+        }
+
+        .dot-green {
+            background: #28C840;
+        }
+
+        .browser-url {
+            margin-left: 12px;
+            color: #9CA3AF;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            min-height: 430px;
+            background: #F8FAFC;
+        }
+
+        .dashboard-sidebar {
+            background: #FFFFFF;
+            border-right: 1px solid #E5E7EB;
+            padding: 22px 15px;
+        }
+
+        .sidebar-logo {
+            color: var(--blue);
+            font-size: 17px;
+            font-weight: 900;
+            margin-bottom: 25px;
+            padding: 0 10px;
+        }
+
+        .side-item {
+            padding: 11px 12px;
+            border-radius: 8px;
+            color: #6B7280;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .side-item.active {
+            background: #EEF4FF;
+            color: var(--blue);
+        }
+
+        .dashboard-main {
+            padding: 25px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-header h3 {
+            font-size: 20px;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        .live-pill {
+            background: #EEF4FF;
+            color: var(--blue);
+            border-radius: 20px;
+            padding: 7px 12px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 12px;
+        }
+
+        .metric {
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 13px;
+            padding: 17px;
+        }
+
+        .metric-label {
+            color: #9CA3AF;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .metric-number {
+            margin-top: 7px;
+            color: var(--black);
+            font-size: 25px;
+            font-weight: 900;
+        }
+
+        .metric-blue {
+            color: var(--blue);
+        }
+
+        .metric-green {
+            color: var(--green);
+        }
+
+        .metric-orange {
+            color: var(--orange);
+        }
+
+        .activity-card {
+            margin-top: 15px;
+            padding: 18px;
+            border-radius: 13px;
+            border: 1px solid #E5E7EB;
+            background: white;
+        }
+
+        .activity-title {
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .activity-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #F0F1F3;
+            color: #6B7280;
+            font-size: 11px;
+        }
+
+        .activity-row:last-child {
+            border-bottom: none;
+        }
+
+        .activity-row strong {
+            color: var(--blue);
+        }
+
+        /* =========================================================
+           SECTION COMMON
+        ========================================================= */
+
+        .section {
+            padding: 95px 0;
+        }
+
+        .section-light {
+            background: var(--blue-light);
+        }
+
+        .section-title {
+            color: var(--black);
+            font-size: clamp(2.2rem,4vw,4rem);
+            line-height: 1.05;
+            font-weight: 900;
+            letter-spacing: -2.5px;
+            text-align: center;
+        }
+
+        .section-title span {
+            color: var(--blue);
+        }
+
+        .section-subtitle {
+            max-width: 700px;
+            margin: 17px auto 55px;
+            text-align: center;
+            color: var(--text);
+            line-height: 1.8;
+            font-size: 16px;
+        }
+
+        /* =========================================================
+           FEATURES
+        ========================================================= */
+
+        .feature-card {
+            height: 100%;
+            background: white;
+            border: 1px solid #E1E5EC;
+            border-radius: 18px;
+            padding: 30px;
+            transition: .25s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-7px);
+            border-color: rgba(7,91,255,.35);
+            box-shadow: 0 25px 55px rgba(7,91,255,.10);
+        }
+
+        .feature-icon {
+            width: 58px;
+            height: 58px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            background: #EEF4FF;
+            color: var(--blue);
+            font-size: 24px;
+            margin-bottom: 22px;
+        }
+
+        .feature-card h4 {
+            color: var(--black);
+            font-size: 19px;
+            font-weight: 900;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.75;
+            margin: 0;
+        }
+
+        /* =========================================================
+           STATS
+        ========================================================= */
+
+        .stats {
+            padding: 70px 0;
+            background: white;
+            border-top: 1px solid #EEF0F3;
+            border-bottom: 1px solid #EEF0F3;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .stat-number {
+            color: var(--blue);
+            font-size: 42px;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: -2px;
+        }
+
+        .stat-label {
+            color: #6B7280;
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        /* =========================================================
+           PLATFORM SECTION
+        ========================================================= */
+
+        .platform-card {
+            height: 100%;
+            background: white;
+            border: 1px solid #E0E4EB;
+            border-radius: 18px;
+            padding: 30px;
+            transition: .25s ease;
+        }
+
+        .platform-card:hover {
+            border-color: var(--blue);
+            box-shadow: 0 20px 50px rgba(7,91,255,.09);
+        }
+
+        .platform-label {
+            color: var(--blue);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .platform-card h3 {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--black);
+        }
+
+        .platform-card p {
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.75;
+        }
+
+        .platform-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--blue);
+            font-size: 14px;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+
+        /* =========================================================
+           CTA
+        ========================================================= */
+
+        .cta {
+            padding: 95px 0;
+            background: var(--blue-light);
+        }
+
+        .cta-box {
+            position: relative;
+            overflow: hidden;
+            border-radius: 22px;
+            background: var(--blue);
+            color: white;
+            padding: 65px 35px;
+            text-align: center;
+            box-shadow: 0 30px 80px rgba(7,91,255,.20);
+        }
+
+        .cta-box::before {
+            content: "";
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            right: -170px;
+            top: -170px;
+            border-radius: 50%;
+            border: 70px solid rgba(255,255,255,.08);
+        }
+
+        .cta-box h2 {
+            position: relative;
+            z-index: 2;
+            font-size: clamp(2rem,4vw,3.5rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+        }
+
+        .cta-box p {
+            position: relative;
+            z-index: 2;
+            color: #DCE8FF;
+            margin-top: 15px;
+        }
+
+        .cta-button {
+            position: relative;
+            z-index: 2;
+            display: inline-flex;
+            margin-top: 23px;
+            background: white;
+            color: var(--blue);
+            border-radius: 10px;
+            padding: 14px 30px;
+            font-size: 14px;
+            font-weight: 900;
+            transition: .2s ease;
+        }
+
+        .cta-button:hover {
+            color: var(--blue-dark);
+            transform: translateY(-2px);
+        }
+
+        /* =========================================================
+           FOOTER
+        ========================================================= */
+
+        footer {
+            background: #050505;
+            color: #9CA3AF;
+            padding: 35px 0;
+        }
+
+        .footer-brand {
+            color: white;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .footer-text {
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .footer-links a {
+            color: #9CA3AF;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        /* =========================================================
+           WHATSAPP BUTTON
+        ========================================================= */
+
+        .whatsapp-button {
+            position: fixed;
+            right: 25px;
+            bottom: 23px;
+            width: 57px;
+            height: 57px;
+            border-radius: 50%;
+            background: var(--green);
+            color: white;
+            display: grid;
+            place-items: center;
+            font-size: 27px;
+            box-shadow: 0 12px 25px rgba(0,0,0,.15);
+            z-index: 1000;
+            transition: .25s ease;
+        }
+
+        .whatsapp-button:hover {
+            color: white;
+            transform: scale(1.08);
+        }
+
+        /* =========================================================
+           MOBILE
+        ========================================================= */
+
+        @media (max-width: 991px) {
+
+            .nav-center {
+                display: none;
+            }
+
+            .menu-btn {
+                display: block;
+            }
+
+            .nav-buttons {
+                gap: 7px;
+            }
+
+            .login-outline,
+            .get-started {
+                padding: 9px 15px;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-sidebar {
+                display: none;
+            }
+
+            .hero {
+                padding-top: 75px;
+            }
+
+            .hero h1 {
+                letter-spacing: -3px;
+            }
+
+            .preview-wrapper {
+                margin-top: 45px;
+            }
+        }
+
+        @media (max-width: 767px) {
+
+            .navbar {
+                height: 70px;
+            }
+
+            .brand-text {
+                font-size: 22px;
+            }
+
+            .logo-img {
+                width: 38px;
+                height: 38px;
+            }
+
+            .login-outline {
+                display: none;
+            }
+
+            .get-started {
+                padding: 9px 14px;
+                font-size: 12px;
+            }
+
+            .hero {
+                padding: 65px 0 60px;
+            }
+
+            .hero h1 {
+                font-size: 3.2rem;
+                letter-spacing: -2.5px;
+            }
+
+            .hero-description {
+                font-size: 15px;
+                line-height: 1.75;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+            }
+
+            .primary-btn,
+            .secondary-btn {
+                width: 100%;
+            }
+
+            .trust-row {
+                gap: 14px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .dashboard-main {
+                padding: 18px;
+            }
+
+            .metric-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section {
+                padding: 70px 0;
+            }
+
+            .section-title {
+                letter-spacing: -1.5px;
+            }
+
+            .cta {
+                padding: 70px 0;
+            }
+
+            .cta-box {
+                padding: 50px 22px;
+            }
+
+            .stat-number {
+                font-size: 35px;
+            }
+
+            .whatsapp-button {
+                width: 52px;
+                height: 52px;
+                right: 17px;
+                bottom: 17px;
+                font-size: 24px;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<!-- =========================================================
+     NAVBAR
+========================================================= -->
+
+<nav class="navbar">
+    <div class="container navbar-inner d-flex align-items-center justify-content-between">
+
+        <a href="#" class="brand">
+            <img
+                class="logo-img"
+                src="{{ url_for('static', filename='images/flowra(2).png') }}"
+                alt="FLOWRA"
+            >
+            <span class="brand-text">FLOWRA</span>
+        </a>
+
+        <div class="nav-center">
+
+            <a class="nav-link" href="#features">
+                Features
+            </a>
+
+            <a class="nav-link" href="#analytics">
+                Analytics
+            </a>
+
+            <a class="nav-link" href="#platform">
+                Platform
+            </a>
+
+            <a class="nav-link" href="#support">
+                Support
+            </a>
+
+        </div>
+
+        <div class="nav-buttons">
+
+            <a
+                class="login-outline"
+                href="{{ url_for('main.login') }}"
+            >
+                Login
+            </a>
+
+            <a
+                class="get-started"
+                href="{{ url_for('main.login') }}"
+            >
+                Get Started
+            </a>
+
+            <button class="menu-btn" type="button">
+                ☰
+            </button>
+
+        </div>
+
+    </div>
+</nav>
+
+
+<!-- =========================================================
+     HERO
+========================================================= -->
+
+<section class="hero">
+
+    <div class="container">
+
+        <div class="hero-content">
+
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                FLOWRA TASK MANAGEMENT PLATFORM
+            </div>
+
+            <h1>
+                Unlock the full power of your
+                <span class="blue-text">Team Workflow</span>
+            </h1>
+
+            <p class="hero-description">
+                Assign tasks, monitor employees, approve work, track time,
+                automate reminders and manage productivity from one powerful
+                business dashboard. Built for modern Indian businesses.
+            </p>
+
+            <div class="hero-actions">
+
+                <a
+                    href="{{ url_for('main.login') }}"
+                    class="primary-btn"
+                >
+                    Start Managing Tasks
+                    <span>→</span>
+                </a>
+
+                <a
+                    href="#features"
+                    class="secondary-btn"
+                >
+                    See Features
+                </a>
+
+            </div>
+
+            <div class="trust-row">
+
+                <div class="trust-item">
+                    <span class="trust-icon trust-green">♢</span>
+                    256-bit Encryption
+                </div>
+
+                <div class="trust-item">
+                    <span class="trust-icon">◷</span>
+                    2-min Setup
+                </div>
+
+                <div class="trust-item">
+                    <span class="trust-icon trust-orange">ϟ</span>
+                    Smart Automation
+                </div>
+
+                <div class="trust-item">
+                    <span class="trust-icon">✓</span>
+                    Role-based Access
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             DASHBOARD PREVIEW
+        ====================================================== -->
+
+        <div class="preview-wrapper">
+
+            <div class="browser-card">
+
+                <div class="browser-top">
+
+                    <span class="browser-dot dot-red"></span>
+                    <span class="browser-dot dot-yellow"></span>
+                    <span class="browser-dot dot-green"></span>
+
+                    <span class="browser-url">
+                        flowra.in/dashboard
+                    </span>
+
+                </div>
+
+
+                <div class="dashboard">
+
+                    <div class="dashboard-sidebar">
+
+                        <div class="sidebar-logo">
+                            FLOWRA
+                        </div>
+
+                        <div class="side-item active">
+                            Dashboard
+                        </div>
+
+                        <div class="side-item">
+                            Tasks
+                        </div>
+
+                        <div class="side-item">
+                            Employees
+                        </div>
+
+                        <div class="side-item">
+                            Analytics
+                        </div>
+
+                        <div class="side-item">
+                            Reports
+                        </div>
+
+                        <div class="side-item">
+                            Settings
+                        </div>
+
+                    </div>
+
+
+                    <div class="dashboard-main">
+
+                        <div class="dashboard-header">
+
+                            <h3>
+                                Task Overview
+                            </h3>
+
+                            <span class="live-pill">
+                                ● LIVE TODAY
+                            </span>
+
+                        </div>
+
+
+                        <div class="metric-grid">
+
+                            <div class="metric">
+
+                                <div class="metric-label">
+                                    TOTAL TASKS
+                                </div>
+
+                                <div class="metric-number metric-blue">
+                                    128
+                                </div>
+
+                            </div>
+
+
+                            <div class="metric">
+
+                                <div class="metric-label">
+                                    COMPLETED
+                                </div>
+
+                                <div class="metric-number metric-green">
+                                    94
+                                </div>
+
+                            </div>
+
+
+                            <div class="metric">
+
+                                <div class="metric-label">
+                                    PENDING
+                                </div>
+
+                                <div class="metric-number metric-orange">
+                                    09
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="activity-card">
+
+                            <div class="activity-title">
+                                Recent Activity
+                            </div>
+
+                            <div class="activity-row">
+                                <span>Tasks completed</span>
+                                <strong>+42</strong>
+                            </div>
+
+                            <div class="activity-row">
+                                <span>New assignments</span>
+                                <strong>+18</strong>
+                            </div>
+
+                            <div class="activity-row">
+                                <span>Smart reminders</span>
+                                <strong>+31</strong>
+                            </div>
+
+                            <div class="activity-row">
+                                <span>Approvals completed</span>
+                                <strong>+15</strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     FEATURES
+========================================================= -->
+
+<section class="section section-light" id="features">
+
+    <div class="container">
+
+        <h2 class="section-title">
+            Everything your team
+            <span>needs</span>
+        </h2>
+
+        <p class="section-subtitle">
+            FLOWRA brings task assignment, employee monitoring,
+            analytics and automation together in one simple platform.
+        </p>
+
+
+        <div class="row g-4">
+
+
+            <div class="col-md-6 col-lg-4">
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        ✓
+                    </div>
+
+                    <h4>
+                        Task Assignment
+                    </h4>
+
+                    <p>
+                        Create tasks, assign employees, set priorities,
+                        add due dates and monitor completion status in real time.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6 col-lg-4">
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        ◈
+                    </div>
+
+                    <h4>
+                        Productivity Analytics
+                    </h4>
+
+                    <p>
+                        Track employee performance, completed work,
+                        pending tasks, overdue assignments and productivity trends.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6 col-lg-4">
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        ♧
+                    </div>
+
+                    <h4>
+                        Smart Reminders
+                    </h4>
+
+                    <p>
+                        Keep teams on schedule with recurring tasks,
+                        deadline alerts and automated reminders.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6 col-lg-4">
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        ◉
+                    </div>
+
+                    <h4>
+                        Role Dashboards
+                    </h4>
+
+                    <p>
+                        Give admins, managers and employees their own
+                        focused dashboards with the right information.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6 col-lg-4">
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        ↗
+                    </div>
+
+                    <h4>
+                        Reports & Insights
+                    </h4>
+
+                    <p>
+                        Generate useful reports and understand team activity
+                        through clear business analytics.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6 col-lg-4">
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        AI
+                    </div>
+
+                    <h4>
+                        AI-powered Workflow
+                    </h4>
+
+                    <p>
+                        Use intelligent suggestions and automation to
+                        reduce repetitive work and improve execution.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     STATS
+========================================================= -->
+
+<section class="stats" id="analytics">
+
+    <div class="container">
+
+        <div class="row g-4">
+
+            <div class="col-6 col-lg-3">
+                <div class="stat">
+                    <div class="stat-number">
+                        3
+                    </div>
+                    <div class="stat-label">
+                        Role Dashboards
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-6 col-lg-3">
+                <div class="stat">
+                    <div class="stat-number">
+                        24/7
+                    </div>
+                    <div class="stat-label">
+                        Live Monitoring
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-6 col-lg-3">
+                <div class="stat">
+                    <div class="stat-number">
+                        AI
+                    </div>
+                    <div class="stat-label">
+                        Smart Suggestions
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-6 col-lg-3">
+                <div class="stat">
+                    <div class="stat-number">
+                        100%
+                    </div>
+                    <div class="stat-label">
+                        Business Visibility
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     PLATFORM
+========================================================= -->
+
+<section class="section" id="platform">
+
+    <div class="container">
+
+        <h2 class="section-title">
+            One platform.
+            <span>More control.</span>
+        </h2>
+
+        <p class="section-subtitle">
+            FLOWRA is designed to grow with your business and give
+            every team member the tools they need to execute better.
+        </p>
+
+
+        <div class="row g-4">
+
+
+            <div class="col-lg-4">
+
+                <div class="platform-card">
+
+                    <div class="platform-label">
+                        ADMIN
+                    </div>
+
+                    <h3>
+                        Complete Control
+                    </h3>
+
+                    <p class="mt-3">
+                        Manage employees, departments, tasks, reports,
+                        permissions and overall business activity from one place.
+                    </p>
+
+                    <a
+                        href="{{ url_for('main.login') }}"
+                        class="platform-link"
+                    >
+                        Open Platform →
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-lg-4">
+
+                <div class="platform-card">
+
+                    <div class="platform-label">
+                        MANAGER
+                    </div>
+
+                    <h3>
+                        Execute Faster
+                    </h3>
+
+                    <p class="mt-3">
+                        Assign work, monitor progress, review completion
+                        and keep your department moving without confusion.
+                    </p>
+
+                    <a
+                        href="{{ url_for('main.login') }}"
+                        class="platform-link"
+                    >
+                        Manage Team →
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-lg-4">
+
+                <div class="platform-card">
+
+                    <div class="platform-label">
+                        EMPLOYEE
+                    </div>
+
+                    <h3>
+                        Work Clearly
+                    </h3>
+
+                    <p class="mt-3">
+                        See assigned work, deadlines, reminders and
+                        productivity information from a simple dashboard.
+                    </p>
+
+                    <a
+                        href="{{ url_for('main.login') }}"
+                        class="platform-link"
+                    >
+                        View Tasks →
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     CTA
+========================================================= -->
+
+<section class="cta" id="support">
+
+    <div class="container">
+
+        <div class="cta-box">
+
+            <h2>
+                Ready to run your team smarter?
+            </h2>
+
+            <p>
+                Login to FLOWRA Tasks and start managing your
+                business workflow with clarity.
+            </p>
+
+            <a
+                href="{{ url_for('main.login') }}"
+                class="cta-button"
+            >
+                Login to Dashboard →
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
+
+<footer>
+
+    <div class="container text-center">
+
+        <div class="footer-brand">
+            FLOWRA
+        </div>
+
+        <div class="footer-text">
+            Smart business workflow by Jodidar India Pvt Ltd
+        </div>
+
+        <div class="footer-links">
+
+            <a href="#features">
+                Features
+            </a>
+
+            <a href="#analytics">
+                Analytics
+            </a>
+
+            <a href="#platform">
+                Platform
+            </a>
+
+            <a href="{{ url_for('main.login') }}">
+                Login
+            </a>
+
+        </div>
+
+        <div class="footer-text mt-4">
+            © 2026 FLOWRA Tasks · All rights reserved
+        </div>
+
+    </div>
+
+</footer>
+
+
+<!-- =========================================================
+     WHATSAPP BUTTON
+========================================================= -->
+
+<a
+    href="https://wa.me/"
+    class="whatsapp-button"
+    target="_blank"
+    aria-label="WhatsApp"
+>
+    ☎
+</a>
+
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+></script>
+
+</body>
+</html>

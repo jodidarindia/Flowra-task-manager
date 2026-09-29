@@ -19,6 +19,9 @@ def create_app():
     load_dotenv()
     app = Flask(__name__)
     app.config.from_object(Config)
+    app.config["WHATSAPP_WEBHOOK_VERIFY_TOKEN"] = os.getenv(
+        "WHATSAPP_WEBHOOK_VERIFY_TOKEN"
+    )
 
     app.config["MONGO_URI"] = os.getenv(
         "MONGO_URI",

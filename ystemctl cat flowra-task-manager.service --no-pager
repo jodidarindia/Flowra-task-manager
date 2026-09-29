@@ -1,0 +1,20 @@
+[0;1;34m# ]8;;file://ubuntu-s-1vcpu-1gb-25gb-blr1/etc/systemd/system/flowra-task-manager.service/etc/systemd/system/flowra-task-manager.service]8;;[0m
+[0;1;36m[Unit][0m
+Description=Flowra Task Manager
+After=network.target
+[0;1;38;5;245m[0m
+[0;1;36m[Service][0m
+User=root
+WorkingDirectory=/var/www/Flowra_task_manager
+Environment="PATH=/var/www/Flowra_task_manager/.venv/bin"
+ExecStart=/var/www/Flowra_task_manager/.venv/bin/gunicorn --bind 127.0.0.1:5002 "app:create_app()"
+[0;1;38;5;245m[0m
+Restart=always
+RestartSec=5
+[0;1;38;5;245m[0m
+[0;1;36m[Install][0m
+WantedBy=multi-user.target
+
+[0;1;34m# ]8;;file://ubuntu-s-1vcpu-1gb-25gb-blr1/etc/systemd/system/flowra-task-manager.service.d/override.conf/etc/systemd/system/flowra-task-manager.service.d/override.conf]8;;[0m
+[0;1;36m[Service][0m
+EnvironmentFile=/var/www/Flowra_task_manager/.env
