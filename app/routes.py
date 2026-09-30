@@ -12,7 +12,7 @@ from werkzeug.security import check_password_hash
 from app.extensions import mongo
 from app.models import MongoUser, hash_password
 from app.utils.whatsapp import send_whatsapp_message
-from app.utils.email import send_account_credentials_email
+from app.utils.email import send_account_credentials_email, get_last_email_error, send_account_deleted_email
 from app.utils.phone import normalize_phone
 from bson import ObjectId
 from datetime import datetime, date, timedelta
@@ -1077,11 +1077,25 @@ def stop_reminder_page(id):
     return redirect(url_for("main.my_reminders"))
 
 
+# ---------------- TASK ACCESS GUARD ----------------
+
+def _block_super_admin_task_access():
+    """Super admin has no task surface. Redirect them to their dashboard."""
+    if current_user.role == "super_admin":
+        flash("Super admin does not have access to tasks.", "danger")
+        return redirect(url_for("main.dashboard"))
+    return None
+
+
 # ---------------- CREATE TASK ----------------
 
 @bp.route("/create_task", methods=["GET", "POST"])
 @login_required
 def create_task():
+
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
 
     if current_user.role not in ["super_admin", "admin", "manager"]:
         flash("Unauthorized access", "danger")
@@ -1453,8 +1467,9 @@ def task_display_status(task):
 @login_required
 def my_tasks():
 
-    if current_user.role == "super_admin":
-        return redirect(url_for("main.task_history"))
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
 
     selected = request.args.get("filter", "all")
     uid = str(current_user.get_id())
@@ -1767,12 +1782,19 @@ def my_tasks():
 @bp.route("/task/<task_id>/view")
 @login_required
 def task_details(task_id):
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
     return task_view("task", task_id)
 
 
 @bp.route("/view/<kind>/<doc_id>")
 @login_required
 def task_view(kind, doc_id):
+
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
 
     kind = kind if kind in ("task", "recurring", "subtask") else "task"
 
@@ -2105,6 +2127,10 @@ def task_mark_complete(task_id):
 @login_required
 def create_subtask(task_id):
 
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
+
     task = mongo.db.tasks.find_one({
         "_id": ObjectId(task_id)
     })
@@ -2146,6 +2172,10 @@ def create_subtask(task_id):
 @login_required
 def create_recurring_subtask(task_id):
 
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
+
     recurring_task = mongo.db.recurring_tasks.find_one({
         "_id": ObjectId(task_id)
     })
@@ -2182,6 +2212,10 @@ def create_recurring_subtask(task_id):
 @bp.route("/subtask/toggle/<subtask_id>")
 @login_required
 def toggle_subtask(subtask_id):
+
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
 
     subtask = mongo.db.sub_tasks.find_one({
         "_id": ObjectId(subtask_id)
@@ -2223,6 +2257,10 @@ def toggle_subtask(subtask_id):
 @login_required
 def toggle_task(task_id):
 
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
+
     task = mongo.db.tasks.find_one({
         "_id": ObjectId(task_id)
     })
@@ -2251,6 +2289,10 @@ def toggle_task(task_id):
 @bp.route("/task/work-toggle/<task_id>")
 @login_required
 def toggle_work(task_id):
+
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
 
     task = mongo.db.tasks.find_one({
         "_id": ObjectId(task_id)
@@ -2497,6 +2539,10 @@ def edit_user(id):
 @login_required
 def recurring_task_history():
 
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
+
     if current_user.role not in ["super_admin", "admin", "manager"]:
         flash("Unauthorized", "danger")
         return redirect(url_for("main.dashboard"))
@@ -2569,6 +2615,10 @@ def recurring_task_history():
 @bp.route("/task/<task_id>/ai-suggestion")
 @login_required
 def ai_suggestion(task_id):
+
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
 
     task = mongo.db.tasks.find_one({
         "_id": ObjectId(task_id)
@@ -2758,19 +2808,28 @@ def delete_user(user_id):
 
     deleted_company = None
     deleted_team = 0
+    cascade_members = []
     if user.get("role") == "admin" and current_user.role == "super_admin":
         company = mongo.db.companies.find_one({"admin_id": user_id}) or (
             mongo.db.companies.find_one({"_id": ObjectId(user.get("company_id"))}) if user.get("company_id") else None
         )
         if company:
-            team_ids = [
-                u["_id"] for u in mongo.db.users.find({
-                    "$or": [
-                        {"company_id": str(company["_id"])},
-                        {"company": {"$regex": "^{}$".format(re.escape(company.get("company_name", ""))), "$options": "i"}}
-                    ],
-                    "role": {"$in": ["manager", "employee"]}
-                }, {"_id": 1})
+            team_docs = list(mongo.db.users.find({
+                "$or": [
+                    {"company_id": str(company["_id"])},
+                    {"company": {"$regex": "^{}$".format(re.escape(company.get("company_name", ""))), "$options": "i"}}
+                ],
+                "role": {"$in": ["manager", "employee"]}
+            }, {"username": 1, "email": 1, "role": 1, "company": 1}))
+            team_ids = [u["_id"] for u in team_docs]
+            cascade_members = [
+                {
+                    "username": u.get("username") or "(no name)",
+                    "email": (u.get("email") or "").strip(),
+                    "role": u.get("role"),
+                    "company": u.get("company") or company.get("company_name"),
+                }
+                for u in team_docs
             ]
             if team_ids:
                 deleted_team = len(team_ids)
@@ -2818,13 +2877,56 @@ def delete_user(user_id):
             "_id": ObjectId(user_id)
         })
 
+        notify = []
+
+        target_email = (user.get("email") or "").strip()
+        if target_email:
+            admin_note = None
+            if deleted_company:
+                if deleted_team:
+                    admin_note = (
+                        "The company <strong>{}</strong>, its {} manager/employee account(s) "
+                        "and its billing record were also removed.".format(deleted_company, deleted_team)
+                    )
+                else:
+                    admin_note = (
+                        "The company <strong>{}</strong> and its billing record were also removed."
+                        .format(deleted_company)
+                    )
+            ok = send_account_deleted_email(
+                target_email, user.get("username") or "(no name)", user.get("role"),
+                user.get("company"), deleted_by=current_user.username,
+                extra_note=admin_note,
+            )
+            notify.append("you" if ok else "you (email failed)")
+
+        team_note = None
+        if deleted_company:
+            team_note = (
+                "This happened because the company <strong>{}</strong> and its admin account "
+                "were removed.".format(deleted_company)
+            )
+
+        for member in cascade_members:
+            if not member["email"]:
+                continue
+            ok = send_account_deleted_email(
+                member["email"], member["username"], member["role"], member["company"],
+                deleted_by=current_user.username, extra_note=team_note,
+            )
+            notify.append("{} ({})".format(member["username"], "ok" if ok else "email failed"))
+
+        notify_tail = ""
+        if notify:
+            notify_tail = " Deletion email sent to: {}.".format(", ".join(notify))
+
         if deleted_company:
             if deleted_team:
-                flash("User and related records deleted. Company '{}', its {} manager/employee account(s) and billing were also removed.".format(deleted_company, deleted_team), "success")
+                flash("User and related records deleted. Company '{}', its {} manager/employee account(s) and billing were also removed.{}".format(deleted_company, deleted_team, notify_tail), "success")
             else:
-                flash("User and related records deleted. Company '{}' and its billing were also removed.".format(deleted_company), "success")
+                flash("User and related records deleted. Company '{}' and its billing were also removed.{}".format(deleted_company, notify_tail), "success")
         else:
-            flash("User and related records deleted successfully.", "success")
+            flash("User and related records deleted successfully.{}".format(notify_tail), "success")
 
     except Exception as e:
         flash(f"Unable to delete user: {str(e)}", "danger")
@@ -2857,6 +2959,10 @@ def delete_reminder(id):
 @bp.route("/create-recurring-task", methods=["GET", "POST"])
 @login_required
 def create_recurring_task():
+
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
 
     if current_user.role not in ["super_admin", "admin", "manager"]:
         flash("Unauthorized", "danger")
@@ -3062,6 +3168,10 @@ def create_recurring_task():
 @login_required
 def delete_task(task_id):
 
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
+
     kind = request.form.get("kind", "task")
 
     if kind == "recurring":
@@ -3108,6 +3218,10 @@ def delete_task(task_id):
 @bp.route("/task/submit/<id>", methods=["POST"])
 @login_required
 def submit_task(id):
+
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
 
     task = mongo.db.tasks.find_one({
         "_id": ObjectId(id)
@@ -3316,6 +3430,10 @@ def submit_recurring_task(id):
 @bp.route("/subtask/submit/<subtask_id>", methods=["POST"])
 @login_required
 def submit_subtask(subtask_id):
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
+
     subtask = mongo.db.sub_tasks.find_one({
         "_id": ObjectId(subtask_id)
     })
@@ -3669,7 +3787,7 @@ def stop_reminder(id):
 def approve_task(id):
 
     # Allow Super Admin + Admin + Manager
-    if current_user.role not in ["super_admin", "admin", "manager"]:
+    if current_user.role not in ["admin", "manager"]:
         return "Unauthorized"
 
     try:
@@ -3915,9 +4033,12 @@ def create_user():
         user_result = mongo.db.users.insert_one(user_doc)
         user_id = str(user_result.inserted_id)
 
+        admin_plan = None
         if current_user.role == "super_admin" and company:
                 existing_co = mongo.db.companies.find_one({"company_name": company})
                 if existing_co:
+                    effective_slots = company_slots if company_slots else existing_co.get("plan_slots", 0)
+                    effective_charge = company_charge if company_charge else existing_co.get("per_employee_charge", 0)
                     mongo.db.companies.update_one(
                         {"_id": existing_co["_id"]},
                         {"$set": {
@@ -3926,14 +4047,21 @@ def create_user():
                             "admin_id": user_id,
                             "admin_username": username,
                             "admin_email": email,
-                            "plan_slots": company_slots if company_slots else existing_co.get("plan_slots", 0),
-                            "per_employee_charge": company_charge if company_charge else existing_co.get("per_employee_charge", 0),
+                            "plan_slots": effective_slots,
+                            "per_employee_charge": effective_charge,
                         }}
                     )
                     mongo.db.users.update_one(
                         {"_id": ObjectId(user_id)},
                         {"$set": {"company_id": str(existing_co["_id"])}}
                     )
+                    admin_plan = {
+                        "plan_slots": effective_slots,
+                        "per_employee_charge": effective_charge,
+                        "total_amount": effective_slots * effective_charge,
+                        "gstin": (company_gst or "").upper(),
+                        "address": company_address or "",
+                    }
                 else:
                     co_result = mongo.db.companies.insert_one({
                         "company_name": company,
@@ -3952,16 +4080,23 @@ def create_user():
                         {"_id": ObjectId(user_id)},
                         {"$set": {"company_id": str(co_result.inserted_id)}}
                     )
+                    admin_plan = {
+                        "plan_slots": company_slots,
+                        "per_employee_charge": company_charge,
+                        "total_amount": company_slots * company_charge,
+                        "gstin": (company_gst or "").upper(),
+                        "address": company_address or "",
+                    }
 
         email_sent = send_account_credentials_email(
-            email, username, generated_password, role, company, status
+            email, username, generated_password, role, company, status, plan=admin_plan
         )
 
         if email_sent:
             flash("User created successfully! Credentials were emailed to the user.", "success")
         else:
             flash("User created successfully, but the credentials email could not be sent "
-                  "(SMTP not configured). Please share the password manually.", "warning")
+                  "({}). Please share the password manually.".format(get_last_email_error() or "email send failed"), "warning")
         return redirect(url_for("main.manage_users"))
 
     return render_template(
@@ -4473,15 +4608,22 @@ def create_company():
 
             email_sent = send_account_credentials_email(
                 admin_email, admin_username, generated_admin_password,
-                "admin", company_name, "active"
+                "admin", company_name, "active",
+                plan={
+                    "plan_slots": employee_slots,
+                    "per_employee_charge": charge_per,
+                    "total_amount": total_amount,
+                    "gstin": gstin,
+                    "address": address,
+                }
             )
 
             if email_sent:
                 flash("Company '{}' and its admin created. Billing (â‚¹{:,}) will be raised from the Payments page. Credentials were emailed to the admin.".format(
                     company_name, total_amount), "success")
             else:
-                flash("Company '{}' and its admin created. Billing (â‚¹{:,}) will be raised from the Payments page. Note: the credentials email could not be sent (SMTP not configured).".format(
-                    company_name, total_amount), "warning")
+                flash("Company '{}' and its admin created. Billing (â‚¹{:,}) will be raised from the Payments page. Note: the credentials email could not be sent ({}).".format(
+                    company_name, total_amount, get_last_email_error() or "email send failed"), "warning")
             return redirect(url_for("main.companies"))
 
         flash("Please fix the highlighted fields.", "danger")
@@ -5556,6 +5698,39 @@ def admin_panel():
     companies_count = mongo.db.companies.count_documents({}) if is_super else 0
     admin_count = mongo.db.users.count_documents({"role": "admin"}) if is_super else 0
 
+    # ---------------- COMPANY USER GENERATION TABLE (super admin) ----------------
+    company_user_stats = []
+    if is_super:
+        company_docs = list(mongo.db.companies.find({}).sort("company_name", 1))
+        users_by_company = {}
+        for u in users:
+            cname = (u.get("company") or "").strip()
+            if cname:
+                users_by_company.setdefault(cname, []).append(u)
+        for cdoc in company_docs:
+            cname = cdoc.get("company_name") or ""
+            members = users_by_company.get(cname, [])
+            n_managers = sum(1 for m in members if m.get("role") == "manager")
+            n_employees = sum(1 for m in members if m.get("role") == "employee")
+            n_admins = sum(1 for m in members if m.get("role") == "admin")
+            n_team = n_managers + n_employees
+            plan_slots = cdoc.get("plan_slots") or 0
+            company_user_stats.append({
+                "name": cname,
+                "admin_username": cdoc.get("admin_username") or "-",
+                "admin_email": cdoc.get("admin_email") or "-",
+                "managers": n_managers,
+                "employees": n_employees,
+                "team_users": n_team,
+                "admins": n_admins,
+                "plan_slots": plan_slots,
+                "filled_pct": round(n_team * 100 / plan_slots) if plan_slots else 0,
+                "per_employee_charge": cdoc.get("per_employee_charge") or 0,
+                "total_amount": cdoc.get("total_amount") or 0,
+                "status": cdoc.get("status", "active"),
+                "created_at": cdoc.get("created_at"),
+            })
+
     return render_template(
         "admin_panel.html",
         greeting=greeting,
@@ -5588,6 +5763,7 @@ def admin_panel():
         is_super_admin=is_super,
         companies_count=companies_count,
         latest_announcements=latest_announcements,
+        company_user_stats=company_user_stats,
     )
 
 @bp.route("/create-department", methods=["GET", "POST"])
@@ -6785,6 +6961,10 @@ def export_activity_logs():
 @login_required
 def task_history():
 
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
+
     selected_employee_id = request.args.get("employee_id")
     overdue = request.args.get("overdue")
 
@@ -6967,6 +7147,10 @@ def export_report_pdf():
 @bp.route("/task-history/export")
 @login_required
 def export_task_history():
+
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
 
     selected_employee_id = request.args.get("employee_id")
 
@@ -7269,6 +7453,10 @@ def download_attachment(filename):
 @login_required
 def start_task(id):
 
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
+
     task = mongo.db.tasks.find_one({
         "_id": ObjectId(id)
     })
@@ -7303,6 +7491,10 @@ def start_task(id):
 @bp.route("/task/stop/<id>")
 @login_required
 def stop_task(id):
+
+    blocked = _block_super_admin_task_access()
+    if blocked is not None:
+        return blocked
 
     task = mongo.db.tasks.find_one({
         "_id": ObjectId(id)

@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "supersecretkey")
@@ -10,9 +13,6 @@ class Config:
     TWILIO_WHATSAPP_NUMBER = os.environ.get("TWILIO_WHATSAPP_NUMBER")
     TWILIO_WHATSAPP_TEMPLATE_SID = os.environ.get("TWILIO_WHATSAPP_TEMPLATE_SID")
 
-    SMTP_HOST = os.environ.get("SMTP_HOST")
-    SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
-    SMTP_USER = os.environ.get("SMTP_USER")
-    SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
-    SMTP_FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL")
-    SMTP_FROM_NAME = os.environ.get("SMTP_FROM_NAME", "Flowra Task")
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+    MAIL_FROM_EMAIL = os.environ.get("MAIL_FROM_EMAIL")
+    MAIL_FROM_NAME = os.environ.get("MAIL_FROM_NAME", "Flowra Task")

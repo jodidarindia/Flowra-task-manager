@@ -1176,7 +1176,7 @@ body{
 </div>
 {% endif %}
 
-{% if is_admin or is_manager and not is_super_admin %}
+{% if not is_super_admin and (is_admin or is_manager) %}
 <!-- Recurring Tasks -->
 <div class="fw-nav-item{% if request.endpoint in ['main.create_recurring_task', 'main.recurring_task_history'] %} active open{% endif %}">
 <button class="fw-nav-toggle" type="button">

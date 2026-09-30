@@ -190,7 +190,7 @@
 .sys-row-3{grid-template-columns:1fr 1fr 1fr;}
 
 .sys-row-3-super{
-    grid-template-columns:1fr 1fr 1fr;
+    grid-template-columns:1fr 1fr;
     padding:0 20px;
 }
 
@@ -683,19 +683,6 @@
         </div>
     </div>
 
-    <div class="sys-kpi">
-        <div class="kpi-icon kpi-amber"><i class="fa-solid fa-bullhorn"></i></div>
-        <div>
-            <div class="kpi-top">
-                <span class="kpi-num" style="font-size:15px;line-height:1.3;">
-                    {{ latest_announcements[0].title if latest_announcements else 'No announcements yet' }}
-                </span>
-            </div>
-            <div class="kpi-label">Latest Announcement</div>
-            <div class="kpi-sub">{{ latest_announcements[0].time_ago if latest_announcements else '' }}</div>
-        </div>
-    </div>
-
 </div>
 
 
@@ -849,7 +836,7 @@
 
 {% endif %}
 
-{% if recent_tasks %}
+{% if not is_super_admin and recent_tasks %}
 <!-- RECENT TASKS + UPCOMING DEADLINES -->
 
 <div class="sys-row">
@@ -1197,6 +1184,72 @@
     {% endif %}
 
 </div>
+
+{% if is_super_admin %}
+<!-- COMPANY USER GENERATION TABLE (super admin only) -->
+
+<div class="sys-card">
+    <div class="sys-card-head">
+        <h5><i class="fa-solid fa-building text-primary"></i> Company User Generation <small>Manager + employee users created per company</small></h5>
+    </div>
+    <div class="sys-card-body" style="padding-top:0;">
+        <div style="overflow-x:auto;">
+        <table class="sys-table" id="companyUserTable">
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Admin</th>
+                    <th>Managers</th>
+                    <th>Employees</th>
+                    <th>User Limit</th>
+                    <th>Per User Charge</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for c in company_user_stats %}
+                <tr>
+                    <td class="t-title">{{ c.name }}</td>
+                    <td class="t-assignee">
+                        {{ c.admin_username }}
+                        {% if c.admin_email %}<div class="text-muted small">{{ c.admin_email }}</div>{% endif %}
+                    </td>
+                    <td>{{ c.managers }}</td>
+                    <td>{{ c.employees }}</td>
+                    <td>
+                        <div class="small mb-1">{{ c.team_users }} / {{ c.plan_slots }}</div>
+                        <div class="dp-bar" style="max-width:140px;">
+                            <div class="dp-fill" style="width:{{ c.filled_pct }}%;"></div>
+                        </div>
+                    </td>
+                    <td>&#8377;{{ c.per_employee_charge }}</td>
+                    <td>&#8377;{{ c.total_amount }}</td>
+                    <td>
+                        {% if c.status == 'active' %}
+                        <span class="fw-badge fw-badge-success">{{ c.status | capitalize }}</span>
+                        {% else %}
+                        <span class="fw-badge fw-badge-secondary">{{ c.status | capitalize }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="8">
+                        <div class="fw-empty py-4">
+                            <i class="fa-regular fa-building fa-2x mb-2 d-block opacity-50"></i>
+                            <div style="font-size:12.5px;color:#94a3b8;">No companies yet.</div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+{% endif %}
 
 </div>
 

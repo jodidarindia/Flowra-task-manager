@@ -1,4 +1,4 @@
-from flask import Flask, session, redirect, url_for, request, flash
+from flask import Flask, app, session, redirect, url_for, request, flash
 from flask_login import LoginManager, current_user, logout_user
 from config import Config
 from datetime import datetime, timedelta
@@ -23,9 +23,14 @@ def create_app():
         "WHATSAPP_WEBHOOK_VERIFY_TOKEN"
     )
 
+    # Resend Email Configuration
+    app.config["RESEND_API_KEY"] = os.getenv("RESEND_API_KEY")
+    app.config["MAIL_FROM_EMAIL"] = os.getenv("MAIL_FROM_EMAIL")
+    app.config["MAIL_FROM_NAME"] = os.getenv("MAIL_FROM_NAME")
+    
     app.config["MONGO_URI"] = os.getenv(
         "MONGO_URI",
-        "mongodb+srv://jodidarindia_db_user:oTTtFSOrJLz3DdTE@flowra-cluster.cxt8yw1.mongodb.net/flowra_task_manager?retryWrites=true&w=majority&appName=flowra-cluster"
+        "mongodb+srv://jodidarindia_db_user:Flowralive_db@flowra-cluster.cxt8yw1.mongodb.net/flowra_task_manager?retryWrites=true&w=majority&appName=flowra-cluster"
     )
     mongo.init_app(app)
 
